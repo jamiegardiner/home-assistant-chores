@@ -456,3 +456,111 @@ async def test_expired_snooze_not_restored_on_restart(
 
     assert coord.data["chore_a"]["status"] == "overdue"
     assert coord.data["chore_a"]["snooze_until"] is None
+
+
+@pytest.mark.asyncio
+async def test_unsnooze_clears_snooze_and_recalculates(
+    hass: Any, two_chore_entry: MockConfigEntry
+) -> None:
+    """Unsnooze on a snoozed overdue chore: snooze_until cleared, status returns to overdue."""
+    snooze_date = date.today() + timedelta(days=3)
+    stored = {
+        "chore_a": {
+            "last_completed": (date.today() - timedelta(days=30)).isoformat(),
+            "snooze_until": snooze_date.isoformat(),
+        }
+    }
+
+    with (
+        patch(
+            "custom_components.chores.coordinator.Store.async_load",
+            new_callable=AsyncMock,
+            return_value=stored,
+        ),
+        patch("custom_components.chores.coordinator.Store.async_save", new_callable=AsyncMock),
+        patch("custom_components.chores.coordinator.async_track_point_in_time"),
+    ):
+        coord = ChoresCoordinator(hass, two_chore_entry)
+        await coord.async_initialize()
+
+        assert coord.data["chore_a"]["status"] == "snoozed"
+        assert coord.data["chore_a"]["snooze_until"] == snooze_date
+
+        await coord.async_unsnooze("chore_a")
+
+    assert coord.data["chore_a"]["snooze_until"] is None
+    assert coord.data["chore_a"]["status"] == "overdue"
+
+
+@pytest.mark.asyncio
+async def test_unsnooze_done_chore_reschedules_timer(
+    hass: Any, two_chore_entry: MockConfigEntry
+) -> None:
+    """Unsnooze on a snoozed done chore: status returns to done."""
+    snooze_date = date.today() + timedelta(days=3)
+    # last_completed yesterday, interval 7d -> not yet overdue
+    stored = {
+        "chore_a": {
+            "last_completed": (date.today() - timedelta(days=1)).isoformat(),
+            "snooze_until": snooze_date.isoformat(),
+        }
+    }
+
+    cancel_mock = MagicMock()
+    with (
+        patch(
+            "custom_components.chores.coordinator.Store.async_load",
+            new_callable=AsyncMock,
+            return_value=stored,
+        ),
+        patch("custom_components.chores.coordinator.Store.async_save", new_callable=AsyncMock),
+        patch(
+            "custom_components.chores.coordinator.async_track_point_in_time",
+            return_value=cancel_mock,
+        ),
+    ):
+        coord = ChoresCoordinator(hass, two_chore_entry)
+        await coord.async_initialize()
+
+        assert coord.data["chore_a"]["status"] == "snoozed"
+
+        await coord.async_unsnooze("chore_a")
+
+    assert coord.data["chore_a"]["snooze_until"] is None
+    assert coord.data["chore_a"]["status"] == "done"
+
+
+@pytest.mark.asyncio
+async def test_unsnooze_on_non_snoozed_is_noop(
+    hass: Any, two_chore_entry: MockConfigEntry
+) -> None:
+    """Calling async_unsnooze on a chore not in snoozed state is a no-op."""
+    stored = {
+        "chore_a": {
+            "last_completed": (date.today() - timedelta(days=30)).isoformat(),
+            "snooze_until": None,
+        }
+    }
+
+    save_mock = AsyncMock()
+    with (
+        patch(
+            "custom_components.chores.coordinator.Store.async_load",
+            new_callable=AsyncMock,
+            return_value=stored,
+        ),
+        patch(
+            "custom_components.chores.coordinator.Store.async_save",
+            save_mock,
+        ),
+        patch("custom_components.chores.coordinator.async_track_point_in_time"),
+    ):
+        coord = ChoresCoordinator(hass, two_chore_entry)
+        await coord.async_initialize()
+
+        status_before = coord.data["chore_a"]["status"]
+        await coord.async_unsnooze("chore_a")
+
+    assert coord.data["chore_a"]["status"] == status_before
+    assert coord.data["chore_a"]["snooze_until"] is None
+    save_mock.assert_not_called()

@@ -19,8 +19,10 @@ _LOGGER = logging.getLogger(__name__)
 
 SERVICE_COMPLETE = "complete"
 SERVICE_SNOOZE = "snooze"
+SERVICE_UNSNOOZE = "unsnooze"
 
 COMPLETE_SCHEMA = vol.Schema({}, extra=vol.ALLOW_EXTRA)
+UNSNOOZE_SCHEMA = vol.Schema({}, extra=vol.ALLOW_EXTRA)
 
 SNOOZE_SCHEMA = vol.Schema(
     {
@@ -107,6 +109,12 @@ async def async_register_services(hass: HomeAssistant) -> None:
 
         await coordinator.async_snooze(chore_id, snooze_until)
 
+    async def _handle_unsnooze(call: ServiceCall) -> None:
+        """Handle chores.unsnooze service call."""
+        domain_data: dict[str, Any] = hass.data.get(DOMAIN, {})
+        chore_id, coordinator = _resolve_entity(call, domain_data)
+        await coordinator.async_unsnooze(chore_id)
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_COMPLETE,
@@ -119,12 +127,18 @@ async def async_register_services(hass: HomeAssistant) -> None:
         _handle_snooze,
         schema=SNOOZE_SCHEMA,
     )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_UNSNOOZE,
+        _handle_unsnooze,
+        schema=UNSNOOZE_SCHEMA,
+    )
     _LOGGER.debug("Registered services for domain %s", DOMAIN)
 
 
 def async_unregister_services(hass: HomeAssistant) -> None:
     """Unregister integration services (called when last entry unloads)."""
-    for service in (SERVICE_COMPLETE, SERVICE_SNOOZE):
+    for service in (SERVICE_COMPLETE, SERVICE_SNOOZE, SERVICE_UNSNOOZE):
         if hass.services.has_service(DOMAIN, service):
             hass.services.async_remove(DOMAIN, service)
     _LOGGER.debug("Unregistered services for domain %s", DOMAIN)
