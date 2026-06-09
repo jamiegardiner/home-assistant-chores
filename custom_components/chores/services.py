@@ -100,6 +100,11 @@ async def async_register_services(hass: HomeAssistant) -> None:
                     f"Invalid snooze_until date: {snooze_until_str!r}"
                 ) from exc
 
+        if snooze_until <= dt_util.now().date():
+            raise HomeAssistantError(
+                f"snooze_until must be a future date, got {snooze_until}"
+            )
+
         await coordinator.async_snooze(chore_id, snooze_until)
 
     hass.services.async_register(
