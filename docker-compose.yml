@@ -7,7 +7,6 @@ services:
     ports:
       - "8123:8123"
     volumes:
-      - ./ha-config:/config
       - ./custom_components/chores:/config/custom_components/chores
     environment:
       - TZ=Europe/London

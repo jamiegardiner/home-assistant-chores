@@ -31,7 +31,7 @@ Discuss the plan with the user. Answer questions and revise the plan until the u
 
 Exit plan mode and begin implementation:
 
-1. Create a branch named `<prefix>/<number>-<slug>` where prefix comes from the category table above and slug is a short kebab-case version of the issue title (e.g. `feat/7-button-entity-complete-chore`). Push it immediately with `git push -u origin <branch>`.
+1. Ensure main is up to date before branching: `git checkout main && git pull origin main`. Then create a branch named `<prefix>/<number>-<slug>` where prefix comes from the category table above and slug is a short kebab-case version of the issue title (e.g. `feat/7-button-entity-complete-chore`). Push it immediately with `git push -u origin <branch>`.
 2. Implement the changes according to the approved plan.
 3. Run `make test` and `make lint` after changes. Fix any failures before proceeding.
 4. Commit using the prefix that matches the category:
@@ -43,8 +43,19 @@ Exit plan mode and begin implementation:
 
 ## Step 4 — Open a PR
 
-Run `gh pr create` with:
-- Title: the issue title
-- Body: `Closes #<number>`, a short summary of what changed, and a test plan checklist
+Write the PR body to a temp file and use `--body-file` to avoid shell escaping mangling backticks and code blocks:
+
+```
+cat > /tmp/pr-body.md << 'EOF'
+Closes #<number>
+
+## Summary
+<what changed>
+
+## Test plan
+- [ ] ...
+EOF
+gh pr create --title "<title>" --body-file /tmp/pr-body.md
+```
 
 Print the PR URL.

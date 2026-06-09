@@ -23,20 +23,26 @@ Write the issue body using this structure:
 
 **Category:** `<bug | enhancement | documentation | chore | security>`
 
-**User Story**
+**User Story** *(enhancement and bug only)*
 > As a [type of user], I want [goal], so that [reason/value].
 
 **Acceptance Criteria**
-BDD-style scenarios using Given/When/Then. Each scenario is a single testable behaviour:
 
-```
-Scenario: <short name>
-  Given <precondition>
-  When <action>
-  Then <outcome>
-```
+The format depends on the category:
 
-Write one scenario per distinct behaviour. Do not bundle multiple outcomes into one Then.
+- **enhancement / bug** — BDD-style scenarios using Given/When/Then. Each scenario is a single testable behaviour. Do not bundle multiple outcomes into one Then:
+  ```
+  Scenario: <short name>
+    Given <precondition>
+    When <action>
+    Then <outcome>
+  ```
+
+- **documentation / chore / security** — Simple bullet list of what must be true when the issue is done. No Given/When/Then needed:
+  ```
+  - README contains an introduction section explaining what the integration does
+  - Installation instructions cover adding the repo as a custom HACS repository
+  ```
 
 **Notes** (omit if empty)
 Implementation hints, constraints, open questions, or links to related issues.
@@ -44,18 +50,20 @@ Implementation hints, constraints, open questions, or links to related issues.
 ## Step 3 — Check scope
 
 Before creating the issue, assess whether it should be split:
-- More than 5 acceptance criteria scenarios
-- Spans clearly separate concerns (e.g. UI change + new service + data model change)
-- Implements more than one user-facing requirement
-- Would naturally result in more than one PR
+- **enhancement / bug**: more than 5 BDD scenarios, spans clearly separate concerns, or would naturally result in more than one PR
+- **documentation / chore / security**: covers clearly distinct deliverables that could ship independently (e.g. README + CLAUDE.md update are separable; a single README with multiple sections is not)
 
 If any of these apply, propose a split: show the user the suggested sub-issues and ask whether to create them separately or proceed as one. Wait for their decision.
 
 ## Step 4 — Create the issue
 
-Once the user is happy with the content and scope, run:
+Once the user is happy with the content and scope, write the issue body to a temp file and use `--body-file` to avoid shell escaping mangling backticks and code blocks:
+
 ```
-gh issue create --title "<title>" --label "<category>" --body "<body>"
+cat > /tmp/issue-body.md << 'EOF'
+<body>
+EOF
+gh issue create --title "<title>" --label "<category>" --body-file /tmp/issue-body.md
 ```
 
 Print the issue URL and number. Do not implement any code.
