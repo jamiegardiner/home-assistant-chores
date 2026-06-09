@@ -25,7 +25,7 @@
           "name": "Name",
           "interval_value": "Interval",
           "interval_unit": "Interval unit",
-          "last_completed": "Last completed (YYYY-MM-DD)"
+          "last_completed": "Last completed date"
         }
       },
       "remove": {
