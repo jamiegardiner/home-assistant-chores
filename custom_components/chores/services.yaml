@@ -1,0 +1,14 @@
+complete:
+  name: Complete chore
+  description: Mark a chore as completed now, returning it to "done".
+  target:
+    entity:
+      integration: chores
+      domain: sensor
+  fields:
+    chore_id:
+      name: Chore ID
+      description: Optional explicit chore id (alternative to targeting the sensor).
+      required: false
+      selector:
+        text:
