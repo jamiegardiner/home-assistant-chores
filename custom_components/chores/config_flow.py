@@ -20,7 +20,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorConfig,
 )
 
-from .const import CONF_CHORES, DOMAIN
+from .const import CONF_CHORES, DOMAIN, INTERVAL_UNITS
 from .models import ChoreConfig
 
 
@@ -77,8 +77,8 @@ class ChoresOptionsFlow(config_entries.OptionsFlow):
                 vol.Required("interval_unit"): SelectSelector(
                     SelectSelectorConfig(
                         options=[
-                            SelectOptionDict(value="days", label="Days"),
-                            SelectOptionDict(value="weeks", label="Weeks"),
+                            SelectOptionDict(value=unit, label=unit.capitalize())
+                            for unit in INTERVAL_UNITS
                         ]
                     )
                 ),
@@ -98,16 +98,14 @@ class ChoresOptionsFlow(config_entries.OptionsFlow):
                 errors["interval_value"] = "invalid_interval"
 
             # DateSelector validates format and returns the date string; parse to date
-            last_completed: date | None = date.fromisoformat(
-                str(user_input["last_completed"])
-            )
+            last_completed: date = date.fromisoformat(str(user_input["last_completed"]))
 
             if not errors:
                 chore = ChoreConfig(
                     name=name,
                     interval_value=interval_value,
                     interval_unit=user_input["interval_unit"],
-                    last_completed=last_completed,  # type: ignore[arg-type]
+                    last_completed=last_completed,
                 )
                 current = list(self.config_entry.data.get(CONF_CHORES, []))
                 current.append(chore.to_dict())
