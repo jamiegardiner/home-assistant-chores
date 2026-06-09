@@ -5,3 +5,38 @@ complete:
     entity:
       integration: chores
       domain: sensor
+
+snooze:
+  name: Snooze chore
+  description: >
+    Snooze a chore until a given date, suppressing overdue transitions until then.
+    Provide exactly one of snooze_days, snooze_weeks, or snooze_until.
+  target:
+    entity:
+      integration: chores
+      domain: sensor
+  fields:
+    snooze_days:
+      name: Snooze days
+      description: Number of days to snooze from today.
+      required: false
+      selector:
+        number:
+          min: 1
+          step: 1
+          mode: box
+    snooze_weeks:
+      name: Snooze weeks
+      description: Number of weeks to snooze from today.
+      required: false
+      selector:
+        number:
+          min: 1
+          step: 1
+          mode: box
+    snooze_until:
+      name: Snooze until
+      description: Specific date to snooze until (ISO format YYYY-MM-DD).
+      required: false
+      selector:
+        date:
