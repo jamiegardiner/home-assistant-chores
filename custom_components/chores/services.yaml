@@ -5,10 +5,3 @@ complete:
     entity:
       integration: chores
       domain: sensor
-  fields:
-    chore_id:
-      name: Chore ID
-      description: Optional explicit chore id (alternative to targeting the sensor).
-      required: false
-      selector:
-        text:
