@@ -284,3 +284,175 @@ async def test_entity_resolution(hass: Any, two_chore_entry: MockConfigEntry) ->
     coord.register_entity("sensor.chore_a", "chore_a")
     assert coord.chore_id_for_entity("sensor.chore_a") == "chore_a"
     assert coord.chore_id_for_entity("sensor.unknown") is None
+
+
+# ---------------------------------------------------------------------------
+# Snooze tests
+# ---------------------------------------------------------------------------
+
+
+async def test_snooze_transitions_to_snoozed(
+    hass: Any, two_chore_entry: MockConfigEntry
+) -> None:
+    """async_snooze sets status to snoozed and exposes snooze_until."""
+    with (
+        patch(
+            "custom_components.chores.coordinator.Store.async_load",
+            new_callable=AsyncMock,
+            return_value=None,
+        ),
+        patch(
+            "custom_components.chores.coordinator.Store.async_save",
+            new_callable=AsyncMock,
+        ),
+        patch("custom_components.chores.coordinator.async_track_point_in_time"),
+    ):
+        coord = ChoresCoordinator(hass, two_chore_entry)
+        await coord.async_initialize()
+
+        snooze_date = date.today() + timedelta(days=3)
+        await coord.async_snooze("chore_a", snooze_date)
+
+    data = coord.data
+    assert data["chore_a"]["status"] == "snoozed"
+    assert data["chore_a"]["snooze_until"] == snooze_date
+
+
+async def test_snooze_expiry_recomputes_state(
+    hass: Any, two_chore_entry: MockConfigEntry
+) -> None:
+    """When the snooze timer fires, status is recalculated."""
+    captured_snooze_cb: dict[str, Any] = {}
+
+    def _fake_track(hass_, cb, point_in_time):  # noqa: ARG001
+        captured_snooze_cb["cb"] = cb
+        return MagicMock()
+
+    with (
+        patch(
+            "custom_components.chores.coordinator.Store.async_load",
+            new_callable=AsyncMock,
+            return_value=None,
+        ),
+        patch(
+            "custom_components.chores.coordinator.Store.async_save",
+            new_callable=AsyncMock,
+        ),
+        patch(
+            "custom_components.chores.coordinator.async_track_point_in_time",
+            side_effect=_fake_track,
+        ),
+    ):
+        coord = ChoresCoordinator(hass, two_chore_entry)
+        await coord.async_initialize()
+
+        # Snooze an overdue chore (no overdue timer, so snooze timer is first)
+        snooze_date = date.today() + timedelta(days=3)
+        await coord.async_snooze("chore_a", snooze_date)
+
+    assert coord.data["chore_a"]["status"] == "snoozed"
+    assert "cb" in captured_snooze_cb
+
+    # Simulate snooze expiry — chore_a was overdue before snooze
+    future = datetime.now(tz=timezone.utc) + timedelta(days=4)
+    with patch("custom_components.chores.coordinator.dt_util.now", return_value=future):
+        captured_snooze_cb["cb"](future)
+
+    assert coord.data["chore_a"]["status"] == "overdue"
+    assert coord.data["chore_a"]["snooze_until"] is None
+
+
+async def test_complete_clears_snooze(
+    hass: Any, two_chore_entry: MockConfigEntry
+) -> None:
+    """Completing a snoozed chore clears the snooze and marks it done."""
+    with (
+        patch(
+            "custom_components.chores.coordinator.Store.async_load",
+            new_callable=AsyncMock,
+            return_value=None,
+        ),
+        patch(
+            "custom_components.chores.coordinator.Store.async_save",
+            new_callable=AsyncMock,
+        ),
+        patch("custom_components.chores.coordinator.async_track_point_in_time"),
+    ):
+        coord = ChoresCoordinator(hass, two_chore_entry)
+        await coord.async_initialize()
+
+        snooze_date = date.today() + timedelta(days=3)
+        await coord.async_snooze("chore_a", snooze_date)
+        assert coord.data["chore_a"]["status"] == "snoozed"
+
+        await coord.async_complete("chore_a")
+
+    data = coord.data
+    assert data["chore_a"]["status"] == "done"
+    assert data["chore_a"]["snooze_until"] is None
+
+
+async def test_snooze_survives_restart(
+    hass: Any, two_chore_entry: MockConfigEntry
+) -> None:
+    """snooze_until is persisted to the store and restored on restart."""
+    saved_payload: dict[str, Any] = {}
+
+    async def fake_save(data: dict) -> None:
+        saved_payload.update(data)
+
+    async def fake_load() -> dict | None:
+        return saved_payload if saved_payload else None
+
+    with (
+        patch(
+            "custom_components.chores.coordinator.Store.async_load",
+            new_callable=AsyncMock,
+            side_effect=fake_load,
+        ),
+        patch(
+            "custom_components.chores.coordinator.Store.async_save",
+            new_callable=AsyncMock,
+            side_effect=fake_save,
+        ),
+        patch("custom_components.chores.coordinator.async_track_point_in_time"),
+    ):
+        coord = ChoresCoordinator(hass, two_chore_entry)
+        await coord.async_initialize()
+
+        snooze_date = date.today() + timedelta(days=5)
+        await coord.async_snooze("chore_a", snooze_date)
+
+        # Simulate restart
+        coord2 = ChoresCoordinator(hass, two_chore_entry)
+        await coord2.async_initialize()
+
+    assert coord2.data["chore_a"]["status"] == "snoozed"
+    assert coord2.data["chore_a"]["snooze_until"] == snooze_date
+
+
+async def test_expired_snooze_not_restored_on_restart(
+    hass: Any, two_chore_entry: MockConfigEntry
+) -> None:
+    """An expired snooze_until is discarded on restart, not restored."""
+    snooze_date = date.today() - timedelta(days=1)  # already past
+    stored = {
+        "chore_a": {
+            "last_completed": (date.today() - timedelta(days=30)).isoformat(),
+            "snooze_until": snooze_date.isoformat(),
+        }
+    }
+
+    with (
+        patch(
+            "custom_components.chores.coordinator.Store.async_load",
+            new_callable=AsyncMock,
+            return_value=stored,
+        ),
+        patch("custom_components.chores.coordinator.async_track_point_in_time"),
+    ):
+        coord = ChoresCoordinator(hass, two_chore_entry)
+        await coord.async_initialize()
+
+    assert coord.data["chore_a"]["status"] == "overdue"
+    assert coord.data["chore_a"]["snooze_until"] is None

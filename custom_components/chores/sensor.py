@@ -110,9 +110,10 @@ class ChoreSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Return last_completed and next_due as ISO strings (or None)."""
+        """Return last_completed, next_due, and snooze_until as ISO strings (or None)."""
         state = self._chore_state()
         return {
             "last_completed": _iso(state.get("last_completed")),
             "next_due": _iso(state.get("next_due")),
+            "snooze_until": _iso(state.get("snooze_until")),
         }
