@@ -10,8 +10,17 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.core import callback
+from homeassistant.helpers.selector import (
+    DateSelector,
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
+    SelectOptionDict,
+    SelectSelector,
+    SelectSelectorConfig,
+)
 
-from .const import CONF_CHORES, DOMAIN, INTERVAL_UNITS
+from .const import CONF_CHORES, DOMAIN
 from .models import ChoreConfig
 
 
@@ -62,9 +71,18 @@ class ChoresOptionsFlow(config_entries.OptionsFlow):
         schema = vol.Schema(
             {
                 vol.Required("name"): str,
-                vol.Required("interval_value"): vol.Coerce(int),
-                vol.Required("interval_unit"): vol.In(list(INTERVAL_UNITS)),
-                vol.Required("last_completed"): str,
+                vol.Required("interval_value"): NumberSelector(
+                    NumberSelectorConfig(min=1, step=1, mode=NumberSelectorMode.BOX)
+                ),
+                vol.Required("interval_unit"): SelectSelector(
+                    SelectSelectorConfig(
+                        options=[
+                            SelectOptionDict(value="days", label="Days"),
+                            SelectOptionDict(value="weeks", label="Weeks"),
+                        ]
+                    )
+                ),
+                vol.Required("last_completed"): DateSelector(),
             }
         )
 
@@ -74,18 +92,15 @@ class ChoresOptionsFlow(config_entries.OptionsFlow):
             if not name:
                 errors["name"] = "name_required"
 
-            interval_value = user_input.get("interval_value", 0)
+            # NumberSelector returns float; coerce to int
+            interval_value = int(user_input.get("interval_value", 1))
             if interval_value < 1:
                 errors["interval_value"] = "invalid_interval"
 
-            last_completed: date | None = None
-            if "last_completed" not in errors:
-                try:
-                    last_completed = date.fromisoformat(
-                        str(user_input["last_completed"])
-                    )
-                except ValueError:
-                    errors["last_completed"] = "invalid_date"
+            # DateSelector validates format and returns the date string; parse to date
+            last_completed: date | None = date.fromisoformat(
+                str(user_input["last_completed"])
+            )
 
             if not errors:
                 chore = ChoreConfig(

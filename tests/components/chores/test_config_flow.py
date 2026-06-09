@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.data_entry_flow import FlowResultType, InvalidData
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.chores.const import CONF_CHORES, DOMAIN
@@ -107,7 +107,7 @@ async def test_options_add_rejects_empty_name(hass):
 
 
 async def test_options_add_rejects_non_positive_interval(hass):
-    """Submitting interval_value=0 is rejected by voluptuous and re-shows the form."""
+    """NumberSelector(min=1) rejects interval_value=0 at schema validation."""
     entry = MockConfigEntry(domain=DOMAIN, data={CONF_CHORES: []})
     entry.add_to_hass(hass)
     await hass.config_entries.async_setup(entry.entry_id)
@@ -116,17 +116,16 @@ async def test_options_add_rejects_non_positive_interval(hass):
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], {"next_step_id": "add"}
     )
-    result = await hass.config_entries.options.async_configure(
-        result["flow_id"],
-        {
-            "name": "Valid Name",
-            "interval_value": 0,
-            "interval_unit": "days",
-            "last_completed": "2026-06-01",
-        },
-    )
-    assert result["type"] == FlowResultType.FORM
-    assert result["step_id"] == "add"
+    with pytest.raises(InvalidData):
+        await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {
+                "name": "Valid Name",
+                "interval_value": 0,
+                "interval_unit": "days",
+                "last_completed": "2026-06-01",
+            },
+        )
 
 
 async def test_options_remove_chore(hass):
@@ -158,7 +157,7 @@ async def test_options_remove_chore(hass):
 
 
 async def test_options_add_rejects_invalid_date(hass):
-    """Submitting a malformed date re-shows the form with an invalid_date error."""
+    """DateSelector rejects a malformed date at schema validation."""
     entry = MockConfigEntry(domain=DOMAIN, data={CONF_CHORES: []})
     entry.add_to_hass(hass)
     await hass.config_entries.async_setup(entry.entry_id)
@@ -167,18 +166,16 @@ async def test_options_add_rejects_invalid_date(hass):
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], {"next_step_id": "add"}
     )
-    result = await hass.config_entries.options.async_configure(
-        result["flow_id"],
-        {
-            "name": "Valid Name",
-            "interval_value": 1,
-            "interval_unit": "days",
-            "last_completed": "not-a-date",
-        },
-    )
-    assert result["type"] == FlowResultType.FORM
-    assert result["step_id"] == "add"
-    assert "last_completed" in result["errors"]
+    with pytest.raises(InvalidData):
+        await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {
+                "name": "Valid Name",
+                "interval_value": 1,
+                "interval_unit": "days",
+                "last_completed": "not-a-date",
+            },
+        )
 
 
 async def test_options_remove_aborts_when_no_chores(hass):
