@@ -23,11 +23,12 @@ custom_components/chores/
 
 tests/
   components/chores/
-    conftest.py        # shared fixtures (chore dict builder)
+    conftest.py        # shared fixtures
     test_config_flow.py
     test_coordinator.py
     test_models.py
-  test_sensor.py
+    test_sensor.py
+    test_services.py
 
 docker-compose.yml     # runs ghcr.io/home-assistant/home-assistant:stable on :8123; bind-mounts ./custom_components/chores into /config/custom_components/chores
 pyproject.toml         # project metadata + mypy config
