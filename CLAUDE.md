@@ -43,7 +43,7 @@ Makefile               # all common dev tasks (see below)
 ### Data flow
 
 ```
-config entry data (CONF_CHORES list)
+entry.options (CONF_CHORES list)
         │
         ▼
 ChoresCoordinator.async_initialize()
@@ -166,5 +166,6 @@ All feature and fix work goes through GitHub Issues:
 
 - Single-instance integration — only one Chores config entry is allowed. Enforced by HA via `"single_config_entry": true` in `manifest.json` (not a manual config-flow check).
 - No YAML configuration — all setup is through the UI options flow.
+- The chore list (`CONF_CHORES`) is stored in `entry.options`, not `entry.data`. The options flow returns the new options dict via `async_create_entry(data={CONF_CHORES: ...})` (HA persists it to `entry.options` and fans out to update listeners) — it must not mutate `entry.data` mid-flow.
 - Python `>=3.14.2` (matches Home Assistant's own requirement).
 - `integration_type: hub` in `manifest.json` — must not be changed to `helper` or the integration appears in the wrong section of the HA UI.

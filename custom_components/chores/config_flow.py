@@ -40,7 +40,7 @@ class ChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """
         return self.async_create_entry(
             title="Chores",
-            data={CONF_CHORES: []},
+            data={},
         )
 
     @staticmethod
@@ -94,7 +94,7 @@ class ChoresOptionsFlow(config_entries.OptionsFlow):
             if not name:
                 errors["name"] = "name_required"
             else:
-                existing = self.config_entry.data.get(CONF_CHORES, [])
+                existing = self.config_entry.options.get(CONF_CHORES, [])
                 incoming_slug = slugify(name)
                 if any(slugify(c["name"]) == incoming_slug for c in existing):
                     errors["name"] = "duplicate_name"
@@ -114,13 +114,9 @@ class ChoresOptionsFlow(config_entries.OptionsFlow):
                     interval_unit=user_input["interval_unit"],
                     last_completed=last_completed,
                 )
-                current = list(self.config_entry.data.get(CONF_CHORES, []))
+                current = list(self.config_entry.options.get(CONF_CHORES, []))
                 current.append(chore.to_dict())
-                self.hass.config_entries.async_update_entry(
-                    self.config_entry,
-                    data={**self.config_entry.data, CONF_CHORES: current},
-                )
-                return self.async_create_entry(title="", data={})
+                return self.async_create_entry(data={CONF_CHORES: current})
 
         today = str(dt_util.now().date())
         suggested_last_completed = (
@@ -140,16 +136,12 @@ class ChoresOptionsFlow(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle removing an existing chore."""
-        chores: list[dict] = list(self.config_entry.data.get(CONF_CHORES, []))
+        chores: list[dict] = list(self.config_entry.options.get(CONF_CHORES, []))
 
         if user_input is not None:
             idx = int(user_input["chore"])
             new_chores = [c for i, c in enumerate(chores) if i != idx]
-            self.hass.config_entries.async_update_entry(
-                self.config_entry,
-                data={**self.config_entry.data, CONF_CHORES: new_chores},
-            )
-            return self.async_create_entry(title="", data={})
+            return self.async_create_entry(data={CONF_CHORES: new_chores})
 
         if not chores:
             return self.async_abort(reason="no_chores")

@@ -23,12 +23,12 @@ async def test_user_flow_creates_single_entry(hass):
     )
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert result["title"] == "Chores"
-    assert result["data"] == {CONF_CHORES: []}
+    assert result["data"] == {}
 
 
 async def test_user_flow_aborts_on_second_instance(hass):
     """A second config flow attempt aborts with single_instance_allowed."""
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_CHORES: []})
+    entry = MockConfigEntry(domain=DOMAIN, options={CONF_CHORES: []})
     entry.add_to_hass(hass)
 
     result = await hass.config_entries.flow.async_init(
@@ -40,7 +40,7 @@ async def test_user_flow_aborts_on_second_instance(hass):
 
 async def test_options_flow_shows_menu(hass):
     """Options flow init step shows the add/remove menu."""
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_CHORES: []})
+    entry = MockConfigEntry(domain=DOMAIN, options={CONF_CHORES: []})
     entry.add_to_hass(hass)
     await hass.config_entries.async_setup(entry.entry_id)
 
@@ -52,7 +52,7 @@ async def test_options_flow_shows_menu(hass):
 
 async def test_options_add_chore(hass):
     """Submitting valid add data stores a chore in the config entry."""
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_CHORES: []})
+    entry = MockConfigEntry(domain=DOMAIN, options={CONF_CHORES: []})
     entry.add_to_hass(hass)
     await hass.config_entries.async_setup(entry.entry_id)
 
@@ -76,7 +76,7 @@ async def test_options_add_chore(hass):
     )
     assert result["type"] == FlowResultType.CREATE_ENTRY
 
-    chores = entry.data[CONF_CHORES]
+    chores = entry.options[CONF_CHORES]
     assert len(chores) == 1
     assert chores[0]["name"] == "Bins"
     assert chores[0]["interval_value"] == 2
@@ -86,7 +86,7 @@ async def test_options_add_chore(hass):
 
 async def test_options_add_date_field_has_suggested_value(hass):
     """Initial add form render binds today's date as suggested_value for last_completed."""
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_CHORES: []})
+    entry = MockConfigEntry(domain=DOMAIN, options={CONF_CHORES: []})
     entry.add_to_hass(hass)
     await hass.config_entries.async_setup(entry.entry_id)
 
@@ -109,7 +109,7 @@ async def test_options_add_date_field_has_suggested_value(hass):
 
 async def test_options_add_rejects_empty_name(hass):
     """Submitting an empty name re-shows the form with an error."""
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_CHORES: []})
+    entry = MockConfigEntry(domain=DOMAIN, options={CONF_CHORES: []})
     entry.add_to_hass(hass)
     await hass.config_entries.async_setup(entry.entry_id)
 
@@ -133,7 +133,7 @@ async def test_options_add_rejects_empty_name(hass):
 
 async def test_options_add_rejects_non_positive_interval(hass):
     """NumberSelector(min=1) rejects interval_value=0 at schema validation."""
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_CHORES: []})
+    entry = MockConfigEntry(domain=DOMAIN, options={CONF_CHORES: []})
     entry.add_to_hass(hass)
     await hass.config_entries.async_setup(entry.entry_id)
 
@@ -161,7 +161,7 @@ async def test_options_remove_chore(hass):
         "interval_unit": "weeks",
         "last_completed": "2026-06-01",
     }
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_CHORES: [existing_chore]})
+    entry = MockConfigEntry(domain=DOMAIN, options={CONF_CHORES: [existing_chore]})
     entry.add_to_hass(hass)
     await hass.config_entries.async_setup(entry.entry_id)
 
@@ -178,12 +178,12 @@ async def test_options_remove_chore(hass):
         result["flow_id"], {"chore": "0"}
     )
     assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert entry.data[CONF_CHORES] == []
+    assert entry.options[CONF_CHORES] == []
 
 
 async def test_options_add_rejects_invalid_date(hass):
     """DateSelector rejects a malformed date at schema validation."""
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_CHORES: []})
+    entry = MockConfigEntry(domain=DOMAIN, options={CONF_CHORES: []})
     entry.add_to_hass(hass)
     await hass.config_entries.async_setup(entry.entry_id)
 
@@ -211,7 +211,7 @@ async def test_options_add_rejects_duplicate_name(hass):
         "interval_unit": "weeks",
         "last_completed": "2026-06-01",
     }
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_CHORES: [existing_chore]})
+    entry = MockConfigEntry(domain=DOMAIN, options={CONF_CHORES: [existing_chore]})
     entry.add_to_hass(hass)
     await hass.config_entries.async_setup(entry.entry_id)
 
@@ -241,7 +241,7 @@ async def test_options_add_rejects_duplicate_name_case_insensitive(hass):
         "interval_unit": "weeks",
         "last_completed": "2026-06-01",
     }
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_CHORES: [existing_chore]})
+    entry = MockConfigEntry(domain=DOMAIN, options={CONF_CHORES: [existing_chore]})
     entry.add_to_hass(hass)
     await hass.config_entries.async_setup(entry.entry_id)
 
@@ -265,7 +265,7 @@ async def test_options_add_rejects_duplicate_name_case_insensitive(hass):
 
 async def test_options_remove_aborts_when_no_chores(hass):
     """The remove step aborts immediately when no chores exist."""
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_CHORES: []})
+    entry = MockConfigEntry(domain=DOMAIN, options={CONF_CHORES: []})
     entry.add_to_hass(hass)
     await hass.config_entries.async_setup(entry.entry_id)
 
