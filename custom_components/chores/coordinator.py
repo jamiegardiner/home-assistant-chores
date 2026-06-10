@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from typing import Any, Callable
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.event import async_track_point_in_time
 from homeassistant.helpers.storage import Store
@@ -62,15 +63,15 @@ class ChoreRuntime:
 class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Coordinator that manages chore state and timers."""
 
-    def __init__(self, hass: HomeAssistant, entry: Any) -> None:
+    def __init__(self, hass: HomeAssistant, entry: ChoresConfigEntry) -> None:
         """Initialize the coordinator."""
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
+            config_entry=entry,
             update_interval=None,
         )
-        self._entry = entry
         self.store: Store = Store(hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}")
         self._chores: dict[str, ChoreRuntime] = {}
 
@@ -78,7 +79,8 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Load chores from config entry, hydrate from store, compute state."""
         stored: dict[str, Any] = await self.store.async_load() or {}
 
-        chore_dicts: list[dict[str, Any]] = self._entry.data.get(CONF_CHORES, [])
+        assert self.config_entry is not None
+        chore_dicts: list[dict[str, Any]] = self.config_entry.data.get(CONF_CHORES, [])
 
         used_slugs: set[str] = set()
         self._chores = {}
@@ -337,3 +339,6 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def get_chore_runtime(self, chore_id: str) -> ChoreRuntime | None:
         """Return the runtime for a given chore_id."""
         return self._chores.get(chore_id)
+
+
+type ChoresConfigEntry = ConfigEntry[ChoresCoordinator]

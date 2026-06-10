@@ -19,7 +19,6 @@ from homeassistant.helpers.entity_platform import (
 )
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
 from .services import (
     COMPLETE_SCHEMA,
     SERVICE_COMPLETE,
@@ -90,7 +89,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Chores sensor platform from a config entry."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     async_add_entities(
         ChoreSensor(coordinator, entry, chore_id) for chore_id in coordinator.chore_ids
     )

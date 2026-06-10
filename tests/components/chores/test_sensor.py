@@ -88,9 +88,9 @@ class TestAsyncSetupEntry:
 
         coordinator = FakeCoordinator()
         entry = _make_entry()
+        entry.runtime_data = coordinator
 
         hass = MagicMock()
-        hass.data = {"chores": {entry.entry_id: coordinator}}
 
         added: list = []
 
@@ -103,15 +103,15 @@ class TestAsyncSetupEntry:
 
         assert len(added) == 2  # one per chore_id in FakeCoordinator.chore_ids
 
-    async def test_setup_entry_uses_correct_domain_key(self):
-        """Coordinator is looked up at hass.data[DOMAIN][entry.entry_id]."""
+    async def test_setup_entry_reads_coordinator_from_runtime_data(self):
+        """Coordinator is read from entry.runtime_data."""
         from custom_components.chores.sensor import async_setup_entry
 
         coordinator = FakeCoordinator()
         entry = _make_entry(entry_id="my_entry")
+        entry.runtime_data = coordinator
 
         hass = MagicMock()
-        hass.data = {"chores": {"my_entry": coordinator}}
 
         added: list = []
 
