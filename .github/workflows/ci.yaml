@@ -31,5 +31,6 @@ jobs:
       - uses: astral-sh/setup-uv@v8.2.0
         with:
           python-version: "3.14"
+      - run: uv venv
       - run: uv pip install -r requirements_test.txt
       - run: make check
