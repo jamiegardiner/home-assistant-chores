@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 import voluptuous as vol
 from homeassistant.data_entry_flow import FlowResultType, InvalidData
+from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.chores.const import CONF_CHORES, DOMAIN
@@ -85,8 +86,6 @@ async def test_options_add_chore(hass):
 
 async def test_options_add_date_field_has_suggested_value(hass):
     """Initial add form render binds today's date as suggested_value for last_completed."""
-    from datetime import date
-
     entry = MockConfigEntry(domain=DOMAIN, data={CONF_CHORES: []})
     entry.add_to_hass(hass)
     await hass.config_entries.async_setup(entry.entry_id)
@@ -103,7 +102,9 @@ async def test_options_add_date_field_has_suggested_value(hass):
         for k in schema.schema
         if isinstance(k, vol.Required) and k.schema == "last_completed"
     )
-    assert last_completed_key.description["suggested_value"] == str(date.today())
+    assert last_completed_key.description["suggested_value"] == str(
+        dt_util.now().date()
+    )
 
 
 async def test_options_add_rejects_empty_name(hass):
