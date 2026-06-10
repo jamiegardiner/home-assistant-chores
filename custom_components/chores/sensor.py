@@ -32,8 +32,8 @@ from .services import (
 )
 
 
-def _iso(value: date | datetime | None | Any) -> str | None | Any:
-    """Convert date/datetime to ISO-8601 string; pass through everything else."""
+def _iso(value: date | datetime | None) -> str | None:
+    """Convert date/datetime to ISO-8601 string; pass through None unchanged."""
     if isinstance(value, (date, datetime)):
         return value.isoformat()
     return value
