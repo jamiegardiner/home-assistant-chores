@@ -53,6 +53,13 @@ Scrutinise every changed file against all of the following categories. Flag anyt
 - [ ] No overly long functions (more than ~40 lines is worth questioning)
 - [ ] No unnecessary class — a module-level function is simpler when there's no state
 
+### Documentation
+- [ ] If the PR adds or changes a service, `README.md` documents it (name, description, YAML example)
+- [ ] If the PR adds or changes sensor states or attributes, `README.md` reflects them
+- [ ] If the PR changes configuration options, setup steps, or architecture, `README.md` and/or `CLAUDE.md` are updated
+- [ ] If the PR introduces new developer patterns or conventions, `CLAUDE.md` covers them
+- [ ] Documentation changes are in a separate commit from code changes
+
 ## Step 3 — Compile findings
 
 Group findings by file. For each issue record:

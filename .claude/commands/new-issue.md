@@ -44,6 +44,11 @@ The format depends on the category:
   - Installation instructions cover adding the repo as a custom HACS repository
   ```
 
+For **enhancement** and **bug** issues, always include a bullet at the end of the acceptance criteria list covering documentation:
+  ```
+  - README.md and CLAUDE.md are updated if the change affects user-visible behaviour, services, configuration options, or architecture
+  ```
+
 **Notes** (omit if empty)
 Implementation hints, constraints, open questions, or links to related issues.
 

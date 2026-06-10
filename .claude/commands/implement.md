@@ -48,12 +48,13 @@ Exit plan mode and begin implementation:
 1. Ensure main is up to date before branching: `git checkout main && git pull origin main`. Then create a branch named `<prefix>/<number>-<slug>` where prefix comes from the category table above and slug is a short kebab-case version of the issue title (e.g. `feat/7-button-entity-complete-chore`). Push it immediately with `git push -u origin <branch>`.
 2. Implement the changes according to the approved plan.
 3. Run `make format && make check` after changes. Fix any failures before proceeding.
-4. Commit using the prefix that matches the category:
+4. Commit the code changes following [Conventional Commits](https://www.conventionalcommits.org/) style: `type(scope): description`. The scope is always `issue-<number>`. Map the category label to the commit type:
    - `bug` → `fix(issue-<number>): <short description>`
    - `enhancement` → `feat(issue-<number>): <short description>`
    - `documentation` → `docs(issue-<number>): <short description>`
    - `chore` → `chore(issue-<number>): <short description>`
    - `security` → `fix(issue-<number>): <short description>`
+5. After the code commit, review whether `README.md` or `CLAUDE.md` need updating to reflect the change (e.g. new services, changed behaviour, new configuration options, updated architecture). If so, update them and commit separately with the message `docs(issue-<number>): update documentation`.
 
 ## Step 5 — Open a PR
 
