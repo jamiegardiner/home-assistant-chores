@@ -37,6 +37,7 @@
     },
     "error": {
       "name_required": "Name cannot be empty.",
+      "duplicate_name": "A chore with this name already exists.",
       "invalid_interval": "Interval must be a positive number.",
       "invalid_date": "Date must be in YYYY-MM-DD format."
     },

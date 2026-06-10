@@ -10,6 +10,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.core import callback
+from homeassistant.util import slugify
 from homeassistant.helpers.selector import (
     DateSelector,
     NumberSelector,
@@ -91,6 +92,11 @@ class ChoresOptionsFlow(config_entries.OptionsFlow):
             name = str(user_input.get("name", "")).strip()
             if not name:
                 errors["name"] = "name_required"
+            else:
+                existing = self.config_entry.data.get(CONF_CHORES, [])
+                incoming_slug = slugify(name)
+                if any(slugify(c["name"]) == incoming_slug for c in existing):
+                    errors["name"] = "duplicate_name"
 
             # NumberSelector returns float; coerce to int
             interval_value = int(user_input.get("interval_value", 1))

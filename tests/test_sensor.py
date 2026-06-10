@@ -197,6 +197,19 @@ class TestChoreSensorUniqueId:
         assert s1.unique_id == s2.unique_id
 
 
+class TestChoreSensorSuggestedObjectId:
+    """Tests for suggested_object_id (controls HA entity_id on first registration)."""
+
+    def test_suggested_object_id_format(self):
+        sensor = _make_sensor(CHORE_A_ID)
+        assert sensor.suggested_object_id == f"chore_{CHORE_A_ID}"
+
+    def test_suggested_object_id_differs_per_chore(self):
+        sensor_a = _make_sensor(CHORE_A_ID)
+        sensor_b = _make_sensor(CHORE_B_ID)
+        assert sensor_a.suggested_object_id != sensor_b.suggested_object_id
+
+
 class TestChoreSensorName:
     """Tests for entity name (set from chore display name)."""
 

@@ -178,6 +178,66 @@ async def test_options_add_rejects_invalid_date(hass):
         )
 
 
+async def test_options_add_rejects_duplicate_name(hass):
+    """Adding a chore with an exact duplicate name re-shows the form with an error."""
+    existing_chore = {
+        "name": "Bins",
+        "interval_value": 1,
+        "interval_unit": "weeks",
+        "last_completed": "2026-06-01",
+    }
+    entry = MockConfigEntry(domain=DOMAIN, data={CONF_CHORES: [existing_chore]})
+    entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry.entry_id)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "add"}
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            "name": "Bins",
+            "interval_value": 1,
+            "interval_unit": "days",
+            "last_completed": "2026-06-01",
+        },
+    )
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "add"
+    assert result["errors"].get("name") == "duplicate_name"
+
+
+async def test_options_add_rejects_duplicate_name_case_insensitive(hass):
+    """Duplicate name check is case-insensitive."""
+    existing_chore = {
+        "name": "Bins",
+        "interval_value": 1,
+        "interval_unit": "weeks",
+        "last_completed": "2026-06-01",
+    }
+    entry = MockConfigEntry(domain=DOMAIN, data={CONF_CHORES: [existing_chore]})
+    entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry.entry_id)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "add"}
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            "name": "BINS",
+            "interval_value": 1,
+            "interval_unit": "days",
+            "last_completed": "2026-06-01",
+        },
+    )
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "add"
+    assert result["errors"].get("name") == "duplicate_name"
+
+
 async def test_options_remove_aborts_when_no_chores(hass):
     """The remove step aborts immediately when no chores exist."""
     entry = MockConfigEntry(domain=DOMAIN, data={CONF_CHORES: []})
