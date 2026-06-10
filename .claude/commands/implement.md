@@ -16,7 +16,21 @@ Derive the branch prefix from the category label:
 
 If no label is set, default to `feat/`.
 
-## Step 2 — Enter plan mode immediately
+## Step 2 — Ask clarifying questions
+
+Before planning anything, use `AskUserQuestion` to gather context you can't derive from the issue alone. Ask all questions in a single questionnaire — do not ask follow-ups one at a time.
+
+Design your questions based on what the issue leaves ambiguous. Common questions to consider (pick the ones that apply, drop the rest):
+
+- **Scope** — Are there any parts of this issue that are out of scope for now, or anything that should be tackled beyond what's written?
+- **Design preference** — Is there a preferred approach when multiple reasonable solutions exist? (e.g. new entity vs. service, attribute vs. state)
+- **UI strings** — Should any new user-visible text follow an existing pattern or wording from the codebase?
+- **Edge cases** — Are there edge cases the ACs don't cover that need handling (e.g. empty state, concurrent calls)?
+- **Testing** — Are there specific scenarios that must be covered by tests beyond the ACs?
+
+If the issue is completely unambiguous and none of these questions apply, skip this step and move straight to Step 3.
+
+## Step 3 — Enter plan mode
 
 Enter plan mode and present a structured implementation plan covering:
 - A brief summary of what the issue requires
@@ -27,7 +41,7 @@ Enter plan mode and present a structured implementation plan covering:
 
 Discuss the plan with the user. Answer questions and revise the plan until the user explicitly approves it. Do not write any code before approval.
 
-## Step 3 — Implement
+## Step 4 — Implement
 
 Exit plan mode and begin implementation:
 
@@ -41,7 +55,7 @@ Exit plan mode and begin implementation:
    - `chore` → `chore(issue-<number>): <short description>`
    - `security` → `fix(issue-<number>): <short description>`
 
-## Step 4 — Open a PR
+## Step 5 — Open a PR
 
 Write the PR body to a temp file and use `--body-file` to avoid shell escaping mangling backticks and code blocks:
 

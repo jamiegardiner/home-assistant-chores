@@ -85,9 +85,9 @@ make venv-destroy   # delete .venv entirely
 # Code quality (run before every commit)
 make test           # pytest
 make lint           # ruff check — flags bugs and style issues
-make format         # ruff format — auto-fixes formatting
+make format         # auto-fix formatting (ruff format) and fixable lint issues (ruff check --fix)
 make typecheck      # mypy
-make check          # lint + typecheck + test in one go
+make check          # lint + format-check + typecheck + test in one go (mirrors CI, read-only)
 
 # Docker (local HA instance at http://localhost:8123)
 make up             # start Home Assistant
