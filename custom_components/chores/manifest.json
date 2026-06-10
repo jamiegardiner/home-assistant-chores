@@ -1,13 +1,13 @@
 {
   "domain": "chores",
   "name": "Chores",
-  "version": "0.1.0",
+  "codeowners": ["@jamiegardiner"],
   "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/jamiegardiner/home-assistant-chores",
   "integration_type": "hub",
   "iot_class": "calculated",
-  "documentation": "https://github.com/jamiegardiner/home-assistant-chores",
   "issue_tracker": "https://github.com/jamiegardiner/home-assistant-chores/issues",
-  "codeowners": ["@jamiegardiner"],
-  "dependencies": [],
-  "requirements": []
+  "requirements": [],
+  "version": "0.1.0"
 }
