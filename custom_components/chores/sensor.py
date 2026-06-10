@@ -8,7 +8,7 @@ as extra state attributes.
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Any, Protocol
+from typing import Any
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
@@ -20,6 +20,7 @@ from homeassistant.helpers.entity_platform import (
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
 
+from .coordinator import ChoresCoordinator
 from .services import (
     COMPLETE_SCHEMA,
     SERVICE_COMPLETE,
@@ -29,33 +30,6 @@ from .services import (
     UNSNOOZE_SCHEMA,
     _parse_snooze_until,
 )
-
-
-class ChoresCoordinator(Protocol):
-    """Protocol for the Chores coordinator.
-
-    Defines the subset of the coordinator's public API consumed by this platform.
-    All coordinator access in this file is gated through this Protocol so that
-    a field-name change requires only updating this declaration.
-    """
-
-    chore_ids: list[str]
-
-    def chore_state(self, chore_id: str) -> dict[str, Any]:
-        """Return runtime state dict for a single chore."""
-        ...
-
-    async def async_complete(self, chore_id: str) -> None:
-        """Mark a chore as completed."""
-        ...
-
-    async def async_snooze(self, chore_id: str, snooze_until: date) -> None:
-        """Snooze a chore until the given date."""
-        ...
-
-    async def async_unsnooze(self, chore_id: str) -> None:
-        """Cancel an active snooze."""
-        ...
 
 
 def _iso(value: date | datetime | None | Any) -> str | None | Any:
@@ -72,16 +46,16 @@ def _iso(value: date | datetime | None | Any) -> str | None | Any:
 
 
 async def _handle_complete(entity: ChoreSensor, call: ServiceCall) -> None:
-    await entity._chores_coordinator.async_complete(entity._chore_id)
+    await entity.coordinator.async_complete(entity._chore_id)
 
 
 async def _handle_snooze(entity: ChoreSensor, call: ServiceCall) -> None:
     snooze_until = _parse_snooze_until(call.data)
-    await entity._chores_coordinator.async_snooze(entity._chore_id, snooze_until)
+    await entity.coordinator.async_snooze(entity._chore_id, snooze_until)
 
 
 async def _handle_unsnooze(entity: ChoreSensor, call: ServiceCall) -> None:
-    await entity._chores_coordinator.async_unsnooze(entity._chore_id)
+    await entity.coordinator.async_unsnooze(entity._chore_id)
 
 
 async def async_setup_entry(
@@ -107,7 +81,7 @@ async def async_setup_entry(
     )
 
 
-class ChoreSensor(CoordinatorEntity, SensorEntity):
+class ChoreSensor(CoordinatorEntity[ChoresCoordinator], SensorEntity):
     """Sensor entity representing a single chore.
 
     State is ``done`` or ``overdue`` as derived by the coordinator.
@@ -117,7 +91,7 @@ class ChoreSensor(CoordinatorEntity, SensorEntity):
 
     def __init__(
         self,
-        coordinator: Any,
+        coordinator: ChoresCoordinator,
         entry: ConfigEntry,
         chore_id: str,
     ) -> None:
@@ -133,14 +107,9 @@ class ChoreSensor(CoordinatorEntity, SensorEntity):
     def suggested_object_id(self) -> str:
         return f"chore_{slugify(self._attr_name)}"
 
-    @property
-    def _chores_coordinator(self) -> ChoresCoordinator:
-        """Return the coordinator typed as ChoresCoordinator."""
-        return self.coordinator  # type: ignore[return-value]
-
     def _chore_state(self) -> dict[str, Any]:
         """Return the coordinator's current state dict for this chore."""
-        return self._chores_coordinator.chore_state(self._chore_id)
+        return self.coordinator.chore_state(self._chore_id)
 
     @property
     def native_value(self) -> str:

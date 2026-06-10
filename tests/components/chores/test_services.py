@@ -30,10 +30,10 @@ def _make_call(data: dict) -> MagicMock:
 def _make_entity(chore_id: str) -> MagicMock:
     entity = MagicMock()
     entity._chore_id = chore_id
-    entity._chores_coordinator = MagicMock()
-    entity._chores_coordinator.async_complete = AsyncMock()
-    entity._chores_coordinator.async_snooze = AsyncMock()
-    entity._chores_coordinator.async_unsnooze = AsyncMock()
+    entity.coordinator = MagicMock()
+    entity.coordinator.async_complete = AsyncMock()
+    entity.coordinator.async_snooze = AsyncMock()
+    entity.coordinator.async_unsnooze = AsyncMock()
     return entity
 
 
@@ -90,12 +90,12 @@ class TestHandleComplete:
     async def test_calls_coordinator_async_complete(self):
         entity = _make_entity("dishes")
         await _handle_complete(entity, _make_call({}))
-        entity._chores_coordinator.async_complete.assert_called_once_with("dishes")
+        entity.coordinator.async_complete.assert_called_once_with("dishes")
 
     async def test_uses_entity_chore_id(self):
         entity = _make_entity("vacuum")
         await _handle_complete(entity, _make_call({}))
-        entity._chores_coordinator.async_complete.assert_called_once_with("vacuum")
+        entity.coordinator.async_complete.assert_called_once_with("vacuum")
 
 
 class TestHandleSnooze:
@@ -103,7 +103,7 @@ class TestHandleSnooze:
         entity = _make_entity("dishes")
         today = dt_util.now().date()
         await _handle_snooze(entity, _make_call({"snooze_days": 3}))
-        entity._chores_coordinator.async_snooze.assert_called_once_with(
+        entity.coordinator.async_snooze.assert_called_once_with(
             "dishes", today + timedelta(days=3)
         )
 
@@ -111,7 +111,7 @@ class TestHandleSnooze:
         entity = _make_entity("vacuum")
         today = dt_util.now().date()
         await _handle_snooze(entity, _make_call({"snooze_weeks": 1}))
-        entity._chores_coordinator.async_snooze.assert_called_once_with(
+        entity.coordinator.async_snooze.assert_called_once_with(
             "vacuum", today + timedelta(weeks=1)
         )
 
@@ -119,16 +119,16 @@ class TestHandleSnooze:
         entity = _make_entity("dishes")
         with pytest.raises(HomeAssistantError):
             await _handle_snooze(entity, _make_call({}))
-        entity._chores_coordinator.async_snooze.assert_not_called()
+        entity.coordinator.async_snooze.assert_not_called()
 
 
 class TestHandleUnsnooze:
     async def test_calls_coordinator_async_unsnooze(self):
         entity = _make_entity("dishes")
         await _handle_unsnooze(entity, _make_call({}))
-        entity._chores_coordinator.async_unsnooze.assert_called_once_with("dishes")
+        entity.coordinator.async_unsnooze.assert_called_once_with("dishes")
 
     async def test_uses_entity_chore_id(self):
         entity = _make_entity("vacuum")
         await _handle_unsnooze(entity, _make_call({}))
-        entity._chores_coordinator.async_unsnooze.assert_called_once_with("vacuum")
+        entity.coordinator.async_unsnooze.assert_called_once_with("vacuum")

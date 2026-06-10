@@ -1,8 +1,4 @@
-"""Unit tests for custom_components/chores/sensor.py.
-
-Uses a fake coordinator so there is no dependency on the real coordinator
-(issue #4) or on a running Home Assistant instance.
-"""
+"""Unit tests for custom_components/chores/sensor.py."""
 
 from __future__ import annotations
 
@@ -32,7 +28,7 @@ CHORE_B_STATE = {
 
 
 class FakeCoordinator:
-    """Minimal coordinator stub exposing the contract consumed by sensor.py."""
+    """Minimal coordinator stub duck-typed against ChoresCoordinator's public surface."""
 
     chore_ids = [CHORE_A_ID, CHORE_B_ID]
 
