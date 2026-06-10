@@ -207,7 +207,9 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._schedule(runtime)
             self.async_set_updated_data(self._snapshot())
 
-        cancel = async_track_point_in_time(self.hass, _snooze_expiry_callback, snooze_dt)
+        cancel = async_track_point_in_time(
+            self.hass, _snooze_expiry_callback, snooze_dt
+        )
         rt._cancel_snooze_timer = cancel
 
     async def async_complete(self, chore_id: str) -> None:
@@ -275,7 +277,9 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         payload = {
             chore_id: {
                 "last_completed": rt.last_completed.isoformat(),
-                "snooze_until": rt.snooze_until.isoformat() if rt.snooze_until else None,
+                "snooze_until": rt.snooze_until.isoformat()
+                if rt.snooze_until
+                else None,
             }
             for chore_id, rt in self._chores.items()
         }

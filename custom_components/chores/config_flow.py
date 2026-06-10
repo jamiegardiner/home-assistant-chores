@@ -18,6 +18,7 @@ from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
 )
+from homeassistant.util import dt as dt_util
 from homeassistant.util import slugify
 
 from .const import CONF_CHORES, DOMAIN, INTERVAL_UNITS
@@ -120,9 +121,17 @@ class ChoresOptionsFlow(config_entries.OptionsFlow):
                 )
                 return self.async_create_entry(title="", data={})
 
+        today = str(dt_util.now().date())
+        suggested_last_completed = (
+            str(user_input.get("last_completed", today))
+            if user_input is not None
+            else today
+        )
         return self.async_show_form(
             step_id="add",
-            data_schema=schema,
+            data_schema=self.add_suggested_values_to_schema(
+                schema, {"last_completed": suggested_last_completed}
+            ),
             errors=errors,
         )
 

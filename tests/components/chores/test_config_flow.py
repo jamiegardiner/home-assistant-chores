@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import pytest
+import voluptuous as vol
 from homeassistant.data_entry_flow import FlowResultType, InvalidData
+from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.chores.const import CONF_CHORES, DOMAIN
@@ -80,6 +82,29 @@ async def test_options_add_chore(hass):
     assert chores[0]["interval_value"] == 2
     assert chores[0]["interval_unit"] == "weeks"
     assert chores[0]["last_completed"] == "2026-06-01"
+
+
+async def test_options_add_date_field_has_suggested_value(hass):
+    """Initial add form render binds today's date as suggested_value for last_completed."""
+    entry = MockConfigEntry(domain=DOMAIN, data={CONF_CHORES: []})
+    entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry.entry_id)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "add"}
+    )
+    assert result["type"] == FlowResultType.FORM
+
+    schema = result["data_schema"]
+    last_completed_key = next(
+        k
+        for k in schema.schema
+        if isinstance(k, vol.Required) and k.schema == "last_completed"
+    )
+    assert last_completed_key.description["suggested_value"] == str(
+        dt_util.now().date()
+    )
 
 
 async def test_options_add_rejects_empty_name(hass):
