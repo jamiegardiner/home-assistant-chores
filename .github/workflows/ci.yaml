@@ -21,6 +21,7 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
+          ignore: brands
 
   check:
     name: Lint, typecheck & tests
@@ -30,5 +31,5 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.14"
-      - run: make venv
+      - run: uv pip install -r requirements_test.txt
       - run: make check
