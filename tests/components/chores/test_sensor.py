@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
+from typing import ClassVar
 from unittest.mock import MagicMock, patch
 
 # ---------------------------------------------------------------------------
@@ -30,9 +31,9 @@ CHORE_B_STATE = {
 class FakeCoordinator:
     """Minimal coordinator stub duck-typed against ChoresCoordinator's public surface."""
 
-    chore_ids = [CHORE_A_ID, CHORE_B_ID]
+    chore_ids: ClassVar[list[str]] = [CHORE_A_ID, CHORE_B_ID]
 
-    _states = {
+    _states: ClassVar[dict] = {
         CHORE_A_ID: CHORE_A_STATE,
         CHORE_B_ID: CHORE_B_STATE,
     }

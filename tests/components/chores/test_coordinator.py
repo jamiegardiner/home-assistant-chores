@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -134,7 +134,7 @@ async def test_timer_fires_overdue_transition(
     """When the scheduled timer fires, status transitions to overdue."""
     captured_callback: dict[str, Any] = {}
 
-    def _fake_track(hass_, callback, point_in_time):  # noqa: ARG001
+    def _fake_track(hass_, callback, point_in_time):
         captured_callback["cb"] = callback
         return MagicMock()  # cancel handle
 
@@ -157,7 +157,7 @@ async def test_timer_fires_overdue_transition(
     assert "cb" in captured_callback
 
     # Simulate time passing: next_due has elapsed
-    future = datetime.now(tz=timezone.utc) + timedelta(days=8)
+    future = datetime.now(tz=UTC) + timedelta(days=8)
     with patch("custom_components.chores.coordinator.dt_util.now", return_value=future):
         captured_callback["cb"](future)
 
@@ -192,7 +192,7 @@ async def test_complete_resets_to_done(
     assert data[CHORE_A_ID]["status"] == "done"
     assert data[CHORE_A_ID]["last_completed"] == dt_util.now().date()
     # next_due should now be in the future
-    assert data[CHORE_A_ID]["next_due"] > datetime.now(tz=timezone.utc)
+    assert data[CHORE_A_ID]["next_due"] > datetime.now(tz=UTC)
 
 
 async def test_last_completed_survives_restart(
@@ -240,7 +240,7 @@ async def test_unload_cancels_timers(
     """async_shutdown_timers cancels all scheduled callbacks."""
     cancel_mocks: list[MagicMock] = []
 
-    def _fake_track(hass_, callback, point_in_time):  # noqa: ARG001
+    def _fake_track(hass_, callback, point_in_time):
         cancel = MagicMock()
         cancel_mocks.append(cancel)
         return cancel
@@ -306,7 +306,7 @@ async def test_snooze_expiry_recomputes_state(
     """When the snooze timer fires, status is recalculated."""
     captured_snooze_cb: dict[str, Any] = {}
 
-    def _fake_track(hass_, cb, point_in_time):  # noqa: ARG001
+    def _fake_track(hass_, cb, point_in_time):
         captured_snooze_cb["cb"] = cb
         return MagicMock()
 
@@ -336,7 +336,7 @@ async def test_snooze_expiry_recomputes_state(
     assert "cb" in captured_snooze_cb
 
     # Simulate snooze expiry — chore_a was overdue before snooze
-    future = datetime.now(tz=timezone.utc) + timedelta(days=4)
+    future = datetime.now(tz=UTC) + timedelta(days=4)
     with patch("custom_components.chores.coordinator.dt_util.now", return_value=future):
         captured_snooze_cb["cb"](future)
 
