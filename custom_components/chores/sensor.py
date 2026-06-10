@@ -81,7 +81,6 @@ class ChoreSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def suggested_object_id(self) -> str:
-        """Suggest entity_id as sensor.chore_<slug>."""
         return f"chore_{self._chore_id}"
 
     async def async_added_to_hass(self) -> None:
