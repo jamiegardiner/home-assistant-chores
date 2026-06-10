@@ -38,11 +38,11 @@ def _chore_dict(
 def _make_entry(
     chore_dicts: list[dict], entry_id: str = "test_entry_id"
 ) -> MockConfigEntry:
-    """Return a MockConfigEntry with the given chore dicts in entry.data."""
+    """Return a MockConfigEntry with the given chore dicts in entry.options."""
     return MockConfigEntry(
         domain=DOMAIN,
         entry_id=entry_id,
-        data={CONF_CHORES: chore_dicts},
+        options={CONF_CHORES: chore_dicts},
     )
 
 

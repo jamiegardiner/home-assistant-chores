@@ -80,7 +80,9 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         stored: dict[str, Any] = await self.store.async_load() or {}
 
         assert self.config_entry is not None
-        chore_dicts: list[dict[str, Any]] = self.config_entry.data.get(CONF_CHORES, [])
+        chore_dicts: list[dict[str, Any]] = self.config_entry.options.get(
+            CONF_CHORES, []
+        )
 
         used_slugs: set[str] = set()
         self._chores = {}
