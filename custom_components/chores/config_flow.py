@@ -120,9 +120,16 @@ class ChoresOptionsFlow(config_entries.OptionsFlow):
                 )
                 return self.async_create_entry(title="", data={})
 
+        suggested_last_completed = (
+            str(user_input.get("last_completed", date.today()))
+            if user_input is not None
+            else str(date.today())
+        )
         return self.async_show_form(
             step_id="add",
-            data_schema=schema,
+            data_schema=self.add_suggested_values_to_schema(
+                schema, {"last_completed": suggested_last_completed}
+            ),
             errors=errors,
         )
 
