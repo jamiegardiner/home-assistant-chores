@@ -124,15 +124,3 @@ target:
   entity_id: sensor.chore_vacuum_living_room
 ```
 
----
-
-## Development
-
-```bash
-make venv    # create venv and install dependencies
-make check   # lint, format-check, typecheck, tests (mirrors CI)
-make format  # auto-fix formatting and lint issues
-make up      # start a local Home Assistant instance on :8123
-```
-
-See the [Makefile](Makefile) for all available targets.
