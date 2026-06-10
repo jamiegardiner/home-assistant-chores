@@ -1,4 +1,9 @@
+"""Tests for the ChoreConfig model."""
+
+from __future__ import annotations
+
 from datetime import date
+from typing import Any
 
 import pytest
 
@@ -26,7 +31,7 @@ def test_to_dict_serializes_date_as_iso() -> None:
     assert c.to_dict()["last_completed"] == "2026-06-01"
 
 
-def _base_dict() -> dict:
+def _base_dict() -> dict[str, Any]:
     return {
         "name": "Bins",
         "interval_value": 2,
