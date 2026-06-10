@@ -290,19 +290,21 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 rt._cancel_snooze_timer()
                 rt._cancel_snooze_timer = None
 
+    @staticmethod
+    def _chore_dict(rt: ChoreRuntime) -> dict[str, Any]:
+        """Return the state dict for a single chore runtime."""
+        return {
+            "chore_id": rt.chore_id,
+            "name": rt.config.name,
+            "last_completed": rt.last_completed,
+            "status": rt.status,
+            "next_due": rt.next_due,
+            "snooze_until": rt.snooze_until,
+        }
+
     def _snapshot(self) -> dict[str, Any]:
         """Return a snapshot of current chore state (consumed by sensor platform)."""
-        return {
-            chore_id: {
-                "chore_id": rt.chore_id,
-                "name": rt.config.name,
-                "last_completed": rt.last_completed,
-                "status": rt.status,
-                "next_due": rt.next_due,
-                "snooze_until": rt.snooze_until,
-            }
-            for chore_id, rt in self._chores.items()
-        }
+        return {chore_id: self._chore_dict(rt) for chore_id, rt in self._chores.items()}
 
     @property
     def chore_ids(self) -> list[str]:
@@ -321,14 +323,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         rt = self._chores.get(chore_id)
         if rt is None:
             return {}
-        return {
-            "chore_id": rt.chore_id,
-            "name": rt.config.name,
-            "last_completed": rt.last_completed,
-            "status": rt.status,
-            "next_due": rt.next_due,
-            "snooze_until": rt.snooze_until,
-        }
+        return self._chore_dict(rt)
 
     def get_chore_runtime(self, chore_id: str) -> ChoreRuntime | None:
         """Return the runtime for a given chore_id."""
