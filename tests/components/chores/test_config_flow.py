@@ -12,7 +12,7 @@ from custom_components.chores.const import CONF_CHORES, DOMAIN
 
 
 @pytest.fixture(autouse=True)
-def auto_enable_custom_integrations(enable_custom_integrations):  # noqa: PT004
+def auto_enable_custom_integrations(enable_custom_integrations):
     """Enable custom integrations in all tests."""
 
 

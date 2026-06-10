@@ -25,7 +25,7 @@ class ChoreConfig:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ChoreConfig":
+    def from_dict(cls, data: dict[str, Any]) -> ChoreConfig:
         required_keys = {"name", "interval_value", "interval_unit", "last_completed"}
         missing = required_keys - data.keys()
         if missing:
