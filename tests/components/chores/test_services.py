@@ -86,13 +86,11 @@ class TestParseSnoozeUntil:
 
 
 class TestHandleComplete:
-    @pytest.mark.asyncio
     async def test_calls_coordinator_async_complete(self):
         entity = _make_entity("dishes")
         await _handle_complete(entity, _make_call({}))
         entity._chores_coordinator.async_complete.assert_called_once_with("dishes")
 
-    @pytest.mark.asyncio
     async def test_uses_entity_chore_id(self):
         entity = _make_entity("vacuum")
         await _handle_complete(entity, _make_call({}))
@@ -100,7 +98,6 @@ class TestHandleComplete:
 
 
 class TestHandleSnooze:
-    @pytest.mark.asyncio
     async def test_calls_coordinator_async_snooze_with_days(self):
         entity = _make_entity("dishes")
         today = date.today()
@@ -109,7 +106,6 @@ class TestHandleSnooze:
             "dishes", today + timedelta(days=3)
         )
 
-    @pytest.mark.asyncio
     async def test_calls_coordinator_async_snooze_with_weeks(self):
         entity = _make_entity("vacuum")
         today = date.today()
@@ -118,7 +114,6 @@ class TestHandleSnooze:
             "vacuum", today + timedelta(weeks=1)
         )
 
-    @pytest.mark.asyncio
     async def test_propagates_validation_error(self):
         entity = _make_entity("dishes")
         with pytest.raises(HomeAssistantError):
@@ -127,13 +122,11 @@ class TestHandleSnooze:
 
 
 class TestHandleUnsnooze:
-    @pytest.mark.asyncio
     async def test_calls_coordinator_async_unsnooze(self):
         entity = _make_entity("dishes")
         await _handle_unsnooze(entity, _make_call({}))
         entity._chores_coordinator.async_unsnooze.assert_called_once_with("dishes")
 
-    @pytest.mark.asyncio
     async def test_uses_entity_chore_id(self):
         entity = _make_entity("vacuum")
         await _handle_unsnooze(entity, _make_call({}))
