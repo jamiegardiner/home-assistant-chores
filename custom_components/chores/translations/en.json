@@ -44,5 +44,33 @@
     "abort": {
       "no_chores": "No chores have been added yet."
     }
+  },
+  "services": {
+    "complete": {
+      "name": "Complete chore",
+      "description": "Mark a chore as completed now, returning it to \"done\"."
+    },
+    "snooze": {
+      "name": "Snooze chore",
+      "description": "Snooze a chore until a given date, suppressing overdue transitions until then. Provide exactly one of snooze_days, snooze_weeks, or snooze_until.",
+      "fields": {
+        "snooze_days": {
+          "name": "Snooze days",
+          "description": "Number of days to snooze from today."
+        },
+        "snooze_weeks": {
+          "name": "Snooze weeks",
+          "description": "Number of weeks to snooze from today."
+        },
+        "snooze_until": {
+          "name": "Snooze until",
+          "description": "Specific date to snooze until (ISO format YYYY-MM-DD)."
+        }
+      }
+    },
+    "unsnooze": {
+      "name": "Unsnooze chore",
+      "description": "Cancel an active snooze, returning the chore to \"done\" or \"overdue\"."
+    }
   }
 }
