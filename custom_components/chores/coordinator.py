@@ -26,6 +26,11 @@ _LOGGER = logging.getLogger(__name__)
 STORAGE_VERSION = 1
 
 
+def storage_key(entry_id: str) -> str:
+    """Return the Store key for a given config entry ID."""
+    return f"{DOMAIN}.{entry_id}"
+
+
 def _interval_to_timedelta(config: ChoreConfig) -> timedelta:
     """Convert a ChoreConfig interval to a timedelta."""
     days = config.interval_value
@@ -60,7 +65,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             config_entry=entry,
             update_interval=None,
         )
-        self.store: Store = Store(hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}")
+        self.store: Store = Store(hass, STORAGE_VERSION, storage_key(entry.entry_id))
         self._chores: dict[str, ChoreRuntime] = {}
 
     async def async_initialize(self) -> None:
