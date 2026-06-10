@@ -29,8 +29,7 @@ tests/
     test_models.py
   test_sensor.py
 
-ha-config/             # local HA config directory, mounted into Docker at /config
-docker-compose.yml     # runs ghcr.io/home-assistant/home-assistant:stable on :8123
+docker-compose.yml     # runs ghcr.io/home-assistant/home-assistant:stable on :8123; bind-mounts ./custom_components/chores into /config/custom_components/chores
 pyproject.toml         # project metadata + mypy config
 requirements_test.txt  # pinned dev/test dependencies
 Makefile               # all common dev tasks (see below)
@@ -91,8 +90,9 @@ make check          # lint + format-check + typecheck + test in one go (mirrors 
 
 # Docker (local HA instance at http://localhost:8123)
 make up             # start Home Assistant
-make down           # stop HA (data preserved)
-make destroy        # stop HA and wipe volumes
+make down           # stop and remove HA container
+make stop           # pause HA container (preserves container state)
+make start          # resume a paused HA container
 make logs           # tail HA container logs
 ```
 

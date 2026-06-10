@@ -2,8 +2,7 @@ services:
   homeassistant:
     image: ghcr.io/home-assistant/home-assistant:stable
     container_name: ha-dev
-    restart: unless-stopped
-    privileged: true
+    restart: "no"
     ports:
       - "8123:8123"
     volumes:
