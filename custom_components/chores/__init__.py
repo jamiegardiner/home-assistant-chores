@@ -8,8 +8,12 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 
-from .const import DOMAIN
-from .coordinator import STORAGE_VERSION, ChoresConfigEntry, ChoresCoordinator
+from .coordinator import (
+    STORAGE_VERSION,
+    ChoresConfigEntry,
+    ChoresCoordinator,
+    storage_key,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -43,7 +47,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ChoresConfigEntry) -> b
 
 async def async_remove_entry(hass: HomeAssistant, entry: ChoresConfigEntry) -> None:
     """Delete the storage file when the config entry is removed."""
-    store: Store = Store(hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}")
+    store: Store = Store(hass, STORAGE_VERSION, storage_key(entry.entry_id))
     await store.async_remove()
 
 
