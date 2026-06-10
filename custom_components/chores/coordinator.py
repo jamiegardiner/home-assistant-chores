@@ -17,7 +17,6 @@ from homeassistant.helpers.event import async_track_point_in_time
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
-from homeassistant.util import slugify
 
 from .const import CONF_CHORES, DOMAIN
 from .models import ChoreConfig
@@ -25,17 +24,6 @@ from .models import ChoreConfig
 _LOGGER = logging.getLogger(__name__)
 
 STORAGE_VERSION = 1
-
-
-def _unique_slug(name: str, existing: set[str]) -> str:
-    """Return a slug for name that does not collide with existing slugs."""
-    base = slugify(name)
-    candidate = base
-    index = 1
-    while candidate in existing:
-        candidate = f"{base}_{index}"
-        index += 1
-    return candidate
 
 
 def _interval_to_timedelta(config: ChoreConfig) -> timedelta:
@@ -84,22 +72,16 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             CONF_CHORES, []
         )
 
-        used_slugs: set[str] = set()
         self._chores = {}
 
         for chore_dict in chore_dicts:
             config = ChoreConfig.from_dict(chore_dict)
-            chore_id = _unique_slug(config.name, used_slugs)
-            used_slugs.add(chore_id)
+            chore_id = config.id
 
-            # Handle both old format (str) and new format (dict)
             stored_data = stored.get(chore_id)
             if isinstance(stored_data, dict):
                 stored_last = stored_data.get("last_completed")
                 stored_snooze = stored_data.get("snooze_until")
-            elif isinstance(stored_data, str):
-                stored_last = stored_data
-                stored_snooze = None
             else:
                 stored_last = None
                 stored_snooze = None
@@ -135,6 +117,11 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self._schedule_snooze(rt)
             else:
                 self._schedule(rt)
+
+        # Prune stale store keys left behind by removed chores
+        current_ids = set(self._chores.keys())
+        if set(stored.keys()) - current_ids:
+            await self._persist()
 
         self.async_set_updated_data(self._snapshot())
 
