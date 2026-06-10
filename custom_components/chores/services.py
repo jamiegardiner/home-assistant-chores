@@ -13,17 +13,16 @@ SERVICE_COMPLETE = "complete"
 SERVICE_SNOOZE = "snooze"
 SERVICE_UNSNOOZE = "unsnooze"
 
-COMPLETE_SCHEMA = vol.Schema({}, extra=vol.ALLOW_EXTRA)
-UNSNOOZE_SCHEMA = vol.Schema({}, extra=vol.ALLOW_EXTRA)
+# Schemas are plain dicts so HA can wrap them with make_entity_service_schema,
+# which adds the entity/area/device/label target fields automatically.
+COMPLETE_SCHEMA: dict = {}
+UNSNOOZE_SCHEMA: dict = {}
 
-SNOOZE_SCHEMA = vol.Schema(
-    {
-        vol.Optional("snooze_days"): vol.All(vol.Coerce(int), vol.Range(min=1)),
-        vol.Optional("snooze_weeks"): vol.All(vol.Coerce(int), vol.Range(min=1)),
-        vol.Optional("snooze_until"): cv.string,
-    },
-    extra=vol.ALLOW_EXTRA,
-)
+SNOOZE_SCHEMA: dict = {
+    vol.Optional("snooze_days"): vol.All(vol.Coerce(int), vol.Range(min=1)),
+    vol.Optional("snooze_weeks"): vol.All(vol.Coerce(int), vol.Range(min=1)),
+    vol.Optional("snooze_until"): cv.string,
+}
 
 
 def _parse_snooze_until(call_data: dict) -> date:
