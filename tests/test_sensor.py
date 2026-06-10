@@ -7,7 +7,7 @@ Uses a fake coordinator so there is no dependency on the real coordinator
 from __future__ import annotations
 
 from datetime import date
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -101,7 +101,8 @@ class TestAsyncSetupEntry:
         def sync_add(entities, **_kwargs):
             added.extend(list(entities))
 
-        await async_setup_entry(hass, entry, sync_add)
+        with patch("custom_components.chores.sensor.async_get_current_platform"):
+            await async_setup_entry(hass, entry, sync_add)
 
         assert len(added) == 2  # one per chore_id in FakeCoordinator.chore_ids
 
@@ -121,7 +122,8 @@ class TestAsyncSetupEntry:
         def sync_add(entities, **_kwargs):
             added.extend(list(entities))
 
-        await async_setup_entry(hass, entry, sync_add)
+        with patch("custom_components.chores.sensor.async_get_current_platform"):
+            await async_setup_entry(hass, entry, sync_add)
         assert len(added) == 2
 
 

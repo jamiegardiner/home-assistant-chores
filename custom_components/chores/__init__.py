@@ -11,7 +11,6 @@ from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
 from .coordinator import ChoresCoordinator
-from .services import async_register_services, async_unregister_services
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,11 +28,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Register timer teardown on unload
     entry.async_on_unload(coordinator.async_shutdown_timers)
 
-    # Forward to sensor platform
+    # Forward to sensor platform (entity services are registered during platform setup)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
-    # Register integration services (idempotent)
-    await async_register_services(hass)
 
     # Re-initialize coordinator when options change
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
@@ -48,10 +44,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if unloaded:
         domain_data: dict[str, Any] = hass.data.get(DOMAIN, {})
         domain_data.pop(entry.entry_id, None)
-
-        # Unregister services only when the last entry is gone
-        if not domain_data:
-            async_unregister_services(hass)
 
     return unloaded
 

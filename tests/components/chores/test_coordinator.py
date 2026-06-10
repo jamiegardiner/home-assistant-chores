@@ -267,24 +267,6 @@ async def test_unload_cancels_timers(
         mock.assert_called_once()
 
 
-async def test_entity_resolution(hass: Any, two_chore_entry: MockConfigEntry) -> None:
-    """register_entity / chore_id_for_entity round-trip works."""
-    with (
-        patch(
-            "custom_components.chores.coordinator.Store.async_load",
-            new_callable=AsyncMock,
-            return_value=None,
-        ),
-        patch("custom_components.chores.coordinator.async_track_point_in_time"),
-    ):
-        coord = ChoresCoordinator(hass, two_chore_entry)
-        await coord.async_initialize()
-
-    coord.register_entity("sensor.chore_a", "chore_a")
-    assert coord.chore_id_for_entity("sensor.chore_a") == "chore_a"
-    assert coord.chore_id_for_entity("sensor.unknown") is None
-
-
 # ---------------------------------------------------------------------------
 # Snooze tests
 # ---------------------------------------------------------------------------
