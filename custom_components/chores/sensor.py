@@ -71,16 +71,16 @@ def _iso(value: date | datetime | None | Any) -> str | None | Any:
 # ---------------------------------------------------------------------------
 
 
-async def _handle_complete(entity: "ChoreSensor", call: ServiceCall) -> None:
+async def _handle_complete(entity: ChoreSensor, call: ServiceCall) -> None:
     await entity._chores_coordinator.async_complete(entity._chore_id)
 
 
-async def _handle_snooze(entity: "ChoreSensor", call: ServiceCall) -> None:
+async def _handle_snooze(entity: ChoreSensor, call: ServiceCall) -> None:
     snooze_until = _parse_snooze_until(call.data)
     await entity._chores_coordinator.async_snooze(entity._chore_id, snooze_until)
 
 
-async def _handle_unsnooze(entity: "ChoreSensor", call: ServiceCall) -> None:
+async def _handle_unsnooze(entity: ChoreSensor, call: ServiceCall) -> None:
     await entity._chores_coordinator.async_unsnooze(entity._chore_id)
 
 
