@@ -9,8 +9,6 @@ from __future__ import annotations
 from datetime import date
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Fake coordinator
 # ---------------------------------------------------------------------------
@@ -84,7 +82,6 @@ def _make_sensor(chore_id: str, coordinator=None, entry=None):  # -> ChoreSensor
 class TestAsyncSetupEntry:
     """Tests for async_setup_entry."""
 
-    @pytest.mark.asyncio
     async def test_one_sensor_per_chore(self):
         """async_setup_entry must add exactly one entity per chore_id."""
         from custom_components.chores.sensor import async_setup_entry
@@ -106,7 +103,6 @@ class TestAsyncSetupEntry:
 
         assert len(added) == 2  # one per chore_id in FakeCoordinator.chore_ids
 
-    @pytest.mark.asyncio
     async def test_setup_entry_uses_correct_domain_key(self):
         """Coordinator is looked up at hass.data[DOMAIN][entry.entry_id]."""
         from custom_components.chores.sensor import async_setup_entry
