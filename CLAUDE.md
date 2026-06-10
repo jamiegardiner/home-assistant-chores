@@ -106,9 +106,10 @@ Activate the venv for interactive use: `source .venv/bin/activate`
 Add the key to `coordinator.py:_snapshot()` and read it in `sensor.py:extra_state_attributes`.
 
 ### 2. New service
-1. Add the handler in `services.py` and register it in `async_register_services`.
-2. Add the schema and UI description to `services.yaml`.
-3. Unregister it in `async_unregister_services`.
+Services are entity services — HA handles all target resolution (entity, area, device, label) and fan-out automatically.
+1. Add the service name constant and schema dict to `services.py`.
+2. Add a handler function `_handle_<name>(entity: ChoreSensor, call: ServiceCall)` in `sensor.py` and register it in `async_setup_entry` via `platform.async_register_entity_service`.
+3. Add the UI description to `services.yaml`. No unregister step needed — entity services are torn down automatically when the platform unloads.
 
 ### 3. New platform (e.g. `button`, `select`)
 1. Add `Platform.BUTTON` (etc.) to `PLATFORMS` in `__init__.py`.

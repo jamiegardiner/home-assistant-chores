@@ -12,11 +12,23 @@ from typing import Any, Protocol
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.helpers.entity_platform import (
+    AddEntitiesCallback,
+    async_get_current_platform,
+)
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
+from .services import (
+    COMPLETE_SCHEMA,
+    SERVICE_COMPLETE,
+    SERVICE_SNOOZE,
+    SERVICE_UNSNOOZE,
+    SNOOZE_SCHEMA,
+    UNSNOOZE_SCHEMA,
+    _parse_snooze_until,
+)
 
 
 class ChoresCoordinator(Protocol):
@@ -33,8 +45,16 @@ class ChoresCoordinator(Protocol):
         """Return runtime state dict for a single chore."""
         ...
 
-    def register_entity(self, entity_id: str, chore_id: str) -> None:
-        """Register a sensor entity_id -> chore_id mapping."""
+    async def async_complete(self, chore_id: str) -> None:
+        """Mark a chore as completed."""
+        ...
+
+    async def async_snooze(self, chore_id: str, snooze_until: date) -> None:
+        """Snooze a chore until the given date."""
+        ...
+
+    async def async_unsnooze(self, chore_id: str) -> None:
+        """Cancel an active snooze."""
         ...
 
 
@@ -43,6 +63,25 @@ def _iso(value: date | datetime | None | Any) -> str | None | Any:
     if isinstance(value, (date, datetime)):
         return value.isoformat()
     return value
+
+
+# ---------------------------------------------------------------------------
+# Entity service handlers — called once per matched entity by HA's platform
+# machinery, which handles all target resolution (entity, area, device, label).
+# ---------------------------------------------------------------------------
+
+
+async def _handle_complete(entity: ChoreSensor, call: ServiceCall) -> None:
+    await entity._chores_coordinator.async_complete(entity._chore_id)
+
+
+async def _handle_snooze(entity: ChoreSensor, call: ServiceCall) -> None:
+    snooze_until = _parse_snooze_until(call.data)
+    await entity._chores_coordinator.async_snooze(entity._chore_id, snooze_until)
+
+
+async def _handle_unsnooze(entity: ChoreSensor, call: ServiceCall) -> None:
+    await entity._chores_coordinator.async_unsnooze(entity._chore_id)
 
 
 async def async_setup_entry(
@@ -54,6 +93,17 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_entities(
         ChoreSensor(coordinator, entry, chore_id) for chore_id in coordinator.chore_ids
+    )
+
+    platform = async_get_current_platform()
+    platform.async_register_entity_service(
+        SERVICE_COMPLETE, COMPLETE_SCHEMA, _handle_complete
+    )
+    platform.async_register_entity_service(
+        SERVICE_SNOOZE, SNOOZE_SCHEMA, _handle_snooze
+    )
+    platform.async_register_entity_service(
+        SERVICE_UNSNOOZE, UNSNOOZE_SCHEMA, _handle_unsnooze
     )
 
 
@@ -83,28 +133,13 @@ class ChoreSensor(CoordinatorEntity, SensorEntity):
     def suggested_object_id(self) -> str:
         return f"chore_{self._chore_id}"
 
-    async def async_added_to_hass(self) -> None:
-        """Register the entity_id -> chore_id mapping with the coordinator.
-
-        ``entity_id`` is not assigned at ``__init__`` time, so the registration
-        must happen in this lifecycle hook.
-        """
-        await super().async_added_to_hass()
-        self._chores_coordinator.register_entity(self.entity_id, self._chore_id)
-
     @property
     def _chores_coordinator(self) -> ChoresCoordinator:
         """Return the coordinator typed as ChoresCoordinator."""
         return self.coordinator  # type: ignore[return-value]
 
     def _chore_state(self) -> dict[str, Any]:
-        """Return the coordinator's current state dict for this chore.
-
-        All coordinator access is funnelled through this single helper so that
-        field-name changes on merge with issue #4 require only a 1-line edit.
-
-        Expected keys: ``status``, ``last_completed``, ``next_due``, ``name``.
-        """
+        """Return the coordinator's current state dict for this chore."""
         return self._chores_coordinator.chore_state(self._chore_id)
 
     @property

@@ -73,8 +73,6 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._entry = entry
         self.store: Store = Store(hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}")
         self._chores: dict[str, ChoreRuntime] = {}
-        # Map entity_id -> chore_id (populated by sensor platform)
-        self._entity_to_chore: dict[str, str] = {}
 
     async def async_initialize(self) -> None:
         """Load chores from config entry, hydrate from store, compute state."""
@@ -339,11 +337,3 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def get_chore_runtime(self, chore_id: str) -> ChoreRuntime | None:
         """Return the runtime for a given chore_id."""
         return self._chores.get(chore_id)
-
-    def register_entity(self, entity_id: str, chore_id: str) -> None:
-        """Register a sensor entity_id -> chore_id mapping."""
-        self._entity_to_chore[entity_id] = chore_id
-
-    def chore_id_for_entity(self, entity_id: str) -> str | None:
-        """Resolve an entity_id to a chore_id."""
-        return self._entity_to_chore.get(entity_id)
