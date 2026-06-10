@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.chores.const import CONF_CHORES, DOMAIN
@@ -25,7 +26,7 @@ from custom_components.chores.models import ChoreConfig
 def _chore_dict(
     name: str, interval_value: int, interval_unit: str, days_ago: int
 ) -> dict:
-    last_completed = (date.today() - timedelta(days=days_ago)).isoformat()
+    last_completed = (dt_util.now().date() - timedelta(days=days_ago)).isoformat()
     return {
         "name": name,
         "interval_value": interval_value,
@@ -66,7 +67,7 @@ def test_interval_to_timedelta_days() -> None:
         name="test",
         interval_value=14,
         interval_unit="days",
-        last_completed=date.today(),
+        last_completed=dt_util.now().date(),
     )
     assert _interval_to_timedelta(config) == timedelta(days=14)
 
@@ -76,7 +77,7 @@ def test_interval_to_timedelta_weeks() -> None:
         name="test",
         interval_value=2,
         interval_unit="weeks",
-        last_completed=date.today(),
+        last_completed=dt_util.now().date(),
     )
     assert _interval_to_timedelta(config) == timedelta(days=14)
 
@@ -123,7 +124,7 @@ async def test_initial_status_and_next_due(
     assert data["chore_b"]["status"] == "done"
     # next_due for B should be roughly today + 7 days
     next_due_b: datetime = data["chore_b"]["next_due"]
-    expected_date = date.today() + timedelta(days=7)
+    expected_date = dt_util.now().date() + timedelta(days=7)
     assert next_due_b.date() == expected_date
 
 
@@ -189,7 +190,7 @@ async def test_complete_resets_to_done(
 
     data = coord.data
     assert data["chore_a"]["status"] == "done"
-    assert data["chore_a"]["last_completed"] == date.today()
+    assert data["chore_a"]["last_completed"] == dt_util.now().date()
     # next_due should now be in the future
     assert data["chore_a"]["next_due"] > datetime.now(tz=timezone.utc)
 
@@ -291,7 +292,7 @@ async def test_snooze_transitions_to_snoozed(
         coord = ChoresCoordinator(hass, two_chore_entry)
         await coord.async_initialize()
 
-        snooze_date = date.today() + timedelta(days=3)
+        snooze_date = dt_util.now().date() + timedelta(days=3)
         await coord.async_snooze("chore_a", snooze_date)
 
     data = coord.data
@@ -328,7 +329,7 @@ async def test_snooze_expiry_recomputes_state(
         await coord.async_initialize()
 
         # Snooze an overdue chore (no overdue timer, so snooze timer is first)
-        snooze_date = date.today() + timedelta(days=3)
+        snooze_date = dt_util.now().date() + timedelta(days=3)
         await coord.async_snooze("chore_a", snooze_date)
 
     assert coord.data["chore_a"]["status"] == "snoozed"
@@ -362,7 +363,7 @@ async def test_complete_clears_snooze(
         coord = ChoresCoordinator(hass, two_chore_entry)
         await coord.async_initialize()
 
-        snooze_date = date.today() + timedelta(days=3)
+        snooze_date = dt_util.now().date() + timedelta(days=3)
         await coord.async_snooze("chore_a", snooze_date)
         assert coord.data["chore_a"]["status"] == "snoozed"
 
@@ -401,7 +402,7 @@ async def test_snooze_survives_restart(
         coord = ChoresCoordinator(hass, two_chore_entry)
         await coord.async_initialize()
 
-        snooze_date = date.today() + timedelta(days=5)
+        snooze_date = dt_util.now().date() + timedelta(days=5)
         await coord.async_snooze("chore_a", snooze_date)
 
         # Simulate restart
@@ -416,10 +417,10 @@ async def test_expired_snooze_not_restored_on_restart(
     hass: Any, two_chore_entry: MockConfigEntry
 ) -> None:
     """An expired snooze_until is discarded on restart, not restored."""
-    snooze_date = date.today() - timedelta(days=1)  # already past
+    snooze_date = dt_util.now().date() - timedelta(days=1)  # already past
     stored = {
         "chore_a": {
-            "last_completed": (date.today() - timedelta(days=30)).isoformat(),
+            "last_completed": (dt_util.now().date() - timedelta(days=30)).isoformat(),
             "snooze_until": snooze_date.isoformat(),
         }
     }
@@ -439,15 +440,14 @@ async def test_expired_snooze_not_restored_on_restart(
     assert coord.data["chore_a"]["snooze_until"] is None
 
 
-@pytest.mark.asyncio
 async def test_unsnooze_clears_snooze_and_recalculates(
     hass: Any, two_chore_entry: MockConfigEntry
 ) -> None:
     """Unsnooze on a snoozed overdue chore: snooze_until cleared, status returns to overdue."""
-    snooze_date = date.today() + timedelta(days=3)
+    snooze_date = dt_util.now().date() + timedelta(days=3)
     stored = {
         "chore_a": {
-            "last_completed": (date.today() - timedelta(days=30)).isoformat(),
+            "last_completed": (dt_util.now().date() - timedelta(days=30)).isoformat(),
             "snooze_until": snooze_date.isoformat(),
         }
     }
@@ -476,16 +476,15 @@ async def test_unsnooze_clears_snooze_and_recalculates(
     assert coord.data["chore_a"]["status"] == "overdue"
 
 
-@pytest.mark.asyncio
 async def test_unsnooze_done_chore_reschedules_timer(
     hass: Any, two_chore_entry: MockConfigEntry
 ) -> None:
     """Unsnooze on a snoozed done chore: status returns to done."""
-    snooze_date = date.today() + timedelta(days=3)
+    snooze_date = dt_util.now().date() + timedelta(days=3)
     # last_completed yesterday, interval 7d -> not yet overdue
     stored = {
         "chore_a": {
-            "last_completed": (date.today() - timedelta(days=1)).isoformat(),
+            "last_completed": (dt_util.now().date() - timedelta(days=1)).isoformat(),
             "snooze_until": snooze_date.isoformat(),
         }
     }
@@ -517,14 +516,13 @@ async def test_unsnooze_done_chore_reschedules_timer(
     assert coord.data["chore_a"]["status"] == "done"
 
 
-@pytest.mark.asyncio
 async def test_unsnooze_on_non_snoozed_is_noop(
     hass: Any, two_chore_entry: MockConfigEntry
 ) -> None:
     """Calling async_unsnooze on a chore not in snoozed state is a no-op."""
     stored = {
         "chore_a": {
-            "last_completed": (date.today() - timedelta(days=30)).isoformat(),
+            "last_completed": (dt_util.now().date() - timedelta(days=30)).isoformat(),
             "snooze_until": None,
         }
     }
