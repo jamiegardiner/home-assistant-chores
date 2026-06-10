@@ -231,6 +231,25 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         await self._persist()
         self.async_set_updated_data(self._snapshot())
 
+    async def async_unsnooze(self, chore_id: str) -> None:
+        """Cancel an active snooze, returning the chore to done or overdue."""
+        if chore_id not in self._chores:
+            _LOGGER.warning("async_unsnooze called for unknown chore_id: %s", chore_id)
+            return
+
+        rt = self._chores[chore_id]
+        if rt.snooze_until is None:
+            return  # no-op
+
+        if rt._cancel_snooze_timer is not None:
+            rt._cancel_snooze_timer()
+            rt._cancel_snooze_timer = None
+        rt.snooze_until = None
+        self._recompute(rt)
+        self._schedule(rt)
+        await self._persist()
+        self.async_set_updated_data(self._snapshot())
+
     async def async_snooze(self, chore_id: str, snooze_until: date) -> None:
         """Snooze a chore until snooze_until, suppressing overdue transitions."""
         if chore_id not in self._chores:

@@ -40,3 +40,11 @@ snooze:
       required: false
       selector:
         date:
+
+unsnooze:
+  name: Unsnooze chore
+  description: Cancel an active snooze, returning the chore to "done" or "overdue".
+  target:
+    entity:
+      integration: chores
+      domain: sensor
