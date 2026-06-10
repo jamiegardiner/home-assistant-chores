@@ -3,7 +3,7 @@
 VENV := .venv
 UV   := uv
 
-.PHONY: help venv venv-destroy install test typecheck lint format check up down logs
+.PHONY: help venv venv-destroy install test typecheck lint format check up down stop start logs
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
@@ -52,8 +52,14 @@ check: ## Check code (read-only): lint, format, typecheck, tests — mirrors CI
 up: ## Start Home Assistant in Docker
 	docker compose up -d
 
-down: ## Stop Home Assistant
+down: ## Stop and remove Home Assistant container
 	docker compose down
+
+stop: ## Pause Home Assistant container (preserves container state)
+	docker compose stop
+
+start: ## Resume a paused Home Assistant container
+	docker compose start
 
 logs: ## Tail Home Assistant logs
 	docker compose logs -f homeassistant

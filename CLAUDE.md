@@ -90,7 +90,9 @@ make check          # lint + format-check + typecheck + test in one go (mirrors 
 
 # Docker (local HA instance at http://localhost:8123)
 make up             # start Home Assistant
-make down           # stop HA
+make down           # stop and remove HA container
+make stop           # pause HA container (preserves container state)
+make start          # resume a paused HA container
 make logs           # tail HA container logs
 ```
 
