@@ -15,7 +15,7 @@ custom_components/chores/
   sensor.py            # ChoreSensor entity (one per chore)
   config_flow.py       # UI config flow (single-instance) + options flow (add/remove)
   services.py          # chores.complete service handler
-  services.yaml        # service schema for the HA UI
+  services.yaml        # service structure for the HA UI (target, fields, selectors)
   strings.json         # translation source (used by tooling/validation)
   translations/
     en.json            # runtime translations loaded by HA (mirrors strings.json)
@@ -110,7 +110,7 @@ Add the key to `coordinator.py:_snapshot()` and read it in `sensor.py:extra_stat
 Services are entity services — HA handles all target resolution (entity, area, device, label) and fan-out automatically.
 1. Add the service name constant and schema dict to `services.py`.
 2. Add a handler function `_handle_<name>(entity: ChoreSensor, call: ServiceCall)` in `sensor.py` and register it in `async_setup_entry` via `platform.async_register_entity_service`.
-3. Add the UI description to `services.yaml`. No unregister step needed — entity services are torn down automatically when the platform unloads.
+3. Add the service structure (target, fields, selectors) to `services.yaml` — but **not** `name`/`description`. Service and field display strings live under the `services` key in both `strings.json` and `translations/en.json` (kept in sync, per HA's 2023.8+ convention). No unregister step needed — entity services are torn down automatically when the platform unloads.
 
 ### 3. New platform (e.g. `button`, `select`)
 1. Add `Platform.BUTTON` (etc.) to `PLATFORMS` in `__init__.py`.
