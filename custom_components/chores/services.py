@@ -6,11 +6,10 @@ import logging
 from datetime import date, timedelta
 from typing import Any
 
+import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import HomeAssistantError
-import homeassistant.helpers.config_validation as cv
 from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
@@ -48,9 +47,7 @@ def _resolve_entity(call: ServiceCall, domain_data: dict[str, Any]) -> tuple[str
         target_entities = []
 
     if not target_entities:
-        raise HomeAssistantError(
-            f"chores.{call.service} requires a target entity"
-        )
+        raise HomeAssistantError(f"chores.{call.service} requires a target entity")
 
     entity_id = target_entities[0]
     for coord in domain_data.values():
@@ -58,9 +55,7 @@ def _resolve_entity(call: ServiceCall, domain_data: dict[str, Any]) -> tuple[str
         if resolved is not None:
             return resolved, coord
 
-    raise HomeAssistantError(
-        f"Could not resolve chore for entity: {entity_id!r}"
-    )
+    raise HomeAssistantError(f"Could not resolve chore for entity: {entity_id!r}")
 
 
 async def async_register_services(hass: HomeAssistant) -> None:
@@ -83,7 +78,9 @@ async def async_register_services(hass: HomeAssistant) -> None:
         snooze_weeks: int | None = call.data.get("snooze_weeks")
         snooze_until_str: str | None = call.data.get("snooze_until")
 
-        provided = sum(x is not None for x in [snooze_days, snooze_weeks, snooze_until_str])
+        provided = sum(
+            x is not None for x in [snooze_days, snooze_weeks, snooze_until_str]
+        )
         if provided != 1:
             raise HomeAssistantError(
                 "Exactly one of snooze_days, snooze_weeks, or snooze_until must be provided"

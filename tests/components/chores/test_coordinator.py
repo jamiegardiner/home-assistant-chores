@@ -17,7 +17,6 @@ from custom_components.chores.coordinator import (
 )
 from custom_components.chores.models import ChoreConfig
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -477,7 +476,10 @@ async def test_unsnooze_clears_snooze_and_recalculates(
             new_callable=AsyncMock,
             return_value=stored,
         ),
-        patch("custom_components.chores.coordinator.Store.async_save", new_callable=AsyncMock),
+        patch(
+            "custom_components.chores.coordinator.Store.async_save",
+            new_callable=AsyncMock,
+        ),
         patch("custom_components.chores.coordinator.async_track_point_in_time"),
     ):
         coord = ChoresCoordinator(hass, two_chore_entry)
@@ -513,7 +515,10 @@ async def test_unsnooze_done_chore_reschedules_timer(
             new_callable=AsyncMock,
             return_value=stored,
         ),
-        patch("custom_components.chores.coordinator.Store.async_save", new_callable=AsyncMock),
+        patch(
+            "custom_components.chores.coordinator.Store.async_save",
+            new_callable=AsyncMock,
+        ),
         patch(
             "custom_components.chores.coordinator.async_track_point_in_time",
             return_value=cancel_mock,

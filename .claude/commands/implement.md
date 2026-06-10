@@ -33,7 +33,7 @@ Exit plan mode and begin implementation:
 
 1. Ensure main is up to date before branching: `git checkout main && git pull origin main`. Then create a branch named `<prefix>/<number>-<slug>` where prefix comes from the category table above and slug is a short kebab-case version of the issue title (e.g. `feat/7-button-entity-complete-chore`). Push it immediately with `git push -u origin <branch>`.
 2. Implement the changes according to the approved plan.
-3. Run `make test` and `make lint` after changes. Fix any failures before proceeding.
+3. Run `make format && make check` after changes. Fix any failures before proceeding.
 4. Commit using the prefix that matches the category:
    - `bug` → `fix(issue-<number>): <short description>`
    - `enhancement` → `feat(issue-<number>): <short description>`

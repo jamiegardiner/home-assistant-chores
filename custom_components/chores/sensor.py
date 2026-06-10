@@ -79,6 +79,10 @@ class ChoreSensor(CoordinatorEntity, SensorEntity):
         state = self._chore_state()
         self._attr_name = state.get("name", chore_id)
 
+    @property
+    def suggested_object_id(self) -> str:
+        return f"chore_{self._chore_id}"
+
     async def async_added_to_hass(self) -> None:
         """Register the entity_id -> chore_id mapping with the coordinator.
 
