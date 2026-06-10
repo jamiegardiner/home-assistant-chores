@@ -33,10 +33,11 @@ class ChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle a user-initiated config flow (single-instance enforcement)."""
-        if self._async_current_entries():
-            return self.async_abort(reason="single_instance_allowed")
+        """Handle a user-initiated config flow.
 
+        Single-instance enforcement is handled by HA via the
+        ``single_config_entry`` manifest flag, so no manual check is needed here.
+        """
         return self.async_create_entry(
             title="Chores",
             data={CONF_CHORES: []},

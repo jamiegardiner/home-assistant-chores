@@ -164,7 +164,7 @@ All feature and fix work goes through GitHub Issues:
 
 ## Constraints
 
-- Single-instance integration — only one Chores config entry is allowed.
+- Single-instance integration — only one Chores config entry is allowed. Enforced by HA via `"single_config_entry": true` in `manifest.json` (not a manual config-flow check).
 - No YAML configuration — all setup is through the UI options flow.
 - Python `>=3.14.2` (matches Home Assistant's own requirement).
 - `integration_type: hub` in `manifest.json` — must not be changed to `helper` or the integration appears in the wrong section of the HA UI.
