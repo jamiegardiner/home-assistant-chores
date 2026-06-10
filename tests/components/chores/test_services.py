@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.util import dt as dt_util
 
 from custom_components.chores.sensor import (
     _handle_complete,
@@ -43,19 +44,19 @@ def _make_entity(chore_id: str) -> MagicMock:
 
 class TestParseSnoozeUntil:
     def test_snooze_days(self):
-        today = date.today()
+        today = dt_util.now().date()
         result = _parse_snooze_until({"snooze_days": 3})
         assert result == today + timedelta(days=3)
 
     def test_snooze_weeks(self):
-        today = date.today()
+        today = dt_util.now().date()
         result = _parse_snooze_until({"snooze_weeks": 2})
         assert result == today + timedelta(weeks=2)
 
     def test_snooze_until_iso(self):
-        future = (date.today() + timedelta(days=5)).isoformat()
+        future = (dt_util.now().date() + timedelta(days=5)).isoformat()
         result = _parse_snooze_until({"snooze_until": future})
-        assert result == date.fromisoformat(future)
+        assert result == dt_util.now().date() + timedelta(days=5)
 
     def test_raises_when_no_param_provided(self):
         with pytest.raises(HomeAssistantError, match="Exactly one"):
@@ -66,12 +67,12 @@ class TestParseSnoozeUntil:
             _parse_snooze_until({"snooze_days": 1, "snooze_weeks": 1})
 
     def test_raises_when_snooze_until_is_today(self):
-        today = date.today().isoformat()
+        today = dt_util.now().date().isoformat()
         with pytest.raises(HomeAssistantError, match="future date"):
             _parse_snooze_until({"snooze_until": today})
 
     def test_raises_when_snooze_until_is_past(self):
-        yesterday = (date.today() - timedelta(days=1)).isoformat()
+        yesterday = (dt_util.now().date() - timedelta(days=1)).isoformat()
         with pytest.raises(HomeAssistantError, match="future date"):
             _parse_snooze_until({"snooze_until": yesterday})
 
@@ -100,7 +101,7 @@ class TestHandleComplete:
 class TestHandleSnooze:
     async def test_calls_coordinator_async_snooze_with_days(self):
         entity = _make_entity("dishes")
-        today = date.today()
+        today = dt_util.now().date()
         await _handle_snooze(entity, _make_call({"snooze_days": 3}))
         entity._chores_coordinator.async_snooze.assert_called_once_with(
             "dishes", today + timedelta(days=3)
@@ -108,7 +109,7 @@ class TestHandleSnooze:
 
     async def test_calls_coordinator_async_snooze_with_weeks(self):
         entity = _make_entity("vacuum")
-        today = date.today()
+        today = dt_util.now().date()
         await _handle_snooze(entity, _make_call({"snooze_weeks": 1}))
         entity._chores_coordinator.async_snooze.assert_called_once_with(
             "vacuum", today + timedelta(weeks=1)
