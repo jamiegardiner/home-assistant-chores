@@ -82,6 +82,9 @@ async def test_options_add_chore(hass):
     assert chores[0]["interval_value"] == 2
     assert chores[0]["interval_unit"] == "weeks"
     assert chores[0]["last_completed"] == "2026-06-01"
+    assert len(chores[0]["id"]) == 32 and all(
+        c in "0123456789abcdef" for c in chores[0]["id"]
+    )
 
 
 async def test_options_add_date_field_has_suggested_value(hass):
@@ -156,6 +159,7 @@ async def test_options_add_rejects_non_positive_interval(hass):
 async def test_options_remove_chore(hass):
     """Selecting a chore to remove removes it from the stored list."""
     existing_chore = {
+        "id": "c" * 32,
         "name": "Mow lawn",
         "interval_value": 1,
         "interval_unit": "weeks",
@@ -206,6 +210,7 @@ async def test_options_add_rejects_invalid_date(hass):
 async def test_options_add_rejects_duplicate_name(hass):
     """Adding a chore with an exact duplicate name re-shows the form with an error."""
     existing_chore = {
+        "id": "c" * 32,
         "name": "Bins",
         "interval_value": 1,
         "interval_unit": "weeks",
@@ -236,6 +241,7 @@ async def test_options_add_rejects_duplicate_name(hass):
 async def test_options_add_rejects_duplicate_name_case_insensitive(hass):
     """Duplicate name check is case-insensitive."""
     existing_chore = {
+        "id": "c" * 32,
         "name": "Bins",
         "interval_value": 1,
         "interval_unit": "weeks",

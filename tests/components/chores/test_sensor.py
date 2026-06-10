@@ -200,7 +200,8 @@ class TestChoreSensorSuggestedObjectId:
 
     def test_suggested_object_id_format(self):
         sensor = _make_sensor(CHORE_A_ID)
-        assert sensor.suggested_object_id == f"chore_{CHORE_A_ID}"
+        # suggested_object_id is derived from the display name, not the internal chore_id
+        assert sensor.suggested_object_id == "chore_dishes"
 
     def test_suggested_object_id_differs_per_chore(self):
         sensor_a = _make_sensor(CHORE_A_ID)

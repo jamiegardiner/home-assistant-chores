@@ -13,9 +13,11 @@ class ChoreConfig:
     interval_value: int
     interval_unit: str  # one of INTERVAL_UNITS ("days" | "weeks")
     last_completed: date
+    id: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "id": self.id,
             "name": self.name,
             "interval_value": self.interval_value,
             "interval_unit": self.interval_unit,
@@ -48,6 +50,7 @@ class ChoreConfig:
                 f"Invalid last_completed date {data['last_completed']!r}: {exc}"
             ) from exc
         return cls(
+            id=data.get("id", ""),
             name=data["name"],
             interval_value=interval_value,
             interval_unit=data["interval_unit"],

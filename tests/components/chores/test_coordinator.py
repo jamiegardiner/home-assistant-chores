@@ -14,9 +14,15 @@ from custom_components.chores.const import CONF_CHORES, DOMAIN
 from custom_components.chores.coordinator import (
     ChoresCoordinator,
     _interval_to_timedelta,
-    _unique_slug,
 )
 from custom_components.chores.models import ChoreConfig
+
+# ---------------------------------------------------------------------------
+# Test chore IDs (deterministic 32-char hex strings)
+# ---------------------------------------------------------------------------
+
+CHORE_A_ID = "a" * 32
+CHORE_B_ID = "b" * 32
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -24,10 +30,15 @@ from custom_components.chores.models import ChoreConfig
 
 
 def _chore_dict(
-    name: str, interval_value: int, interval_unit: str, days_ago: int
+    name: str,
+    interval_value: int,
+    interval_unit: str,
+    days_ago: int,
+    chore_id: str = "",
 ) -> dict:
     last_completed = (dt_util.now().date() - timedelta(days=days_ago)).isoformat()
     return {
+        "id": chore_id,
         "name": name,
         "interval_value": interval_value,
         "interval_unit": interval_unit,
@@ -49,17 +60,6 @@ def _make_entry(
 # ---------------------------------------------------------------------------
 # Unit tests: helpers (no HA required)
 # ---------------------------------------------------------------------------
-
-
-def test_unique_slug_no_collision() -> None:
-    slug = _unique_slug("Vacuum Living Room", set())
-    assert slug == "vacuum_living_room"
-
-
-def test_unique_slug_collision() -> None:
-    existing = {"vacuum_living_room"}
-    slug = _unique_slug("Vacuum Living Room", existing)
-    assert slug == "vacuum_living_room_1"
 
 
 def test_interval_to_timedelta_days() -> None:
@@ -93,10 +93,10 @@ def two_chore_entry() -> MockConfigEntry:
     return _make_entry(
         [
             _chore_dict(
-                "Chore A", 7, "days", 30
+                "Chore A", 7, "days", 30, CHORE_A_ID
             ),  # last_completed 30 days ago, 7d interval -> overdue
             _chore_dict(
-                "Chore B", 7, "days", 0
+                "Chore B", 7, "days", 0, CHORE_B_ID
             ),  # last_completed today, 7d interval -> done
         ]
     )
@@ -119,11 +119,11 @@ async def test_initial_status_and_next_due(
 
     data = coord.data
     # Chore A: 30 days ago, 7d interval -> overdue
-    assert data["chore_a"]["status"] == "overdue"
+    assert data[CHORE_A_ID]["status"] == "overdue"
     # Chore B: today, 7d interval -> done
-    assert data["chore_b"]["status"] == "done"
+    assert data[CHORE_B_ID]["status"] == "done"
     # next_due for B should be roughly today + 7 days
-    next_due_b: datetime = data["chore_b"]["next_due"]
+    next_due_b: datetime = data[CHORE_B_ID]["next_due"]
     expected_date = dt_util.now().date() + timedelta(days=7)
     assert next_due_b.date() == expected_date
 
@@ -153,7 +153,7 @@ async def test_timer_fires_overdue_transition(
         await coord.async_initialize()
 
     # Chore B starts as "done"; fire its timer
-    assert coord.data["chore_b"]["status"] == "done"
+    assert coord.data[CHORE_B_ID]["status"] == "done"
     assert "cb" in captured_callback
 
     # Simulate time passing: next_due has elapsed
@@ -161,7 +161,7 @@ async def test_timer_fires_overdue_transition(
     with patch("custom_components.chores.coordinator.dt_util.now", return_value=future):
         captured_callback["cb"](future)
 
-    assert coord.data["chore_b"]["status"] == "overdue"
+    assert coord.data[CHORE_B_ID]["status"] == "overdue"
 
 
 async def test_complete_resets_to_done(
@@ -184,15 +184,15 @@ async def test_complete_resets_to_done(
         await coord.async_initialize()
 
         # Chore A starts overdue
-        assert coord.data["chore_a"]["status"] == "overdue"
+        assert coord.data[CHORE_A_ID]["status"] == "overdue"
 
-        await coord.async_complete("chore_a")
+        await coord.async_complete(CHORE_A_ID)
 
     data = coord.data
-    assert data["chore_a"]["status"] == "done"
-    assert data["chore_a"]["last_completed"] == dt_util.now().date()
+    assert data[CHORE_A_ID]["status"] == "done"
+    assert data[CHORE_A_ID]["last_completed"] == dt_util.now().date()
     # next_due should now be in the future
-    assert data["chore_a"]["next_due"] > datetime.now(tz=timezone.utc)
+    assert data[CHORE_A_ID]["next_due"] > datetime.now(tz=timezone.utc)
 
 
 async def test_last_completed_survives_restart(
@@ -223,15 +223,15 @@ async def test_last_completed_survives_restart(
         # First load and complete chore A
         coord = ChoresCoordinator(hass, two_chore_entry)
         await coord.async_initialize()
-        await coord.async_complete("chore_a")
-        completion_date = coord.data["chore_a"]["last_completed"]
+        await coord.async_complete(CHORE_A_ID)
+        completion_date = coord.data[CHORE_A_ID]["last_completed"]
 
         # Simulate restart: create new coordinator with same entry
         coord2 = ChoresCoordinator(hass, two_chore_entry)
         await coord2.async_initialize()
 
-    assert coord2.data["chore_a"]["last_completed"] == completion_date
-    assert coord2.data["chore_a"]["status"] == "done"
+    assert coord2.data[CHORE_A_ID]["last_completed"] == completion_date
+    assert coord2.data[CHORE_A_ID]["status"] == "done"
 
 
 async def test_unload_cancels_timers(
@@ -293,11 +293,11 @@ async def test_snooze_transitions_to_snoozed(
         await coord.async_initialize()
 
         snooze_date = dt_util.now().date() + timedelta(days=3)
-        await coord.async_snooze("chore_a", snooze_date)
+        await coord.async_snooze(CHORE_A_ID, snooze_date)
 
     data = coord.data
-    assert data["chore_a"]["status"] == "snoozed"
-    assert data["chore_a"]["snooze_until"] == snooze_date
+    assert data[CHORE_A_ID]["status"] == "snoozed"
+    assert data[CHORE_A_ID]["snooze_until"] == snooze_date
 
 
 async def test_snooze_expiry_recomputes_state(
@@ -330,9 +330,9 @@ async def test_snooze_expiry_recomputes_state(
 
         # Snooze an overdue chore (no overdue timer, so snooze timer is first)
         snooze_date = dt_util.now().date() + timedelta(days=3)
-        await coord.async_snooze("chore_a", snooze_date)
+        await coord.async_snooze(CHORE_A_ID, snooze_date)
 
-    assert coord.data["chore_a"]["status"] == "snoozed"
+    assert coord.data[CHORE_A_ID]["status"] == "snoozed"
     assert "cb" in captured_snooze_cb
 
     # Simulate snooze expiry — chore_a was overdue before snooze
@@ -340,8 +340,8 @@ async def test_snooze_expiry_recomputes_state(
     with patch("custom_components.chores.coordinator.dt_util.now", return_value=future):
         captured_snooze_cb["cb"](future)
 
-    assert coord.data["chore_a"]["status"] == "overdue"
-    assert coord.data["chore_a"]["snooze_until"] is None
+    assert coord.data[CHORE_A_ID]["status"] == "overdue"
+    assert coord.data[CHORE_A_ID]["snooze_until"] is None
 
 
 async def test_complete_clears_snooze(
@@ -364,14 +364,14 @@ async def test_complete_clears_snooze(
         await coord.async_initialize()
 
         snooze_date = dt_util.now().date() + timedelta(days=3)
-        await coord.async_snooze("chore_a", snooze_date)
-        assert coord.data["chore_a"]["status"] == "snoozed"
+        await coord.async_snooze(CHORE_A_ID, snooze_date)
+        assert coord.data[CHORE_A_ID]["status"] == "snoozed"
 
-        await coord.async_complete("chore_a")
+        await coord.async_complete(CHORE_A_ID)
 
     data = coord.data
-    assert data["chore_a"]["status"] == "done"
-    assert data["chore_a"]["snooze_until"] is None
+    assert data[CHORE_A_ID]["status"] == "done"
+    assert data[CHORE_A_ID]["snooze_until"] is None
 
 
 async def test_snooze_survives_restart(
@@ -403,14 +403,14 @@ async def test_snooze_survives_restart(
         await coord.async_initialize()
 
         snooze_date = dt_util.now().date() + timedelta(days=5)
-        await coord.async_snooze("chore_a", snooze_date)
+        await coord.async_snooze(CHORE_A_ID, snooze_date)
 
         # Simulate restart
         coord2 = ChoresCoordinator(hass, two_chore_entry)
         await coord2.async_initialize()
 
-    assert coord2.data["chore_a"]["status"] == "snoozed"
-    assert coord2.data["chore_a"]["snooze_until"] == snooze_date
+    assert coord2.data[CHORE_A_ID]["status"] == "snoozed"
+    assert coord2.data[CHORE_A_ID]["snooze_until"] == snooze_date
 
 
 async def test_expired_snooze_not_restored_on_restart(
@@ -419,7 +419,7 @@ async def test_expired_snooze_not_restored_on_restart(
     """An expired snooze_until is discarded on restart, not restored."""
     snooze_date = dt_util.now().date() - timedelta(days=1)  # already past
     stored = {
-        "chore_a": {
+        CHORE_A_ID: {
             "last_completed": (dt_util.now().date() - timedelta(days=30)).isoformat(),
             "snooze_until": snooze_date.isoformat(),
         }
@@ -436,8 +436,8 @@ async def test_expired_snooze_not_restored_on_restart(
         coord = ChoresCoordinator(hass, two_chore_entry)
         await coord.async_initialize()
 
-    assert coord.data["chore_a"]["status"] == "overdue"
-    assert coord.data["chore_a"]["snooze_until"] is None
+    assert coord.data[CHORE_A_ID]["status"] == "overdue"
+    assert coord.data[CHORE_A_ID]["snooze_until"] is None
 
 
 async def test_unsnooze_clears_snooze_and_recalculates(
@@ -446,7 +446,7 @@ async def test_unsnooze_clears_snooze_and_recalculates(
     """Unsnooze on a snoozed overdue chore: snooze_until cleared, status returns to overdue."""
     snooze_date = dt_util.now().date() + timedelta(days=3)
     stored = {
-        "chore_a": {
+        CHORE_A_ID: {
             "last_completed": (dt_util.now().date() - timedelta(days=30)).isoformat(),
             "snooze_until": snooze_date.isoformat(),
         }
@@ -467,13 +467,13 @@ async def test_unsnooze_clears_snooze_and_recalculates(
         coord = ChoresCoordinator(hass, two_chore_entry)
         await coord.async_initialize()
 
-        assert coord.data["chore_a"]["status"] == "snoozed"
-        assert coord.data["chore_a"]["snooze_until"] == snooze_date
+        assert coord.data[CHORE_A_ID]["status"] == "snoozed"
+        assert coord.data[CHORE_A_ID]["snooze_until"] == snooze_date
 
-        await coord.async_unsnooze("chore_a")
+        await coord.async_unsnooze(CHORE_A_ID)
 
-    assert coord.data["chore_a"]["snooze_until"] is None
-    assert coord.data["chore_a"]["status"] == "overdue"
+    assert coord.data[CHORE_A_ID]["snooze_until"] is None
+    assert coord.data[CHORE_A_ID]["status"] == "overdue"
 
 
 async def test_unsnooze_done_chore_reschedules_timer(
@@ -483,7 +483,7 @@ async def test_unsnooze_done_chore_reschedules_timer(
     snooze_date = dt_util.now().date() + timedelta(days=3)
     # last_completed yesterday, interval 7d -> not yet overdue
     stored = {
-        "chore_a": {
+        CHORE_A_ID: {
             "last_completed": (dt_util.now().date() - timedelta(days=1)).isoformat(),
             "snooze_until": snooze_date.isoformat(),
         }
@@ -508,12 +508,12 @@ async def test_unsnooze_done_chore_reschedules_timer(
         coord = ChoresCoordinator(hass, two_chore_entry)
         await coord.async_initialize()
 
-        assert coord.data["chore_a"]["status"] == "snoozed"
+        assert coord.data[CHORE_A_ID]["status"] == "snoozed"
 
-        await coord.async_unsnooze("chore_a")
+        await coord.async_unsnooze(CHORE_A_ID)
 
-    assert coord.data["chore_a"]["snooze_until"] is None
-    assert coord.data["chore_a"]["status"] == "done"
+    assert coord.data[CHORE_A_ID]["snooze_until"] is None
+    assert coord.data[CHORE_A_ID]["status"] == "done"
 
 
 async def test_unsnooze_on_non_snoozed_is_noop(
@@ -521,7 +521,7 @@ async def test_unsnooze_on_non_snoozed_is_noop(
 ) -> None:
     """Calling async_unsnooze on a chore not in snoozed state is a no-op."""
     stored = {
-        "chore_a": {
+        CHORE_A_ID: {
             "last_completed": (dt_util.now().date() - timedelta(days=30)).isoformat(),
             "snooze_until": None,
         }
@@ -543,9 +543,101 @@ async def test_unsnooze_on_non_snoozed_is_noop(
         coord = ChoresCoordinator(hass, two_chore_entry)
         await coord.async_initialize()
 
-        status_before = coord.data["chore_a"]["status"]
-        await coord.async_unsnooze("chore_a")
+        status_before = coord.data[CHORE_A_ID]["status"]
+        await coord.async_unsnooze(CHORE_A_ID)
 
-    assert coord.data["chore_a"]["status"] == status_before
-    assert coord.data["chore_a"]["snooze_until"] is None
+    assert coord.data[CHORE_A_ID]["status"] == status_before
+    assert coord.data[CHORE_A_ID]["snooze_until"] is None
     save_mock.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# UUID identity tests
+# ---------------------------------------------------------------------------
+
+
+async def test_re_added_chore_does_not_inherit_stale_state(hass: Any) -> None:
+    """A new chore with the same name as a removed one does not inherit stored state."""
+    removed_id = "dead" * 8  # 32-char hex
+    new_id = "cafe" * 8
+    stale_date = (dt_util.now().date() - timedelta(days=5)).isoformat()
+
+    # Store has data for the removed chore under its old UUID
+    stored = {
+        removed_id: {"last_completed": stale_date, "snooze_until": None},
+    }
+
+    config_last_completed = (dt_util.now().date() - timedelta(days=1)).isoformat()
+    entry = _make_entry(
+        [
+            {
+                "id": new_id,
+                "name": "Bins",
+                "interval_value": 7,
+                "interval_unit": "days",
+                "last_completed": config_last_completed,
+            }
+        ]
+    )
+
+    with (
+        patch(
+            "custom_components.chores.coordinator.Store.async_load",
+            new_callable=AsyncMock,
+            return_value=stored,
+        ),
+        patch(
+            "custom_components.chores.coordinator.Store.async_save",
+            new_callable=AsyncMock,
+        ),
+        patch("custom_components.chores.coordinator.async_track_point_in_time"),
+    ):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+
+    # The new chore uses its own config's last_completed, not the stale stored value
+    assert coord.data[new_id]["last_completed"].isoformat() == config_last_completed
+
+
+async def test_removed_chore_pruned_from_storage(hass: Any) -> None:
+    """A stale store key left by a removed chore is pruned on async_initialize."""
+    stale_id = "dead" * 8
+
+    stored = {
+        CHORE_A_ID: {
+            "last_completed": (dt_util.now().date() - timedelta(days=1)).isoformat(),
+            "snooze_until": None,
+        },
+        stale_id: {
+            "last_completed": (dt_util.now().date() - timedelta(days=30)).isoformat(),
+            "snooze_until": None,
+        },
+    }
+
+    saved_payload: dict[str, Any] = {}
+
+    async def fake_save(data: dict) -> None:
+        saved_payload.clear()
+        saved_payload.update(data)
+
+    entry = _make_entry([_chore_dict("Chore A", 7, "days", 1, CHORE_A_ID)])
+
+    with (
+        patch(
+            "custom_components.chores.coordinator.Store.async_load",
+            new_callable=AsyncMock,
+            return_value=stored,
+        ),
+        patch(
+            "custom_components.chores.coordinator.Store.async_save",
+            new_callable=AsyncMock,
+            side_effect=fake_save,
+        ),
+        patch("custom_components.chores.coordinator.async_track_point_in_time"),
+    ):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+
+    # Stale key must be absent from what was saved
+    assert stale_id not in saved_payload
+    assert CHORE_A_ID in saved_payload

@@ -18,6 +18,7 @@ from homeassistant.helpers.entity_platform import (
     async_get_current_platform,
 )
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import slugify
 
 from .services import (
     COMPLETE_SCHEMA,
@@ -130,7 +131,7 @@ class ChoreSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def suggested_object_id(self) -> str:
-        return f"chore_{self._chore_id}"
+        return f"chore_{slugify(self._attr_name)}"
 
     @property
     def _chores_coordinator(self) -> ChoresCoordinator:

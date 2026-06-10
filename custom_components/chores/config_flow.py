@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import date
 from typing import Any
+from uuid import uuid4
 
 import voluptuous as vol
 from homeassistant import config_entries
@@ -109,6 +110,7 @@ class ChoresOptionsFlow(config_entries.OptionsFlow):
 
             if not errors:
                 chore = ChoreConfig(
+                    id=uuid4().hex,
                     name=name,
                     interval_value=interval_value,
                     interval_unit=user_input["interval_unit"],
