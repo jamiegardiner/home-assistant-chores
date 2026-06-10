@@ -13,6 +13,7 @@ from custom_components.chores.models import ChoreConfig
 
 def test_choreconfig_round_trip() -> None:
     c = ChoreConfig(
+        id="a" * 32,
         name="Bins",
         interval_value=2,
         interval_unit="weeks",
@@ -33,6 +34,7 @@ def test_to_dict_serializes_date_as_iso() -> None:
 
 def _base_dict() -> dict[str, Any]:
     return {
+        "id": "a" * 32,
         "name": "Bins",
         "interval_value": 2,
         "interval_unit": "weeks",
@@ -55,6 +57,18 @@ def test_from_dict_rejects_negative_interval_value() -> None:
 def test_from_dict_rejects_non_integer_interval_value() -> None:
     data = {**_base_dict(), "interval_value": "two"}
     with pytest.raises(ValueError, match="interval_value"):
+        ChoreConfig.from_dict(data)
+
+
+def test_from_dict_rejects_missing_id() -> None:
+    data = {k: v for k, v in _base_dict().items() if k != "id"}
+    with pytest.raises(ValueError, match="id"):
+        ChoreConfig.from_dict(data)
+
+
+def test_from_dict_rejects_empty_id() -> None:
+    data = {**_base_dict(), "id": ""}
+    with pytest.raises(ValueError, match="id"):
         ChoreConfig.from_dict(data)
 
 

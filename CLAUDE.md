@@ -10,7 +10,7 @@ A HACS-compatible custom integration that tracks recurring household chores and 
 custom_components/chores/
   __init__.py          # entry setup/teardown, forwards to platforms and services
   const.py             # DOMAIN, CONF_CHORES, INTERVAL_UNITS
-  models.py            # ChoreConfig dataclass (name, interval, last_completed)
+  models.py            # ChoreConfig dataclass (id, name, interval, last_completed)
   coordinator.py       # ChoresCoordinator — runtime state, timers, persistence
   sensor.py            # ChoreSensor entity (one per chore)
   config_flow.py       # UI config flow (single-instance) + options flow (add/remove)

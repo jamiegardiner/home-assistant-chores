@@ -43,6 +43,11 @@ class ChoreConfig:
             raise ValueError(
                 f"Invalid interval_unit {data['interval_unit']!r}; must be one of {INTERVAL_UNITS}"
             )
+        chore_id = data.get("id", "")
+        if not chore_id:
+            raise ValueError(
+                "ChoreConfig missing required field: id (expected a uuid4 hex string)"
+            )
         try:
             last_completed = date.fromisoformat(data["last_completed"])
         except (TypeError, ValueError) as exc:
@@ -50,7 +55,7 @@ class ChoreConfig:
                 f"Invalid last_completed date {data['last_completed']!r}: {exc}"
             ) from exc
         return cls(
-            id=data.get("id", ""),
+            id=chore_id,
             name=data["name"],
             interval_value=interval_value,
             interval_unit=data["interval_unit"],
