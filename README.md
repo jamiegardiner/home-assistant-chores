@@ -52,7 +52,7 @@ All configuration is done through the Home Assistant UI — there is no YAML.
 **To add a chore:**
 
 1. Go to **Settings → Devices & Services → Helpers**
-2. Click **Add helper** and search for **Chores**
+2. Click **Add helper** and search for **Chore**
 3. Enter a name, recurrence interval, and last-completed date
 
 **To edit a chore:**
