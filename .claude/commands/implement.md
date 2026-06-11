@@ -1,3 +1,7 @@
+---
+model: opusplan
+---
+
 Implement the GitHub issue number provided in $ARGUMENTS.
 
 ## Step 1 — Read the issue
