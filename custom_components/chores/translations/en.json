@@ -3,6 +3,7 @@
     "step": {
       "user": {
         "title": "Add a chore",
+        "description": "Create a new chore helper. Each chore becomes a sensor that transitions between done and overdue on the configured interval.",
         "data": {
           "name": "Name",
           "interval_value": "Interval",
