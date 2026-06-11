@@ -1,8 +1,7 @@
 """Sensor platform for the Chores integration.
 
-One sensor entity per configured chore. State is ``done`` or ``overdue``,
-sourced from the coordinator. ``last_completed`` and ``next_due`` are exposed
-as extra state attributes.
+One sensor entity per config entry (each entry represents one chore).
+State is ``done``, ``overdue``, or ``snoozed``, sourced from the coordinator.
 """
 
 from __future__ import annotations
@@ -39,23 +38,17 @@ def _iso(value: date | datetime | None) -> str | None:
     return value
 
 
-# ---------------------------------------------------------------------------
-# Entity service handlers — called once per matched entity by HA's platform
-# machinery, which handles all target resolution (entity, area, device, label).
-# ---------------------------------------------------------------------------
-
-
 async def _handle_complete(entity: ChoreSensor, call: ServiceCall) -> None:
-    await entity.coordinator.async_complete(entity._chore_id)
+    await entity.coordinator.async_complete()
 
 
 async def _handle_snooze(entity: ChoreSensor, call: ServiceCall) -> None:
     snooze_until = _parse_snooze_until(call.data)
-    await entity.coordinator.async_snooze(entity._chore_id, snooze_until)
+    await entity.coordinator.async_snooze(snooze_until)
 
 
 async def _handle_unsnooze(entity: ChoreSensor, call: ServiceCall) -> None:
-    await entity.coordinator.async_unsnooze(entity._chore_id)
+    await entity.coordinator.async_unsnooze()
 
 
 async def async_setup_entry(
@@ -63,11 +56,9 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up Chores sensor platform from a config entry."""
+    """Set up a single ChoreSensor for this config entry."""
     coordinator = entry.runtime_data
-    async_add_entities(
-        ChoreSensor(coordinator, entry, chore_id) for chore_id in coordinator.chore_ids
-    )
+    async_add_entities([ChoreSensor(coordinator, entry)])
 
     platform = async_get_current_platform()
     platform.async_register_entity_service(
@@ -82,46 +73,35 @@ async def async_setup_entry(
 
 
 class ChoreSensor(CoordinatorEntity[ChoresCoordinator], SensorEntity):
-    """Sensor entity representing a single chore.
-
-    State is ``done`` or ``overdue`` as derived by the coordinator.
-    """
+    """Sensor entity representing a single chore (one per config entry)."""
 
     _attr_has_entity_name = True
 
-    def __init__(
-        self,
-        coordinator: ChoresCoordinator,
-        entry: ConfigEntry,
-        chore_id: str,
-    ) -> None:
+    def __init__(self, coordinator: ChoresCoordinator, entry: ConfigEntry) -> None:
         """Initialise the sensor."""
-        super().__init__(coordinator, context=chore_id)
-        self._chore_id = chore_id
-        self._attr_unique_id = f"{entry.entry_id}_{chore_id}"
-        # Capture the chore display name once; it does not change at runtime.
-        state = self._chore_state()
-        self._attr_name = state.get("name", chore_id)
+        super().__init__(coordinator)
+        self._attr_unique_id = entry.entry_id
+
+    @property
+    def name(self) -> str:
+        """Return the chore display name."""
+        return (self.coordinator.data or {}).get("name", "Chore")
 
     @property
     def suggested_object_id(self) -> str:
-        return f"chore_{slugify(self._attr_name)}"
-
-    def _chore_state(self) -> dict[str, Any]:
-        """Return the coordinator's current state dict for this chore."""
-        return self.coordinator.chore_state(self._chore_id)
+        return f"chore_{slugify(self.name)}"
 
     @property
     def native_value(self) -> str:
-        """Return ``done`` or ``overdue``."""
-        return self._chore_state().get("status", "unknown")
+        """Return ``done``, ``overdue``, or ``snoozed``."""
+        return (self.coordinator.data or {}).get("status", "unknown")
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return last_completed, next_due, and snooze_until as ISO strings (or None)."""
-        state = self._chore_state()
+        data = self.coordinator.data or {}
         return {
-            "last_completed": _iso(state.get("last_completed")),
-            "next_due": _iso(state.get("next_due")),
-            "snooze_until": _iso(state.get("snooze_until")),
+            "last_completed": _iso(data.get("last_completed")),
+            "next_due": _iso(data.get("next_due")),
+            "snooze_until": _iso(data.get("snooze_until")),
         }
