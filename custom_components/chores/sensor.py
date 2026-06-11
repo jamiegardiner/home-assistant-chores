@@ -19,7 +19,7 @@ from homeassistant.helpers.entity_platform import (
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
 
-from .const import DOMAIN, STATUS_OPTIONS
+from .const import CHORE_SERVICE_FEATURE, DOMAIN, STATUS_OPTIONS
 from .coordinator import ChoresCoordinator
 from .services import (
     COMPLETE_SCHEMA,
@@ -71,13 +71,22 @@ async def async_setup_entry(
 
     platform = async_get_current_platform()
     platform.async_register_entity_service(
-        SERVICE_COMPLETE, COMPLETE_SCHEMA, _handle_complete, required_features=[1]
+        SERVICE_COMPLETE,
+        COMPLETE_SCHEMA,
+        _handle_complete,
+        required_features=[CHORE_SERVICE_FEATURE],
     )
     platform.async_register_entity_service(
-        SERVICE_SNOOZE, SNOOZE_SCHEMA, _handle_snooze, required_features=[1]
+        SERVICE_SNOOZE,
+        SNOOZE_SCHEMA,
+        _handle_snooze,
+        required_features=[CHORE_SERVICE_FEATURE],
     )
     platform.async_register_entity_service(
-        SERVICE_UNSNOOZE, UNSNOOZE_SCHEMA, _handle_unsnooze, required_features=[1]
+        SERVICE_UNSNOOZE,
+        UNSNOOZE_SCHEMA,
+        _handle_unsnooze,
+        required_features=[CHORE_SERVICE_FEATURE],
     )
 
 
@@ -88,9 +97,7 @@ class ChoreSensor(CoordinatorEntity[ChoresCoordinator], SensorEntity):
     _attr_has_entity_name = True
     _attr_translation_key = "chore"
     _attr_options = STATUS_OPTIONS
-    _attr_supported_features = (
-        1  # sentinel: marks this entity as a valid service target
-    )
+    _attr_supported_features = CHORE_SERVICE_FEATURE
 
     def __init__(self, coordinator: ChoresCoordinator, entry: ConfigEntry) -> None:
         """Initialise the sensor."""
