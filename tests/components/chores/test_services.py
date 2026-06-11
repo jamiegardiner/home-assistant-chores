@@ -27,9 +27,8 @@ def _make_call(data: dict) -> MagicMock:
     return call
 
 
-def _make_entity(chore_id: str) -> MagicMock:
+def _make_entity() -> MagicMock:
     entity = MagicMock()
-    entity._chore_id = chore_id
     entity.coordinator = MagicMock()
     entity.coordinator.async_complete = AsyncMock()
     entity.coordinator.async_snooze = AsyncMock()
@@ -78,35 +77,35 @@ class TestParseSnoozeUntil:
 
 class TestHandleComplete:
     async def test_calls_coordinator_async_complete(self):
-        entity = _make_entity("dishes")
+        entity = _make_entity()
         await _handle_complete(entity, _make_call({}))
-        entity.coordinator.async_complete.assert_called_once_with("dishes")
+        entity.coordinator.async_complete.assert_called_once_with()
 
-    async def test_uses_entity_chore_id(self):
-        entity = _make_entity("vacuum")
+    async def test_complete_second_entity_also_works(self):
+        entity = _make_entity()
         await _handle_complete(entity, _make_call({}))
-        entity.coordinator.async_complete.assert_called_once_with("vacuum")
+        entity.coordinator.async_complete.assert_called_once_with()
 
 
 class TestHandleSnooze:
     async def test_calls_coordinator_async_snooze_with_days(self):
-        entity = _make_entity("dishes")
+        entity = _make_entity()
         today = dt_util.now().date()
         await _handle_snooze(entity, _make_call({"snooze_days": 3}))
         entity.coordinator.async_snooze.assert_called_once_with(
-            "dishes", today + timedelta(days=3)
+            today + timedelta(days=3)
         )
 
     async def test_calls_coordinator_async_snooze_with_weeks(self):
-        entity = _make_entity("vacuum")
+        entity = _make_entity()
         today = dt_util.now().date()
         await _handle_snooze(entity, _make_call({"snooze_weeks": 1}))
         entity.coordinator.async_snooze.assert_called_once_with(
-            "vacuum", today + timedelta(weeks=1)
+            today + timedelta(weeks=1)
         )
 
     async def test_propagates_validation_error(self):
-        entity = _make_entity("dishes")
+        entity = _make_entity()
         with pytest.raises(HomeAssistantError):
             await _handle_snooze(entity, _make_call({}))
         entity.coordinator.async_snooze.assert_not_called()
@@ -114,11 +113,6 @@ class TestHandleSnooze:
 
 class TestHandleUnsnooze:
     async def test_calls_coordinator_async_unsnooze(self):
-        entity = _make_entity("dishes")
+        entity = _make_entity()
         await _handle_unsnooze(entity, _make_call({}))
-        entity.coordinator.async_unsnooze.assert_called_once_with("dishes")
-
-    async def test_uses_entity_chore_id(self):
-        entity = _make_entity("vacuum")
-        await _handle_unsnooze(entity, _make_call({}))
-        entity.coordinator.async_unsnooze.assert_called_once_with("vacuum")
+        entity.coordinator.async_unsnooze.assert_called_once_with()

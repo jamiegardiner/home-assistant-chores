@@ -9,12 +9,12 @@ A HACS-compatible custom integration that tracks recurring household chores and 
 ```
 custom_components/chores/
   __init__.py          # entry setup/teardown, forwards to platforms and services
-  const.py             # DOMAIN, CONF_CHORES, INTERVAL_UNITS
-  models.py            # ChoreConfig dataclass (id, name, interval, last_completed)
+  const.py             # DOMAIN, INTERVAL_UNITS
+  models.py            # ChoreConfig dataclass (name, interval_value, interval_unit)
   coordinator.py       # ChoresCoordinator — runtime state, timers, persistence
-  sensor.py            # ChoreSensor entity (one per chore)
-  config_flow.py       # UI config flow (single-instance) + options flow (add/remove)
-  services.py          # chores.complete service handler
+  sensor.py            # ChoreSensor entity (one per config entry)
+  config_flow.py       # UI config flow (create chore) + options flow (edit chore)
+  services.py          # chores.complete/snooze/unsnooze service handlers
   services.yaml        # service structure for the HA UI (target, fields, selectors)
   strings.json         # translation source (used by tooling/validation)
   translations/
@@ -40,37 +40,54 @@ Makefile               # all common dev tasks (see below)
 
 ## Architecture
 
+### Data model
+
+Each chore is a separate config entry (`integration_type: helper`). All state lives in `entry.options` — there is no separate Store:
+
+```json
+{
+  "name": "Bins",
+  "interval_value": 7,
+  "interval_unit": "weeks",
+  "last_completed": "2026-06-01",
+  "snooze_until": null
+}
+```
+
 ### Data flow
 
 ```
-entry.options (CONF_CHORES list)
+entry.options (one chore per entry)
         │
         ▼
 ChoresCoordinator.async_initialize()
-  ├── loads last_completed overrides from HA Store (survives restarts)
-  ├── builds ChoreRuntime per chore (status, next_due)
-  └── schedules a point-in-time timer per chore at next_due
+  ├── reads last_completed / snooze_until from entry.options
+  ├── builds ChoreRuntime (status, next_due)
+  └── schedules a point-in-time timer at next_due
         │
-        ▼ timer fires / async_complete called
+        ▼ timer fires / service called / options edited
 ChoresCoordinator.async_set_updated_data(snapshot)
         │
         ▼
 ChoreSensor.native_value / extra_state_attributes (pushed by CoordinatorEntity)
 ```
 
+Options updates (from config flow edits) are handled in-place via `async_update_config` — no `async_reload`, no entity teardown.
+
 ### Key types
 
 | Type | File | Purpose |
 |---|---|---|
-| `ChoreConfig` | `models.py` | Immutable config parsed from the config entry |
-| `ChoreRuntime` | `coordinator.py` | Mutable runtime state: status, next_due, timer cancel fn |
-| `ChoresCoordinator` | `coordinator.py` | Owns all chores, pushes updates to sensors |
+| `ChoreConfig` | `models.py` | Immutable config: name, interval (no id, no last_completed) |
+| `ChoreRuntime` | `coordinator.py` | Mutable runtime state: status, next_due, timer cancel fns |
+| `ChoresCoordinator` | `coordinator.py` | Owns one chore, pushes updates to the sensor |
 | `ChoreSensor` | `sensor.py` | `CoordinatorEntity` — reads from coordinator snapshot |
 
 ### Status transitions
 
 - **`done` → `overdue`**: HA point-in-time timer fires at `next_due` (start of local day of `last_completed + interval`)
-- **`overdue` → `done`**: `chores.complete` service call resets `last_completed` to today, recomputes `next_due`, schedules new timer
+- **`overdue` → `done`**: `chores.complete` service call resets `last_completed` to today, persists to `entry.options`, recomputes `next_due`, schedules new timer
+- **`snoozed`**: any state can be snoozed; `chores.snooze` sets `snooze_until` in `entry.options`; a snooze-expiry timer fires at that date
 
 ---
 
@@ -115,13 +132,12 @@ Services are entity services — HA handles all target resolution (entity, area,
 ### 3. New platform (e.g. `button`, `select`)
 1. Add `Platform.BUTTON` (etc.) to `PLATFORMS` in `__init__.py`.
 2. Create `custom_components/chores/<platform>.py` implementing `async_setup_entry` and the entity class.
-3. The entity should be a `CoordinatorEntity` and read state via `coordinator.chore_state(chore_id)`.
+3. The entity should be a `CoordinatorEntity` and read state from `coordinator.data` (flat dict).
 
 ### 4. New config option
-1. Add the constant to `const.py`.
-2. Add the field to `ChoreConfig` in `models.py` (update `to_dict` / `from_dict`).
-3. Add the form field to `config_flow.py:async_step_add`.
-4. Add the label to both `strings.json` and `translations/en.json` under `options.step.add.data`.
+1. Add the field to `ChoreConfig` in `models.py` (update `from_dict`).
+2. Add the form field to `config_flow.py:_chore_schema()` (used by both user and options flow).
+3. Add the label to both `strings.json` and `translations/en.json` under both `config.step.user.data` and `options.step.init.data`.
 
 ### 5. Strings / translations
 Every user-visible string must exist in **both** files:
@@ -143,7 +159,7 @@ They must be kept in sync. If you add to one, add to the other.
       pass
   ```
 - Use `MockConfigEntry` from `pytest_homeassistant_custom_component.common` to set up config entries in tests without going through the UI flow.
-- Coordinator tests patch `Store.async_load` and `Store.async_save` to avoid touching the filesystem.
+- Coordinator tests must call `entry.add_to_hass(hass)` so that `hass.config_entries.async_update_entry` works; no Store patching needed (state lives in `entry.options`).
 
 ---
 
@@ -164,8 +180,8 @@ All feature and fix work goes through GitHub Issues:
 
 ## Constraints
 
-- Single-instance integration — only one Chores config entry is allowed. Enforced by HA via `"single_config_entry": true` in `manifest.json` (not a manual config-flow check).
-- No YAML configuration — all setup is through the UI options flow.
-- The chore list (`CONF_CHORES`) is stored in `entry.options`, not `entry.data`. The options flow returns the new options dict via `async_create_entry(data={CONF_CHORES: ...})` (HA persists it to `entry.options` and fans out to update listeners) — it must not mutate `entry.data` mid-flow.
+- Each chore is a separate config entry — multiple entries are allowed. **Adding a chore** = "Add Integration → Chores". **Removing a chore** = delete that config entry.
+- No YAML configuration — all setup is through the UI.
+- All chore state (`last_completed`, `snooze_until`) lives in `entry.options`, not in a separate Store. The update listener calls `coordinator.async_update_config` (never `async_reload`) so edits are applied in-place without entity teardown.
 - Python `>=3.14.2` (matches Home Assistant's own requirement).
-- `integration_type: hub` in `manifest.json` — must not be changed to `helper` or the integration appears in the wrong section of the HA UI.
+- `integration_type: helper` in `manifest.json` — chores appear in the Helpers panel alongside counters and input helpers.

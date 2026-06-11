@@ -2,44 +2,33 @@
   "config": {
     "step": {
       "user": {
-        "title": "Chores",
-        "description": "Set up chore tracking. Only one Chores entry is allowed."
-      }
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "title": "Manage chores",
-        "menu_options": {
-          "add": "Add a chore",
-          "remove": "Remove a chore"
-        }
-      },
-      "add": {
         "title": "Add a chore",
+        "description": "Create a new chore helper. Each chore becomes a sensor that transitions between done and overdue on the configured interval.",
         "data": {
           "name": "Name",
           "interval_value": "Interval",
           "interval_unit": "Interval unit",
           "last_completed": "Last completed date"
         }
-      },
-      "remove": {
-        "title": "Remove a chore",
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Edit chore",
         "data": {
-          "chore": "Chore"
+          "name": "Name",
+          "interval_value": "Interval",
+          "interval_unit": "Interval unit",
+          "last_completed": "Last completed date"
         }
       }
     },
     "error": {
       "name_required": "Name cannot be empty.",
-      "duplicate_name": "A chore with this name already exists.",
       "invalid_interval": "Interval must be a positive number.",
       "invalid_date": "Date must be in YYYY-MM-DD format."
-    },
-    "abort": {
-      "no_chores": "No chores have been added yet."
     }
   },
   "services": {

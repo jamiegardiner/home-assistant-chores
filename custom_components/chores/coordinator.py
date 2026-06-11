@@ -1,7 +1,7 @@
 """Coordinator for the Chores integration.
 
-Holds and persists per-chore runtime state, derives status/next_due,
-schedules overdue-transition timers, and exposes async_complete and async_snooze.
+Manages the runtime state for a single chore, derives status/next_due,
+schedules overdue-transition timers, and persists state to entry.options.
 """
 
 from __future__ import annotations
@@ -16,21 +16,13 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.event import async_track_point_in_time
-from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
-from .const import CONF_CHORES, DOMAIN
+from .const import DOMAIN
 from .models import ChoreConfig
 
 _LOGGER = logging.getLogger(__name__)
-
-STORAGE_VERSION = 1
-
-
-def storage_key(entry_id: str) -> str:
-    """Return the Store key for a given config entry ID."""
-    return f"{DOMAIN}.{entry_id}"
 
 
 def _interval_to_timedelta(config: ChoreConfig) -> timedelta:
@@ -43,9 +35,8 @@ def _interval_to_timedelta(config: ChoreConfig) -> timedelta:
 
 @dataclass
 class ChoreRuntime:
-    """Runtime state for a single chore."""
+    """Runtime state for the single chore managed by this coordinator."""
 
-    chore_id: str
     config: ChoreConfig
     last_completed: date
     status: str = "done"
@@ -56,7 +47,7 @@ class ChoreRuntime:
 
 
 class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
-    """Coordinator that manages chore state and timers."""
+    """Coordinator that manages a single chore's state and timers."""
 
     def __init__(self, hass: HomeAssistant, entry: ChoresConfigEntry) -> None:
         """Initialize the coordinator."""
@@ -67,116 +58,86 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             config_entry=entry,
             update_interval=None,
         )
-        self.store: Store = Store(hass, STORAGE_VERSION, storage_key(entry.entry_id))
-        self._chores: dict[str, ChoreRuntime] = {}
+        self._runtime: ChoreRuntime | None = None
 
     async def async_initialize(self) -> None:
-        """Load chores from config entry, hydrate from store, compute state."""
-        stored: dict[str, Any] = await self.store.async_load() or {}
-
+        """Load chore from entry.options and schedule timers."""
         assert self.config_entry is not None
-        chore_dicts: list[dict[str, Any]] = self.config_entry.options.get(
-            CONF_CHORES, []
-        )
-
-        self._chores = {}
-
-        for chore_dict in chore_dicts:
-            config = ChoreConfig.from_dict(chore_dict)
-            chore_id = config.id
-
-            stored_data = stored.get(chore_id)
-            if isinstance(stored_data, dict):
-                stored_last = stored_data.get("last_completed")
-                stored_snooze = stored_data.get("snooze_until")
-            else:
-                stored_last = None
-                stored_snooze = None
-
-            if stored_last:
-                try:
-                    last_completed = date.fromisoformat(stored_last)
-                except ValueError:
-                    last_completed = config.last_completed
-            else:
-                last_completed = config.last_completed
-
-            # Only restore snooze if it hasn't already expired
-            snooze_until: date | None = None
-            if stored_snooze:
-                try:
-                    candidate = date.fromisoformat(stored_snooze)
-                    if dt_util.now() < dt_util.start_of_local_day(candidate):
-                        snooze_until = candidate
-                except ValueError:
-                    pass
-
-            rt = ChoreRuntime(
-                chore_id=chore_id,
-                config=config,
-                last_completed=last_completed,
-                snooze_until=snooze_until,
-            )
-            self._chores[chore_id] = rt
-            self._recompute(rt)
-
-            if rt.status == "snoozed":
-                self._schedule_snooze(rt)
-            else:
-                self._schedule(rt)
-
-        # Prune stale store keys left behind by removed chores
-        current_ids = set(self._chores.keys())
-        if set(stored.keys()) - current_ids:
-            await self._persist()
-
+        opts = dict(self.config_entry.options)
+        self._runtime = self._build_runtime(opts)
+        self._schedule_timers()
         self.async_set_updated_data(self._snapshot())
 
+    async def async_update_config(self, new_options: dict[str, Any]) -> None:
+        """Reconcile runtime state from new options. Called by the update listener."""
+        assert self._runtime is not None
+        rt = self._runtime
+        self._cancel_timers(rt)
+        rt.config = ChoreConfig.from_dict(new_options)
+        rt.last_completed = (
+            _parse_date(new_options.get("last_completed")) or rt.last_completed
+        )
+        rt.snooze_until = _parse_snooze(new_options.get("snooze_until"))
+        self._recompute(rt)
+        self._schedule_timers()
+        self.async_set_updated_data(self._snapshot())
+
+    def _build_runtime(self, opts: dict[str, Any]) -> ChoreRuntime:
+        """Construct a ChoreRuntime from an options dict."""
+        config = ChoreConfig.from_dict(opts)
+        last_completed = _parse_date(opts.get("last_completed")) or dt_util.now().date()
+        snooze_until = _parse_snooze(opts.get("snooze_until"))
+        rt = ChoreRuntime(
+            config=config, last_completed=last_completed, snooze_until=snooze_until
+        )
+        self._recompute(rt)
+        return rt
+
     def _recompute(self, rt: ChoreRuntime) -> None:
-        """Recompute status and next_due for a chore runtime."""
+        """Recompute status and next_due."""
         delta = _interval_to_timedelta(rt.config)
-        # next_due is the local start-of-day of (last_completed + interval)
-        due_date = rt.last_completed + delta
-        rt.next_due = dt_util.start_of_local_day(due_date)
+        rt.next_due = dt_util.start_of_local_day(rt.last_completed + delta)
         now = dt_util.now()
 
-        if rt.snooze_until is not None:
-            snooze_dt = dt_util.start_of_local_day(rt.snooze_until)
-            if now < snooze_dt:
-                rt.status = "snoozed"
-                return
+        if rt.snooze_until is not None and now < dt_util.start_of_local_day(
+            rt.snooze_until
+        ):
+            rt.status = "snoozed"
+            return
 
         rt.status = "overdue" if now >= rt.next_due else "done"
 
+    def _schedule_timers(self) -> None:
+        """Schedule overdue and/or snooze timer based on current runtime state."""
+        assert self._runtime is not None
+        rt = self._runtime
+        if rt.status == "snoozed":
+            self._schedule_snooze(rt)
+        else:
+            self._schedule(rt)
+
     def _schedule(self, rt: ChoreRuntime) -> None:
         """Schedule a timer to fire the overdue transition at next_due."""
-        # Cancel any existing overdue timer for this chore
         if rt._cancel_timer is not None:
             rt._cancel_timer()
             rt._cancel_timer = None
 
-        now = dt_util.now()
-        if rt.next_due <= now:
-            # Already overdue; no future timer needed
+        if rt.next_due <= dt_util.now():
             return
-
-        chore_id = rt.chore_id
 
         @callback
         def _overdue_callback(_now: datetime) -> None:
-            """Fire when the chore becomes overdue."""
-            if chore_id not in self._chores:
+            if self._runtime is None:
                 return
-            runtime = self._chores[chore_id]
-            self._recompute(runtime)
+            self._recompute(self._runtime)
             self.async_set_updated_data(self._snapshot())
 
-        cancel = async_track_point_in_time(self.hass, _overdue_callback, rt.next_due)
-        rt._cancel_timer = cancel
+        rt._cancel_timer = async_track_point_in_time(
+            self.hass, _overdue_callback, rt.next_due
+        )
 
     def _schedule_snooze(self, rt: ChoreRuntime) -> None:
         """Schedule a snooze-expiry timer at snooze_until."""
-        # Cancel any existing snooze timer
         if rt._cancel_snooze_timer is not None:
             rt._cancel_snooze_timer()
             rt._cancel_snooze_timer = None
@@ -185,38 +146,44 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return
 
         snooze_dt = dt_util.start_of_local_day(rt.snooze_until)
-        now = dt_util.now()
-        if snooze_dt <= now:
+        if snooze_dt <= dt_util.now():
             return
-
-        chore_id = rt.chore_id
 
         @callback
         def _snooze_expiry_callback(_now: datetime) -> None:
-            """Fire when the snooze period ends."""
-            if chore_id not in self._chores:
+            if self._runtime is None:
                 return
-            runtime = self._chores[chore_id]
-            runtime.snooze_until = None
-            runtime._cancel_snooze_timer = None
-            self._recompute(runtime)
-            self._schedule(runtime)
+            self._runtime.snooze_until = None
+            self._runtime._cancel_snooze_timer = None
+            self._recompute(self._runtime)
+            self._schedule(self._runtime)
             self.async_set_updated_data(self._snapshot())
 
-        cancel = async_track_point_in_time(
+        rt._cancel_snooze_timer = async_track_point_in_time(
             self.hass, _snooze_expiry_callback, snooze_dt
         )
-        rt._cancel_snooze_timer = cancel
 
-    async def async_complete(self, chore_id: str) -> None:
-        """Mark a chore as completed now, recompute state, and persist."""
-        if chore_id not in self._chores:
-            _LOGGER.warning("async_complete called for unknown chore_id: %s", chore_id)
-            return
+    @callback
+    def _cancel_timers(self, rt: ChoreRuntime) -> None:
+        """Cancel all timers on a runtime."""
+        if rt._cancel_timer is not None:
+            rt._cancel_timer()
+            rt._cancel_timer = None
+        if rt._cancel_snooze_timer is not None:
+            rt._cancel_snooze_timer()
+            rt._cancel_snooze_timer = None
 
-        rt = self._chores[chore_id]
+    def _persist(self, fields: dict[str, Any]) -> None:
+        """Write updated runtime fields back to entry.options for persistence."""
+        assert self.config_entry is not None
+        new_opts = {**self.config_entry.options, **fields}
+        self.hass.config_entries.async_update_entry(self.config_entry, options=new_opts)
 
-        # Clear any active snooze
+    async def async_complete(self) -> None:
+        """Mark the chore as completed now, recompute state, and persist."""
+        assert self._runtime is not None
+        rt = self._runtime
+
         if rt.snooze_until is not None:
             if rt._cancel_snooze_timer is not None:
                 rt._cancel_snooze_timer()
@@ -226,18 +193,37 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         rt.last_completed = dt_util.now().date()
         self._recompute(rt)
         self._schedule(rt)
-        await self._persist()
+        self._persist(
+            {"last_completed": rt.last_completed.isoformat(), "snooze_until": None}
+        )
         self.async_set_updated_data(self._snapshot())
 
-    async def async_unsnooze(self, chore_id: str) -> None:
-        """Cancel an active snooze, returning the chore to done or overdue."""
-        if chore_id not in self._chores:
-            _LOGGER.warning("async_unsnooze called for unknown chore_id: %s", chore_id)
-            return
+    async def async_snooze(self, snooze_until: date) -> None:
+        """Snooze the chore until snooze_until."""
+        assert self._runtime is not None
+        if snooze_until <= dt_util.now().date():
+            raise HomeAssistantError(
+                f"snooze_until must be a future date, got {snooze_until}"
+            )
 
-        rt = self._chores[chore_id]
+        rt = self._runtime
+        rt.snooze_until = snooze_until
+
+        if rt._cancel_timer is not None:
+            rt._cancel_timer()
+            rt._cancel_timer = None
+
+        self._schedule_snooze(rt)
+        rt.status = "snoozed"
+        self._persist({"snooze_until": snooze_until.isoformat()})
+        self.async_set_updated_data(self._snapshot())
+
+    async def async_unsnooze(self) -> None:
+        """Cancel an active snooze, returning the chore to done or overdue."""
+        assert self._runtime is not None
+        rt = self._runtime
         if rt.snooze_until is None:
-            return  # no-op
+            return
 
         if rt._cancel_snooze_timer is not None:
             rt._cancel_snooze_timer()
@@ -245,63 +231,20 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         rt.snooze_until = None
         self._recompute(rt)
         self._schedule(rt)
-        await self._persist()
+        self._persist({"snooze_until": None})
         self.async_set_updated_data(self._snapshot())
-
-    async def async_snooze(self, chore_id: str, snooze_until: date) -> None:
-        """Snooze a chore until snooze_until, suppressing overdue transitions."""
-        if chore_id not in self._chores:
-            _LOGGER.warning("async_snooze called for unknown chore_id: %s", chore_id)
-            return
-
-        if snooze_until <= dt_util.now().date():
-            raise HomeAssistantError(
-                f"snooze_until must be a future date, got {snooze_until}"
-            )
-
-        rt = self._chores[chore_id]
-        rt.snooze_until = snooze_until
-
-        # Cancel the overdue timer — the snooze timer takes over
-        if rt._cancel_timer is not None:
-            rt._cancel_timer()
-            rt._cancel_timer = None
-
-        self._schedule_snooze(rt)
-        rt.status = "snoozed"
-
-        await self._persist()
-        self.async_set_updated_data(self._snapshot())
-
-    async def _persist(self) -> None:
-        """Persist last_completed and snooze_until for all chores to the store."""
-        payload = {
-            chore_id: {
-                "last_completed": rt.last_completed.isoformat(),
-                "snooze_until": rt.snooze_until.isoformat()
-                if rt.snooze_until
-                else None,
-            }
-            for chore_id, rt in self._chores.items()
-        }
-        await self.store.async_save(payload)
 
     @callback
     def async_shutdown_timers(self) -> None:
         """Cancel all scheduled timers. Called on entry unload."""
-        for rt in self._chores.values():
-            if rt._cancel_timer is not None:
-                rt._cancel_timer()
-                rt._cancel_timer = None
-            if rt._cancel_snooze_timer is not None:
-                rt._cancel_snooze_timer()
-                rt._cancel_snooze_timer = None
+        if self._runtime is not None:
+            self._cancel_timers(self._runtime)
 
-    @staticmethod
-    def _chore_dict(rt: ChoreRuntime) -> dict[str, Any]:
-        """Return the state dict for a single chore runtime."""
+    def _snapshot(self) -> dict[str, Any]:
+        """Return a snapshot of current chore state (consumed by sensor platform)."""
+        assert self._runtime is not None
+        rt = self._runtime
         return {
-            "chore_id": rt.chore_id,
             "name": rt.config.name,
             "last_completed": rt.last_completed,
             "status": rt.status,
@@ -309,32 +252,25 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "snooze_until": rt.snooze_until,
         }
 
-    def _snapshot(self) -> dict[str, Any]:
-        """Return a snapshot of current chore state (consumed by sensor platform)."""
-        return {chore_id: self._chore_dict(rt) for chore_id, rt in self._chores.items()}
 
-    @property
-    def chore_ids(self) -> list[str]:
-        """Return all chore ids."""
-        return list(self._chores.keys())
+def _parse_date(value: str | None) -> date | None:
+    """Parse an ISO date string; return None on missing or invalid input."""
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except TypeError, ValueError:
+        return None
 
-    def chore_state(self, chore_id: str) -> dict[str, Any]:
-        """Return the current snapshot state dict for a single chore.
 
-        Consumed by the sensor platform. Keys: ``chore_id``, ``name``,
-        ``last_completed``, ``status``, ``next_due``, ``snooze_until``.
-        """
-        data: dict[str, Any] = self.data or {}
-        if chore_id in data:
-            return data[chore_id]
-        rt = self._chores.get(chore_id)
-        if rt is None:
-            return {}
-        return self._chore_dict(rt)
-
-    def get_chore_runtime(self, chore_id: str) -> ChoreRuntime | None:
-        """Return the runtime for a given chore_id."""
-        return self._chores.get(chore_id)
+def _parse_snooze(value: str | None) -> date | None:
+    """Parse a snooze_until ISO string and discard if already expired."""
+    candidate = _parse_date(value)
+    if candidate is None:
+        return None
+    if dt_util.now() >= dt_util.start_of_local_day(candidate):
+        return None
+    return candidate
 
 
 type ChoresConfigEntry = ConfigEntry[ChoresCoordinator]
