@@ -3,12 +3,16 @@ complete:
     entity:
       integration: chores
       domain: sensor
+      supported_features:
+        - 1
 
 snooze:
   target:
     entity:
       integration: chores
       domain: sensor
+      supported_features:
+        - 1
   fields:
     snooze_days:
       required: false
@@ -34,3 +38,5 @@ unsnooze:
     entity:
       integration: chores
       domain: sensor
+      supported_features:
+        - 1
