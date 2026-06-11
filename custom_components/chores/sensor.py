@@ -71,13 +71,13 @@ async def async_setup_entry(
 
     platform = async_get_current_platform()
     platform.async_register_entity_service(
-        SERVICE_COMPLETE, COMPLETE_SCHEMA, _handle_complete
+        SERVICE_COMPLETE, COMPLETE_SCHEMA, _handle_complete, required_features=[1]
     )
     platform.async_register_entity_service(
-        SERVICE_SNOOZE, SNOOZE_SCHEMA, _handle_snooze
+        SERVICE_SNOOZE, SNOOZE_SCHEMA, _handle_snooze, required_features=[1]
     )
     platform.async_register_entity_service(
-        SERVICE_UNSNOOZE, UNSNOOZE_SCHEMA, _handle_unsnooze
+        SERVICE_UNSNOOZE, UNSNOOZE_SCHEMA, _handle_unsnooze, required_features=[1]
     )
 
 
@@ -88,6 +88,9 @@ class ChoreSensor(CoordinatorEntity[ChoresCoordinator], SensorEntity):
     _attr_has_entity_name = True
     _attr_translation_key = "chore"
     _attr_options = STATUS_OPTIONS
+    _attr_supported_features = (
+        1  # sentinel: marks this entity as a valid service target
+    )
 
     def __init__(self, coordinator: ChoresCoordinator, entry: ConfigEntry) -> None:
         """Initialise the sensor."""
