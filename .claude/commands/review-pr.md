@@ -1,3 +1,7 @@
+---
+model: opus
+---
+
 Review the pull request number provided in $ARGUMENTS.
 
 ## Step 1 — Fetch the PR

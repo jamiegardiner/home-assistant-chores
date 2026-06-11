@@ -1,3 +1,7 @@
+---
+model: opus
+---
+
 Create a new GitHub issue from the task description in $ARGUMENTS.
 
 ## Step 1 — Gather requirements
