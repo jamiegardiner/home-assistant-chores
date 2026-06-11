@@ -51,15 +51,22 @@ All configuration is done through the Home Assistant UI — there is no YAML.
 
 **To add a chore:**
 
-1. Go to **Settings → Devices & Services**
-2. Find the **Chores** integration and click **Configure**
-3. Choose **Add chore**
-4. Enter a name and a recurrence interval (number + unit: days, weeks, or months)
+1. Go to **Settings → Devices & Services → Helpers**
+2. Click **Add helper** and search for **Chores**
+3. Enter a name, recurrence interval, and last-completed date
+
+**To edit a chore:**
+
+1. Go to **Settings → Devices & Services → Helpers**
+2. Find the chore and click **Configure**
+3. Update the name, interval, or last-completed date
 
 **To remove a chore:**
 
-1. Go to **Settings → Devices & Services → Chores → Configure**
-2. Choose **Remove chore** and select the chore to delete
+1. Go to **Settings → Devices & Services → Helpers**
+2. Find the chore, click the three-dot menu (⋮), and choose **Delete**
+
+Removing a chore's config entry removes just that chore — all other chores are unaffected.
 
 ---
 
