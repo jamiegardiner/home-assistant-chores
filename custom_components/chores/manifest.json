@@ -1,6 +1,6 @@
 {
   "domain": "chores",
-  "name": "Chores",
+  "name": "Chore",
   "codeowners": ["@jamiegardiner"],
   "config_flow": true,
   "dependencies": [],
