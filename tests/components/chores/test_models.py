@@ -1,78 +1,75 @@
-"""Tests for the ChoreConfig model."""
+"""Tests for ChoreConfig model."""
 
 from __future__ import annotations
 
-from datetime import date
-from typing import Any
-
 import pytest
 
-from custom_components.chores.const import CONF_CHORES, DOMAIN, INTERVAL_UNITS
+from custom_components.chores.const import DOMAIN, INTERVAL_UNITS
 from custom_components.chores.models import ChoreConfig
 
 
-def test_choreconfig_round_trip() -> None:
-    c = ChoreConfig(
-        id="a" * 32,
-        name="Bins",
-        interval_value=2,
-        interval_unit="weeks",
-        last_completed=date(2026, 6, 1),
+def test_from_dict_valid() -> None:
+    config = ChoreConfig.from_dict(
+        {"name": "Bins", "interval_value": 7, "interval_unit": "days"}
     )
-    assert ChoreConfig.from_dict(c.to_dict()) == c
+    assert config.name == "Bins"
+    assert config.interval_value == 7
+    assert config.interval_unit == "days"
 
 
-def test_to_dict_serializes_date_as_iso() -> None:
-    c = ChoreConfig(
-        name="Bins",
-        interval_value=2,
-        interval_unit="weeks",
-        last_completed=date(2026, 6, 1),
+def test_from_dict_weeks() -> None:
+    config = ChoreConfig.from_dict(
+        {"name": "Vacuum", "interval_value": 2, "interval_unit": "weeks"}
     )
-    assert c.to_dict()["last_completed"] == "2026-06-01"
+    assert config.interval_unit == "weeks"
 
 
-def _base_dict() -> dict[str, Any]:
-    return {
-        "id": "a" * 32,
-        "name": "Bins",
-        "interval_value": 2,
-        "interval_unit": "weeks",
-        "last_completed": "2026-06-01",
-    }
+def test_from_dict_missing_key_raises() -> None:
+    with pytest.raises(ValueError, match="missing required keys"):
+        ChoreConfig.from_dict({"name": "Bins", "interval_value": 7})
 
 
-def test_from_dict_rejects_zero_interval_value() -> None:
-    data = {**_base_dict(), "interval_value": 0}
-    with pytest.raises(ValueError, match="interval_value"):
-        ChoreConfig.from_dict(data)
+def test_from_dict_zero_interval_raises() -> None:
+    with pytest.raises(ValueError, match="Invalid interval_value"):
+        ChoreConfig.from_dict(
+            {"name": "Bins", "interval_value": 0, "interval_unit": "days"}
+        )
 
 
-def test_from_dict_rejects_negative_interval_value() -> None:
-    data = {**_base_dict(), "interval_value": -1}
-    with pytest.raises(ValueError, match="interval_value"):
-        ChoreConfig.from_dict(data)
+def test_from_dict_negative_interval_raises() -> None:
+    with pytest.raises(ValueError, match="Invalid interval_value"):
+        ChoreConfig.from_dict(
+            {"name": "Bins", "interval_value": -1, "interval_unit": "days"}
+        )
 
 
-def test_from_dict_rejects_non_integer_interval_value() -> None:
-    data = {**_base_dict(), "interval_value": "two"}
-    with pytest.raises(ValueError, match="interval_value"):
-        ChoreConfig.from_dict(data)
+def test_from_dict_bool_interval_raises() -> None:
+    with pytest.raises(ValueError, match="Invalid interval_value"):
+        ChoreConfig.from_dict(
+            {"name": "Bins", "interval_value": True, "interval_unit": "days"}
+        )
 
 
-def test_from_dict_rejects_missing_id() -> None:
-    data = {k: v for k, v in _base_dict().items() if k != "id"}
-    with pytest.raises(ValueError, match="id"):
-        ChoreConfig.from_dict(data)
+def test_from_dict_invalid_unit_raises() -> None:
+    with pytest.raises(ValueError, match="Invalid interval_unit"):
+        ChoreConfig.from_dict(
+            {"name": "Bins", "interval_value": 1, "interval_unit": "months"}
+        )
 
 
-def test_from_dict_rejects_empty_id() -> None:
-    data = {**_base_dict(), "id": ""}
-    with pytest.raises(ValueError, match="id"):
-        ChoreConfig.from_dict(data)
+def test_from_dict_ignores_extra_keys() -> None:
+    config = ChoreConfig.from_dict(
+        {
+            "name": "Bins",
+            "interval_value": 7,
+            "interval_unit": "days",
+            "last_completed": "2026-06-01",
+            "snooze_until": None,
+        }
+    )
+    assert config.name == "Bins"
 
 
 def test_const_values() -> None:
     assert DOMAIN == "chores"
-    assert CONF_CHORES == "chores"
     assert set(INTERVAL_UNITS) == {"days", "weeks"}

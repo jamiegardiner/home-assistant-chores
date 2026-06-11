@@ -3,45 +3,35 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import ClassVar
 from unittest.mock import MagicMock, patch
 
 # ---------------------------------------------------------------------------
-# Fake coordinator
+# Fake coordinator — single-chore flat-dict model
 # ---------------------------------------------------------------------------
 
-CHORE_A_ID = "chore_dishes"
-CHORE_B_ID = "chore_vacuum"
-
-CHORE_A_STATE = {
+CHORE_STATE = {
     "name": "Dishes",
     "status": "overdue",
     "last_completed": date(2026, 6, 1),
     "next_due": date(2026, 6, 8),
+    "snooze_until": None,
 }
 
-CHORE_B_STATE = {
+CHORE_STATE_B = {
     "name": "Vacuum",
     "status": "done",
     "last_completed": date(2026, 6, 5),
     "next_due": date(2026, 6, 12),
+    "snooze_until": None,
 }
 
 
 class FakeCoordinator:
-    """Minimal coordinator stub duck-typed against ChoresCoordinator's public surface."""
+    """Minimal coordinator stub duck-typed against the new single-chore API."""
 
-    chore_ids: ClassVar[list[str]] = [CHORE_A_ID, CHORE_B_ID]
+    def __init__(self, state: dict | None = None):
+        self.data = state if state is not None else dict(CHORE_STATE)
 
-    _states: ClassVar[dict] = {
-        CHORE_A_ID: CHORE_A_STATE,
-        CHORE_B_ID: CHORE_B_STATE,
-    }
-
-    def chore_state(self, chore_id: str) -> dict:
-        return self._states[chore_id]
-
-    # CoordinatorEntity calls these; provide stubs so the entity can initialise.
     def async_add_listener(self, *_args, **_kwargs):
         return lambda: None
 
@@ -60,7 +50,7 @@ def _make_entry(entry_id: str = "test_entry_id") -> MagicMock:
     return entry
 
 
-def _make_sensor(chore_id: str, coordinator=None, entry=None):  # -> ChoreSensor
+def _make_sensor(coordinator=None, entry=None):
     """Build a ChoreSensor without going through async_setup_entry."""
     from custom_components.chores.sensor import ChoreSensor
 
@@ -68,7 +58,7 @@ def _make_sensor(chore_id: str, coordinator=None, entry=None):  # -> ChoreSensor
         coordinator = FakeCoordinator()
     if entry is None:
         entry = _make_entry()
-    return ChoreSensor(coordinator, entry, chore_id)
+    return ChoreSensor(coordinator, entry)
 
 
 # ---------------------------------------------------------------------------
@@ -79,8 +69,8 @@ def _make_sensor(chore_id: str, coordinator=None, entry=None):  # -> ChoreSensor
 class TestAsyncSetupEntry:
     """Tests for async_setup_entry."""
 
-    async def test_one_sensor_per_chore(self):
-        """async_setup_entry must add exactly one entity per chore_id."""
+    async def test_one_sensor_per_entry(self):
+        """async_setup_entry must add exactly one entity per config entry."""
         from custom_components.chores.sensor import async_setup_entry
 
         coordinator = FakeCoordinator()
@@ -88,17 +78,15 @@ class TestAsyncSetupEntry:
         entry.runtime_data = coordinator
 
         hass = MagicMock()
-
         added: list = []
 
-        # async_add_entities is called synchronously with a generator in our impl.
         def sync_add(entities, **_kwargs):
             added.extend(list(entities))
 
         with patch("custom_components.chores.sensor.async_get_current_platform"):
             await async_setup_entry(hass, entry, sync_add)
 
-        assert len(added) == 2  # one per chore_id in FakeCoordinator.chore_ids
+        assert len(added) == 1
 
     async def test_setup_entry_reads_coordinator_from_runtime_data(self):
         """Coordinator is read from entry.runtime_data."""
@@ -109,7 +97,6 @@ class TestAsyncSetupEntry:
         entry.runtime_data = coordinator
 
         hass = MagicMock()
-
         added: list = []
 
         def sync_add(entities, **_kwargs):
@@ -117,105 +104,88 @@ class TestAsyncSetupEntry:
 
         with patch("custom_components.chores.sensor.async_get_current_platform"):
             await async_setup_entry(hass, entry, sync_add)
-        assert len(added) == 2
+
+        assert len(added) == 1
 
 
 class TestChoreSensorState:
     """Tests for ChoreSensor.native_value."""
 
     def test_state_overdue(self):
-        sensor = _make_sensor(CHORE_A_ID)
+        sensor = _make_sensor()
         assert sensor.native_value == "overdue"
 
     def test_state_done(self):
-        sensor = _make_sensor(CHORE_B_ID)
+        sensor = _make_sensor(coordinator=FakeCoordinator(dict(CHORE_STATE_B)))
         assert sensor.native_value == "done"
+
+
+class TestChoreSensorName:
+    """Tests for ChoreSensor.name."""
+
+    def test_name_from_coordinator_data(self):
+        sensor = _make_sensor()
+        assert sensor.name == "Dishes"
+
+    def test_name_updates_when_data_changes(self):
+        coordinator = FakeCoordinator()
+        sensor = _make_sensor(coordinator=coordinator)
+        coordinator.data = {**CHORE_STATE, "name": "Plates"}
+        assert sensor.name == "Plates"
 
 
 class TestChoreSensorAttributes:
     """Tests for ChoreSensor.extra_state_attributes."""
 
     def test_attributes_last_completed_iso(self):
-        sensor = _make_sensor(CHORE_A_ID)
-        attrs = sensor.extra_state_attributes
-        assert attrs["last_completed"] == "2026-06-01"
+        sensor = _make_sensor()
+        assert sensor.extra_state_attributes["last_completed"] == "2026-06-01"
 
     def test_attributes_next_due_iso(self):
-        sensor = _make_sensor(CHORE_A_ID)
-        attrs = sensor.extra_state_attributes
-        assert attrs["next_due"] == "2026-06-08"
+        sensor = _make_sensor()
+        assert sensor.extra_state_attributes["next_due"] == "2026-06-08"
+
+    def test_attributes_none_snooze_until(self):
+        sensor = _make_sensor()
+        assert sensor.extra_state_attributes["snooze_until"] is None
 
     def test_attributes_none_last_completed(self):
-        """Never-completed chore: last_completed=None passes through as None."""
-
-        class NeverCompletedCoordinator(FakeCoordinator):
-            def chore_state(self, chore_id):
-                state = dict(super().chore_state(chore_id))
-                state["last_completed"] = None
-                return state
-
-        sensor = _make_sensor(CHORE_A_ID, coordinator=NeverCompletedCoordinator())
+        coordinator = FakeCoordinator({**CHORE_STATE, "last_completed": None})
+        sensor = _make_sensor(coordinator=coordinator)
         assert sensor.extra_state_attributes["last_completed"] is None
-
-    def test_attributes_none_next_due(self):
-        """next_due may be None (no schedule configured)."""
-
-        class NoNextDueCoordinator(FakeCoordinator):
-            def chore_state(self, chore_id):
-                state = dict(super().chore_state(chore_id))
-                state["next_due"] = None
-                return state
-
-        sensor = _make_sensor(CHORE_A_ID, coordinator=NoNextDueCoordinator())
-        assert sensor.extra_state_attributes["next_due"] is None
 
 
 class TestChoreSensorUniqueId:
-    """Tests for stable unique_id."""
+    """Tests for stable unique_id (= entry.entry_id)."""
 
-    def test_unique_id_format(self):
+    def test_unique_id_equals_entry_id(self):
         entry = _make_entry(entry_id="cfg_entry_abc")
-        sensor = _make_sensor(CHORE_A_ID, entry=entry)
-        assert sensor.unique_id == f"cfg_entry_abc_{CHORE_A_ID}"
-
-    def test_unique_id_differs_per_chore(self):
-        entry = _make_entry(entry_id="cfg_entry_abc")
-        sensor_a = _make_sensor(CHORE_A_ID, entry=entry)
-        sensor_b = _make_sensor(CHORE_B_ID, entry=entry)
-        assert sensor_a.unique_id != sensor_b.unique_id
+        sensor = _make_sensor(entry=entry)
+        assert sensor.unique_id == "cfg_entry_abc"
 
     def test_unique_id_stable_across_instances(self):
-        """Same entry_id + chore_id must produce the same unique_id."""
         entry = _make_entry(entry_id="stable_entry")
-        s1 = _make_sensor(CHORE_A_ID, entry=entry)
-        s2 = _make_sensor(CHORE_A_ID, entry=entry)
+        s1 = _make_sensor(entry=entry)
+        s2 = _make_sensor(entry=entry)
         assert s1.unique_id == s2.unique_id
+
+    def test_unique_id_differs_per_entry(self):
+        s1 = _make_sensor(entry=_make_entry(entry_id="entry_1"))
+        s2 = _make_sensor(entry=_make_entry(entry_id="entry_2"))
+        assert s1.unique_id != s2.unique_id
 
 
 class TestChoreSensorSuggestedObjectId:
-    """Tests for suggested_object_id (controls HA entity_id on first registration)."""
+    """Tests for suggested_object_id."""
 
     def test_suggested_object_id_format(self):
-        sensor = _make_sensor(CHORE_A_ID)
-        # suggested_object_id is derived from the display name, not the internal chore_id
+        sensor = _make_sensor()
         assert sensor.suggested_object_id == "chore_dishes"
 
-    def test_suggested_object_id_differs_per_chore(self):
-        sensor_a = _make_sensor(CHORE_A_ID)
-        sensor_b = _make_sensor(CHORE_B_ID)
-        assert sensor_a.suggested_object_id != sensor_b.suggested_object_id
-
-
-class TestChoreSensorName:
-    """Tests for entity name (set from chore display name)."""
-
-    def test_name_from_coordinator(self):
-        sensor = _make_sensor(CHORE_A_ID)
-        assert sensor.name == "Dishes"
-
-    def test_name_second_chore(self):
-        sensor = _make_sensor(CHORE_B_ID)
-        assert sensor.name == "Vacuum"
+    def test_suggested_object_id_tracks_name(self):
+        coordinator = FakeCoordinator({**CHORE_STATE, "name": "Vacuum"})
+        sensor = _make_sensor(coordinator=coordinator)
+        assert sensor.suggested_object_id == "chore_vacuum"
 
 
 class TestIsoHelper:
