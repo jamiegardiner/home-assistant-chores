@@ -1,10 +1,18 @@
 complete:
   target:
+    entity:
+      integration: chores
+      supported_features:
+        - 1
     device:
       integration: chores
 
 snooze:
   target:
+    entity:
+      integration: chores
+      supported_features:
+        - 1
     device:
       integration: chores
   fields:
@@ -29,5 +37,9 @@ snooze:
 
 unsnooze:
   target:
+    entity:
+      integration: chores
+      supported_features:
+        - 1
     device:
       integration: chores
