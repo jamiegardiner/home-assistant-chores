@@ -1,14 +1,12 @@
 complete:
   target:
-    entity:
+    device:
       integration: chores
-      domain: sensor
 
 snooze:
   target:
-    entity:
+    device:
       integration: chores
-      domain: sensor
   fields:
     snooze_days:
       required: false
@@ -31,6 +29,5 @@ snooze:
 
 unsnooze:
   target:
-    entity:
+    device:
       integration: chores
-      domain: sensor
