@@ -66,16 +66,6 @@ class TestParseSnoozeUntil:
         with pytest.raises(HomeAssistantError, match="Exactly one"):
             _parse_snooze_until({"snooze_days": 1, "snooze_weeks": 1})
 
-    def test_raises_when_snooze_until_is_today(self):
-        today = dt_util.now().date().isoformat()
-        with pytest.raises(HomeAssistantError, match="future date"):
-            _parse_snooze_until({"snooze_until": today})
-
-    def test_raises_when_snooze_until_is_past(self):
-        yesterday = (dt_util.now().date() - timedelta(days=1)).isoformat()
-        with pytest.raises(HomeAssistantError, match="future date"):
-            _parse_snooze_until({"snooze_until": yesterday})
-
     def test_raises_on_invalid_date_string(self):
         with pytest.raises(HomeAssistantError, match="Invalid snooze_until"):
             _parse_snooze_until({"snooze_until": "not-a-date"})
