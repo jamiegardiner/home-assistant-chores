@@ -21,8 +21,8 @@ def _make_entry(entry_id: str = "test_entry_id") -> MockConfigEntry:
         entry_id=entry_id,
         options={
             "name": "Bins",
-            "interval_value": 7,
-            "interval_unit": "days",
+            "interval_days": 7,
+            "default_snooze_days": 1,
             "last_completed": "2026-06-01",
             "snooze_until": None,
         },

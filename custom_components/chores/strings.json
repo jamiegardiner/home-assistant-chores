@@ -1,5 +1,10 @@
 {
   "entity": {
+    "button": {
+      "complete": { "name": "Complete" },
+      "snooze": { "name": "Snooze" },
+      "unsnooze": { "name": "Unsnooze" }
+    },
     "sensor": {
       "chore": {
         "state": {
@@ -7,18 +12,22 @@
           "overdue": "Overdue",
           "snoozed": "Snoozed"
         }
-      }
+      },
+      "last_completed": { "name": "Last Completed" },
+      "next_due": { "name": "Next Due" },
+      "snooze_until": { "name": "Snooze Until" },
+      "default_snooze_days": { "name": "Default Snooze Days" }
     }
   },
   "config": {
     "step": {
       "user": {
         "title": "Add a chore",
-        "description": "Create a new chore helper. Each chore becomes a sensor that transitions between done and overdue on the configured interval.",
+        "description": "Create a new chore. Each chore becomes a device that transitions between done and overdue on the configured interval.",
         "data": {
           "name": "Name",
-          "interval_value": "Interval",
-          "interval_unit": "Interval unit",
+          "interval_days": "Interval (days)",
+          "default_snooze_days": "Default snooze (days)",
           "last_completed": "Last completed date"
         }
       }
@@ -30,8 +39,8 @@
         "title": "Edit chore",
         "data": {
           "name": "Name",
-          "interval_value": "Interval",
-          "interval_unit": "Interval unit",
+          "interval_days": "Interval (days)",
+          "default_snooze_days": "Default snooze (days)",
           "last_completed": "Last completed date"
         }
       }

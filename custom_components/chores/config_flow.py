@@ -14,13 +14,10 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
-    SelectOptionDict,
-    SelectSelector,
-    SelectSelectorConfig,
 )
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN, INTERVAL_UNITS
+from .const import DOMAIN
 
 
 def _chore_schema() -> vol.Schema:
@@ -28,16 +25,11 @@ def _chore_schema() -> vol.Schema:
     return vol.Schema(
         {
             vol.Required("name"): str,
-            vol.Required("interval_value"): NumberSelector(
+            vol.Required("interval_days"): NumberSelector(
                 NumberSelectorConfig(min=1, step=1, mode=NumberSelectorMode.BOX)
             ),
-            vol.Required("interval_unit"): SelectSelector(
-                SelectSelectorConfig(
-                    options=[
-                        SelectOptionDict(value=unit, label=unit.capitalize())
-                        for unit in INTERVAL_UNITS
-                    ]
-                )
+            vol.Required("default_snooze_days"): NumberSelector(
+                NumberSelectorConfig(min=1, step=1, mode=NumberSelectorMode.BOX)
             ),
             vol.Required("last_completed"): DateSelector(),
         }
@@ -46,23 +38,26 @@ def _chore_schema() -> vol.Schema:
 
 def _validate_chore_input(
     user_input: dict[str, Any], errors: dict[str, str]
-) -> tuple[str, int, str, date]:
+) -> tuple[str, int, int, date]:
     """Validate and coerce chore form input. Populates errors in-place.
 
-    Returns (name, interval_value, interval_unit, last_completed).
+    Returns (name, interval_days, default_snooze_days, last_completed).
     """
     name = str(user_input.get("name", "")).strip()
     if not name:
         errors["name"] = "name_required"
 
-    interval_value = int(user_input.get("interval_value", 1))
-    if interval_value < 1:
-        errors["interval_value"] = "invalid_interval"
+    interval_days = int(user_input.get("interval_days", 1))
+    if interval_days < 1:
+        errors["interval_days"] = "invalid_interval"
 
-    interval_unit = user_input.get("interval_unit", INTERVAL_UNITS[0])
+    default_snooze_days = int(user_input.get("default_snooze_days", 1))
+    if default_snooze_days < 1:
+        errors["default_snooze_days"] = "invalid_interval"
+
     last_completed: date = date.fromisoformat(str(user_input["last_completed"]))
 
-    return name, interval_value, interval_unit, last_completed
+    return name, interval_days, default_snooze_days, last_completed
 
 
 class ChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -77,8 +72,8 @@ class ChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            name, interval_value, interval_unit, last_completed = _validate_chore_input(
-                user_input, errors
+            name, interval_days, default_snooze_days, last_completed = (
+                _validate_chore_input(user_input, errors)
             )
             if not errors:
                 return self.async_create_entry(
@@ -86,8 +81,8 @@ class ChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     data={},
                     options={
                         "name": name,
-                        "interval_value": interval_value,
-                        "interval_unit": interval_unit,
+                        "interval_days": interval_days,
+                        "default_snooze_days": default_snooze_days,
                         "last_completed": last_completed.isoformat(),
                         "snooze_until": None,
                     },
@@ -97,6 +92,9 @@ class ChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         suggested = {
             "last_completed": (
                 str(user_input.get("last_completed", today)) if user_input else today
+            ),
+            "default_snooze_days": (
+                int(user_input.get("default_snooze_days", 1)) if user_input else 1
             ),
         }
         return self.async_show_form(
@@ -125,15 +123,15 @@ class ChoresOptionsFlow(config_entries.OptionsFlow):
         opts = self.config_entry.options
 
         if user_input is not None:
-            name, interval_value, interval_unit, last_completed = _validate_chore_input(
-                user_input, errors
+            name, interval_days, default_snooze_days, last_completed = (
+                _validate_chore_input(user_input, errors)
             )
             if not errors:
                 return self.async_create_entry(
                     data={
                         "name": name,
-                        "interval_value": interval_value,
-                        "interval_unit": interval_unit,
+                        "interval_days": interval_days,
+                        "default_snooze_days": default_snooze_days,
                         "last_completed": last_completed.isoformat(),
                         # Preserve existing snooze — managed exclusively via services
                         "snooze_until": opts.get("snooze_until"),
@@ -142,8 +140,8 @@ class ChoresOptionsFlow(config_entries.OptionsFlow):
 
         suggested = {
             "name": opts.get("name", ""),
-            "interval_value": opts.get("interval_value", 1),
-            "interval_unit": opts.get("interval_unit", INTERVAL_UNITS[0]),
+            "interval_days": opts.get("interval_days", 7),
+            "default_snooze_days": opts.get("default_snooze_days", 1),
             "last_completed": opts.get("last_completed", str(dt_util.now().date())),
         }
         return self.async_show_form(

@@ -25,14 +25,6 @@ from .models import ChoreConfig
 _LOGGER = logging.getLogger(__name__)
 
 
-def _interval_to_timedelta(config: ChoreConfig) -> timedelta:
-    """Convert a ChoreConfig interval to a timedelta."""
-    days = config.interval_value
-    if config.interval_unit == "weeks":
-        days = config.interval_value * 7
-    return timedelta(days=days)
-
-
 @dataclass
 class ChoreRuntime:
     """Runtime state for the single chore managed by this coordinator."""
@@ -95,8 +87,9 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     def _recompute(self, rt: ChoreRuntime) -> None:
         """Recompute status and next_due."""
-        delta = _interval_to_timedelta(rt.config)
-        rt.next_due = dt_util.start_of_local_day(rt.last_completed + delta)
+        rt.next_due = dt_util.start_of_local_day(
+            rt.last_completed + timedelta(days=rt.config.interval_days)
+        )
         now = dt_util.now()
 
         if rt.snooze_until is not None and now < dt_util.start_of_local_day(
@@ -198,6 +191,14 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
         self.async_set_updated_data(self._snapshot())
 
+    async def async_snooze_default(self) -> None:
+        """Snooze by default_snooze_days (today + default_snooze_days)."""
+        assert self._runtime is not None
+        snooze_until = dt_util.now().date() + timedelta(
+            days=self._runtime.config.default_snooze_days
+        )
+        await self.async_snooze(snooze_until)
+
     async def async_snooze(self, snooze_until: date) -> None:
         """Snooze the chore until snooze_until."""
         assert self._runtime is not None
@@ -250,6 +251,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "status": rt.status,
             "next_due": rt.next_due,
             "snooze_until": rt.snooze_until,
+            "default_snooze_days": rt.config.default_snooze_days,
         }
 
 
