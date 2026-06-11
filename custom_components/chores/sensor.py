@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.entity_platform import (
@@ -19,6 +19,7 @@ from homeassistant.helpers.entity_platform import (
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
 
+from .const import STATUS_OPTIONS
 from .coordinator import ChoresCoordinator
 from .services import (
     COMPLETE_SCHEMA,
@@ -75,7 +76,9 @@ async def async_setup_entry(
 class ChoreSensor(CoordinatorEntity[ChoresCoordinator], SensorEntity):
     """Sensor entity representing a single chore (one per config entry)."""
 
-    _attr_has_entity_name = True
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_translation_key = "chore"
+    _attr_options = STATUS_OPTIONS
 
     def __init__(self, coordinator: ChoresCoordinator, entry: ConfigEntry) -> None:
         """Initialise the sensor."""
@@ -92,9 +95,9 @@ class ChoreSensor(CoordinatorEntity[ChoresCoordinator], SensorEntity):
         return f"chore_{slugify(self.name)}"
 
     @property
-    def native_value(self) -> str:
-        """Return ``done``, ``overdue``, or ``snoozed``."""
-        return (self.coordinator.data or {}).get("status", "unknown")
+    def native_value(self) -> str | None:
+        """Return ``done``, ``overdue``, ``snoozed``, or None when unknown."""
+        return (self.coordinator.data or {}).get("status")
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
