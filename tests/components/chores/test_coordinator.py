@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -341,6 +342,39 @@ async def test_snooze_expiry_recomputes_state(
         captured_snooze_cb["cb"](future)
 
     assert coord.data[CHORE_A_ID]["status"] == "overdue"
+    assert coord.data[CHORE_A_ID]["snooze_until"] is None
+
+
+@pytest.mark.parametrize(
+    "bad_date",
+    [
+        pytest.param(dt_util.now().date() - timedelta(days=1), id="yesterday"),
+        pytest.param(dt_util.now().date(), id="today"),
+    ],
+)
+async def test_snooze_non_future_date_raises(
+    hass: Any, two_chore_entry: MockConfigEntry, bad_date: date
+) -> None:
+    """async_snooze with today or a past date raises HomeAssistantError without mutating state."""
+    with (
+        patch(
+            "custom_components.chores.coordinator.Store.async_load",
+            new_callable=AsyncMock,
+            return_value=None,
+        ),
+        patch(
+            "custom_components.chores.coordinator.Store.async_save",
+            new_callable=AsyncMock,
+        ),
+        patch("custom_components.chores.coordinator.async_track_point_in_time"),
+    ):
+        coord = ChoresCoordinator(hass, two_chore_entry)
+        await coord.async_initialize()
+
+        with pytest.raises(HomeAssistantError):
+            await coord.async_snooze(CHORE_A_ID, bad_date)
+
+    assert coord.data[CHORE_A_ID]["status"] != "snoozed"
     assert coord.data[CHORE_A_ID]["snooze_until"] is None
 
 

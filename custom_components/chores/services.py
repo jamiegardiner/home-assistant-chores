@@ -29,7 +29,7 @@ def _parse_snooze_until(call_data: dict) -> date:
     """Parse and validate snooze target date from service call data.
 
     Exactly one of snooze_days, snooze_weeks, or snooze_until must be provided.
-    The resolved date must be in the future.
+    Future-date validation is enforced by the coordinator.
 
     Raises HomeAssistantError on invalid input.
     """
@@ -55,10 +55,5 @@ def _parse_snooze_until(call_data: dict) -> date:
             raise HomeAssistantError(
                 f"Invalid snooze_until date: {snooze_until_str!r}"
             ) from exc
-
-    if snooze_until <= dt_util.now().date():
-        raise HomeAssistantError(
-            f"snooze_until must be a future date, got {snooze_until}"
-        )
 
     return snooze_until
