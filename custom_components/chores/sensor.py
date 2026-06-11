@@ -12,6 +12,7 @@ from typing import Any
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import (
     AddEntitiesCallback,
     async_get_current_platform,
@@ -19,7 +20,7 @@ from homeassistant.helpers.entity_platform import (
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
 
-from .const import STATUS_OPTIONS
+from .const import DOMAIN, STATUS_OPTIONS
 from .coordinator import ChoresCoordinator
 from .services import (
     COMPLETE_SCHEMA,
@@ -77,6 +78,7 @@ class ChoreSensor(CoordinatorEntity[ChoresCoordinator], SensorEntity):
     """Sensor entity representing a single chore (one per config entry)."""
 
     _attr_device_class = SensorDeviceClass.ENUM
+    _attr_has_entity_name = True
     _attr_translation_key = "chore"
     _attr_options = STATUS_OPTIONS
 
@@ -84,15 +86,17 @@ class ChoreSensor(CoordinatorEntity[ChoresCoordinator], SensorEntity):
         """Initialise the sensor."""
         super().__init__(coordinator)
         self._attr_unique_id = entry.entry_id
+        self._entry_id = entry.entry_id
 
     @property
-    def name(self) -> str:
-        """Return the chore display name."""
-        return (self.coordinator.data or {}).get("name", "Chore")
+    def device_info(self) -> DeviceInfo:
+        name = (self.coordinator.data or {}).get("name", "Chore")
+        return DeviceInfo(identifiers={(DOMAIN, self._entry_id)}, name=name)
 
     @property
     def suggested_object_id(self) -> str:
-        return f"chore_{slugify(self.name)}"
+        name = (self.coordinator.data or {}).get("name", "Chore")
+        return f"chore_{slugify(name)}"
 
     @property
     def native_value(self) -> str | None:

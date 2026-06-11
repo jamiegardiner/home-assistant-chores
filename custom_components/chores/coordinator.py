@@ -198,6 +198,12 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
         self.async_set_updated_data(self._snapshot())
 
+    async def async_snooze_default(self) -> None:
+        """Snooze by the chore's own interval (today + interval)."""
+        assert self._runtime is not None
+        delta = _interval_to_timedelta(self._runtime.config)
+        await self.async_snooze(dt_util.now().date() + delta)
+
     async def async_snooze(self, snooze_until: date) -> None:
         """Snooze the chore until snooze_until."""
         assert self._runtime is not None

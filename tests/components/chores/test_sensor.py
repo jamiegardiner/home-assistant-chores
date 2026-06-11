@@ -120,18 +120,30 @@ class TestChoreSensorState:
         assert sensor.native_value == "done"
 
 
-class TestChoreSensorName:
-    """Tests for ChoreSensor.name."""
+class TestChoreSensorDeviceInfo:
+    """Tests for ChoreSensor.device_info and entity naming (has_entity_name=True)."""
 
-    def test_name_from_coordinator_data(self):
+    def test_device_info_name_from_coordinator_data(self):
         sensor = _make_sensor()
-        assert sensor.name == "Dishes"
+        assert sensor.device_info["name"] == "Dishes"
 
-    def test_name_updates_when_data_changes(self):
+    def test_device_info_name_updates_when_data_changes(self):
         coordinator = FakeCoordinator()
         sensor = _make_sensor(coordinator=coordinator)
         coordinator.data = {**CHORE_STATE, "name": "Plates"}
-        assert sensor.name == "Plates"
+        assert sensor.device_info["name"] == "Plates"
+
+    def test_device_info_identifiers_contain_entry_id(self):
+        from custom_components.chores.const import DOMAIN
+
+        entry = _make_entry(entry_id="my_entry_id")
+        sensor = _make_sensor(entry=entry)
+        assert (DOMAIN, "my_entry_id") in sensor.device_info["identifiers"]
+
+    def test_has_entity_name_is_true(self):
+        """Sensor is the primary entity of its device; HA uses device name."""
+        sensor = _make_sensor()
+        assert sensor.has_entity_name is True
 
 
 class TestChoreSensorAttributes:
