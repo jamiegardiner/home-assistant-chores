@@ -14,6 +14,7 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.event import async_track_point_in_time
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -252,6 +253,11 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if chore_id not in self._chores:
             _LOGGER.warning("async_snooze called for unknown chore_id: %s", chore_id)
             return
+
+        if snooze_until <= dt_util.now().date():
+            raise HomeAssistantError(
+                f"snooze_until must be a future date, got {snooze_until}"
+            )
 
         rt = self._chores[chore_id]
         rt.snooze_until = snooze_until

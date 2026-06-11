@@ -344,6 +344,62 @@ async def test_snooze_expiry_recomputes_state(
     assert coord.data[CHORE_A_ID]["snooze_until"] is None
 
 
+async def test_snooze_past_date_raises(
+    hass: Any, two_chore_entry: MockConfigEntry
+) -> None:
+    """async_snooze with a past date raises HomeAssistantError without mutating state."""
+    from homeassistant.exceptions import HomeAssistantError
+
+    with (
+        patch(
+            "custom_components.chores.coordinator.Store.async_load",
+            new_callable=AsyncMock,
+            return_value=None,
+        ),
+        patch(
+            "custom_components.chores.coordinator.Store.async_save",
+            new_callable=AsyncMock,
+        ),
+        patch("custom_components.chores.coordinator.async_track_point_in_time"),
+    ):
+        coord = ChoresCoordinator(hass, two_chore_entry)
+        await coord.async_initialize()
+
+        past_date = dt_util.now().date() - timedelta(days=1)
+        with pytest.raises(HomeAssistantError):
+            await coord.async_snooze(CHORE_A_ID, past_date)
+
+    assert coord.data[CHORE_A_ID]["status"] != "snoozed"
+    assert coord.data[CHORE_A_ID]["snooze_until"] is None
+
+
+async def test_snooze_today_raises(hass: Any, two_chore_entry: MockConfigEntry) -> None:
+    """async_snooze with today's date raises HomeAssistantError without mutating state."""
+    from homeassistant.exceptions import HomeAssistantError
+
+    with (
+        patch(
+            "custom_components.chores.coordinator.Store.async_load",
+            new_callable=AsyncMock,
+            return_value=None,
+        ),
+        patch(
+            "custom_components.chores.coordinator.Store.async_save",
+            new_callable=AsyncMock,
+        ),
+        patch("custom_components.chores.coordinator.async_track_point_in_time"),
+    ):
+        coord = ChoresCoordinator(hass, two_chore_entry)
+        await coord.async_initialize()
+
+        today = dt_util.now().date()
+        with pytest.raises(HomeAssistantError):
+            await coord.async_snooze(CHORE_A_ID, today)
+
+    assert coord.data[CHORE_A_ID]["status"] != "snoozed"
+    assert coord.data[CHORE_A_ID]["snooze_until"] is None
+
+
 async def test_complete_clears_snooze(
     hass: Any, two_chore_entry: MockConfigEntry
 ) -> None:
