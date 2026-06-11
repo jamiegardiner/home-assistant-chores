@@ -188,6 +188,36 @@ class TestChoreSensorSuggestedObjectId:
         assert sensor.suggested_object_id == "chore_vacuum"
 
 
+class TestChoreSensorConventions:
+    """Tests for HA entity conventions: enum device class, options, translation_key."""
+
+    def test_device_class_is_enum(self):
+        from homeassistant.components.sensor import SensorDeviceClass
+
+        sensor = _make_sensor()
+        assert sensor.device_class == SensorDeviceClass.ENUM
+
+    def test_options_covers_all_states(self):
+        sensor = _make_sensor()
+        assert sensor.options == ["done", "overdue", "snoozed"]
+
+    def test_translation_key(self):
+        sensor = _make_sensor()
+        assert sensor.translation_key == "chore"
+
+    def test_native_value_none_when_data_is_none(self):
+        coordinator = FakeCoordinator()
+        coordinator.data = None
+        sensor = _make_sensor(coordinator=coordinator)
+        assert sensor.native_value is None
+
+    def test_native_value_none_when_status_missing(self):
+        coordinator = FakeCoordinator({**CHORE_STATE})
+        del coordinator.data["status"]
+        sensor = _make_sensor(coordinator=coordinator)
+        assert sensor.native_value is None
+
+
 class TestIsoHelper:
     """Tests for the _iso date-formatting helper."""
 

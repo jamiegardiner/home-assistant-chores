@@ -1,4 +1,15 @@
 {
+  "entity": {
+    "sensor": {
+      "chore": {
+        "state": {
+          "done": "Done",
+          "overdue": "Overdue",
+          "snoozed": "Snoozed"
+        }
+      }
+    }
+  },
   "config": {
     "step": {
       "user": {
