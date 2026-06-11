@@ -19,6 +19,7 @@ from homeassistant.helpers.entity_platform import (
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
 
+from .const import STATUS_OPTIONS
 from .coordinator import ChoresCoordinator
 from .services import (
     COMPLETE_SCHEMA,
@@ -77,12 +78,12 @@ class ChoreSensor(CoordinatorEntity[ChoresCoordinator], SensorEntity):
 
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_translation_key = "chore"
+    _attr_options = STATUS_OPTIONS
 
     def __init__(self, coordinator: ChoresCoordinator, entry: ConfigEntry) -> None:
         """Initialise the sensor."""
         super().__init__(coordinator)
         self._attr_unique_id = entry.entry_id
-        self._attr_options = ["done", "overdue", "snoozed"]
 
     @property
     def name(self) -> str:

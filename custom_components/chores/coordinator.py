@@ -19,7 +19,7 @@ from homeassistant.helpers.event import async_track_point_in_time
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN
+from .const import DOMAIN, STATUS_DONE, STATUS_OVERDUE, STATUS_SNOOZED
 from .models import ChoreConfig
 
 _LOGGER = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ class ChoreRuntime:
 
     config: ChoreConfig
     last_completed: date
-    status: str = "done"
+    status: str = STATUS_DONE
     next_due: datetime = field(default_factory=dt_util.now)
     snooze_until: date | None = None
     _cancel_timer: Callable[[], None] | None = field(default=None, repr=False)
@@ -102,16 +102,16 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if rt.snooze_until is not None and now < dt_util.start_of_local_day(
             rt.snooze_until
         ):
-            rt.status = "snoozed"
+            rt.status = STATUS_SNOOZED
             return
 
-        rt.status = "overdue" if now >= rt.next_due else "done"
+        rt.status = STATUS_OVERDUE if now >= rt.next_due else STATUS_DONE
 
     def _schedule_timers(self) -> None:
         """Schedule overdue and/or snooze timer based on current runtime state."""
         assert self._runtime is not None
         rt = self._runtime
-        if rt.status == "snoozed":
+        if rt.status == STATUS_SNOOZED:
             self._schedule_snooze(rt)
         else:
             self._schedule(rt)
@@ -214,7 +214,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             rt._cancel_timer = None
 
         self._schedule_snooze(rt)
-        rt.status = "snoozed"
+        rt.status = STATUS_SNOOZED
         self._persist({"snooze_until": snooze_until.isoformat()})
         self.async_set_updated_data(self._snapshot())
 
