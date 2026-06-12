@@ -143,3 +143,9 @@ action: chores.unsnooze
 target:
   entity_id: sensor.chore_vacuum_living_room
 ```
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the versioning model, release strategy, PR title conventions, and contributor flow.

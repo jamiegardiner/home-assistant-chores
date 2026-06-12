@@ -176,9 +176,11 @@ All feature and fix work goes through GitHub Issues:
 /implement <issue-number>        → plan mode → approval → code → PR
 ```
 
-**Branch naming:** `issue-<number>-<short-slug>`
+**Branch naming:** `<type>/<number>-<slug>` (e.g. `feat/42-snooze-button`, `fix/13-dst-timer`)
 **Commit style:** `feat(issue-<number>): <description>` or `fix(issue-<number>): <description>`
 **PRs must contain** `Closes #<number>` so the issue auto-closes on merge.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full versioning model, release strategy, squash-merge conventions, and PR title rules.
 
 ---
 
