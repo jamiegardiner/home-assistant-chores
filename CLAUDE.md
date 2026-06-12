@@ -43,7 +43,7 @@ Makefile               # all common dev tasks (see below)
 
 ### Data model
 
-Each chore is a separate config entry (`integration_type: device`). All state lives in `entry.options` — there is no separate Store:
+Each chore is a separate config entry (`integration_type: device`). All state lives in `entry.options`:
 
 ```json
 {
@@ -163,7 +163,7 @@ They must be kept in sync. If you add to one, add to the other.
       pass
   ```
 - Use `MockConfigEntry` from `pytest_homeassistant_custom_component.common` to set up config entries in tests without going through the UI flow.
-- Coordinator tests must call `entry.add_to_hass(hass)` so that `hass.config_entries.async_update_entry` works; no Store patching needed (state lives in `entry.options`).
+- Coordinator tests must call `entry.add_to_hass(hass)` so that `hass.config_entries.async_update_entry` works (state lives in `entry.options`).
 
 ---
 
@@ -186,7 +186,7 @@ All feature and fix work goes through GitHub Issues:
 
 - Each chore is a separate config entry — multiple entries are allowed. **Adding a chore** = "Add Integration → Chores". **Removing a chore** = delete that config entry.
 - No YAML configuration — all setup is through the UI.
-- All chore state (`last_completed`, `snooze_until`) lives in `entry.options`, not in a separate Store. The update listener calls `coordinator.async_update_config` (never `async_reload`) so edits are applied in-place without entity teardown.
+- All chore state (`last_completed`, `snooze_until`) lives in `entry.options`. The update listener calls `coordinator.async_update_config` (never `async_reload`) so edits are applied in-place without entity teardown.
 - Python `>=3.14.2` (matches Home Assistant's own requirement).
 - `integration_type: device` in `manifest.json` — chores appear in the Devices & Services panel, not the Helpers panel.
 - Interval is stored as `interval_days` (int, days only). The UI previously offered a weeks selector; it no longer does.
