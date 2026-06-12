@@ -62,6 +62,30 @@ Exit plan mode and begin implementation:
 
 ## Step 5 — Open a PR
 
+### PR title format
+
+The PR title **must** be a conventional-commit message. Under the repo's squash-merge-only model, the PR title becomes the single commit on `main` that release-please uses to determine the version bump — individual branch commits never reach `main`.
+
+Format: `type(issue-<number>): <short description>`
+
+Use the type that reflects the PR's **most significant** change:
+
+| Type | When to use |
+|------|-------------|
+| `feat` | new user-visible capability |
+| `fix` | corrects incorrect behaviour |
+| `docs` | documentation only |
+| `chore` | tooling, deps, CI, refactoring with no user-facing change |
+
+A `chore:`-titled PR produces no release even if its branch contained `feat()` commits. A `BREAKING CHANGE:` footer in the PR body is honoured for a major bump.
+
+Examples:
+- `feat(issue-42): add snooze button entity`
+- `fix(issue-13): correct overdue timer after DST change`
+- `docs(issue-65): document versioning and release strategy`
+
+### Creating the PR
+
 Write the PR body to a temp file and use `--body-file` to avoid shell escaping mangling backticks and code blocks:
 
 ```
@@ -74,7 +98,7 @@ Closes #<number>
 ## Test plan
 - [ ] ...
 EOF
-gh pr create --title "<title>" --body-file /tmp/pr-body.md
+gh pr create --title "type(issue-<number>): <description>" --body-file /tmp/pr-body.md
 ```
 
 Print the PR URL.

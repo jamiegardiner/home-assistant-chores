@@ -180,6 +180,8 @@ All feature and fix work goes through GitHub Issues:
 **Commit style:** `feat(issue-<number>): <description>` or `fix(issue-<number>): <description>`
 **PRs must contain** `Closes #<number>` so the issue auto-closes on merge.
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full versioning model, release strategy, squash-merge conventions, and PR title rules.
+
 ---
 
 ## Constraints
