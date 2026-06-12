@@ -31,20 +31,20 @@ Each chore appears in **Settings → Devices & Services** as a device with 8 ent
 
 The primary entity (`sensor.chore_<name>`) reports the chore's current state:
 
-| State     | Meaning                                                                        |
-| --------- | ------------------------------------------------------------------------------ |
-| `done`    | The chore has been completed and is not yet due again                          |
-| `overdue` | The chore's due date has passed without being marked complete                  |
-| `snoozed` | The chore is snoozed; overdue transitions are suppressed until the snooze date |
+| State     | Meaning                                                                           |
+| --------- | --------------------------------------------------------------------------------- |
+| `done`    | The chore has been completed and is not yet due again                             |
+| `overdue` | The chore's due date has passed without being marked complete                     |
+| `snoozed` | The chore is snoozed; overdue transitions are suppressed until the snooze expires |
 
 ### Diagnostic sensors
 
-| Entity              | Type    | Description                                                     |
-| ------------------- | ------- | --------------------------------------------------------------- |
-| Last completed      | Date    | The date the chore was last marked complete                     |
-| Next due            | Date    | The date the chore will next transition to `overdue`            |
-| Snooze until        | Date    | The date an active snooze expires; unavailable when not snoozed |
-| Default snooze days | Integer | How many days the Snooze button defers the chore                |
+| Entity              | Type     | Description                                                         |
+| ------------------- | -------- | ------------------------------------------------------------------- |
+| Last completed      | Date     | The date the chore was last marked complete                         |
+| Next due            | Date     | The date the chore will next transition to `overdue`                |
+| Snooze until        | Datetime | The datetime an active snooze expires; unavailable when not snoozed |
+| Default snooze days | Integer  | How many days the Snooze button defers the chore                    |
 
 ### Buttons
 
@@ -99,36 +99,39 @@ ______________________________________________________________________
 
 ### `chores.snooze`
 
-Snooze a chore until a given date, suppressing `overdue` transitions in the meantime. Provide **exactly one** of `snooze_days`, `snooze_weeks`, or `snooze_until`.
+Snooze a chore for a given duration, suppressing `overdue` transitions in the meantime. Provide a `value` (positive integer) and a `unit` (`minutes`, `hours`, `days`, or `weeks`).
 
-**Snooze for a number of days:**
+**Snooze for 30 minutes:**
 
 ```yaml
 action: chores.snooze
 target:
   entity_id: sensor.chore_vacuum_living_room
 data:
-  snooze_days: 3
+  value: 30
+  unit: minutes
 ```
 
-**Snooze for a number of weeks:**
+**Snooze for 3 days:**
 
 ```yaml
 action: chores.snooze
 target:
   entity_id: sensor.chore_vacuum_living_room
 data:
-  snooze_weeks: 2
+  value: 3
+  unit: days
 ```
 
-**Snooze until a specific date:**
+**Snooze for 2 weeks:**
 
 ```yaml
 action: chores.snooze
 target:
   entity_id: sensor.chore_vacuum_living_room
 data:
-  snooze_until: "2026-07-01"
+  value: 2
+  unit: weeks
 ```
 
 ______________________________________________________________________

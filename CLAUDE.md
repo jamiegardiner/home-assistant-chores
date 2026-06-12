@@ -91,7 +91,7 @@ Options updates (from config flow edits) are handled in-place via `async_update_
 
 - **`done` → `overdue`**: HA point-in-time timer fires at `next_due` (start of local day of `last_completed + interval`)
 - **`overdue` → `done`**: `chores.complete` service call resets `last_completed` to today, persists to `entry.options`, recomputes `next_due`, schedules new timer
-- **`snoozed`**: any state can be snoozed; `chores.snooze` sets `snooze_until` in `entry.options`; a snooze-expiry timer fires at that date
+- **`snoozed`**: any state can be snoozed; `chores.snooze` sets `snooze_until` in `entry.options` as a timezone-aware ISO datetime; a snooze-expiry timer fires at that exact datetime
 
 ______________________________________________________________________
 
@@ -202,4 +202,4 @@ ______________________________________________________________________
 - `integration_type: device` in `manifest.json` — chores appear in the Devices & Services panel, not the Helpers panel.
 - Interval is stored as `interval_days` (int, days only). The UI previously offered a weeks selector; it no longer does.
 - `default_snooze_days` (default: 1) controls how far ahead the Snooze button defers the chore.
-- The Snooze button uses `default_snooze_days`; the `chores.snooze` service still accepts an explicit date/offset.
+- The Snooze button uses `default_snooze_days`; the `chores.snooze` service accepts `value` (int) + `unit` (minutes/hours/days/weeks) for arbitrary durations.
