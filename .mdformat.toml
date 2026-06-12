@@ -1,4 +1,3 @@
-[mdformat]
 wrap = 80
 extensions = ["gfm", "frontmatter"]
 exclude = [
