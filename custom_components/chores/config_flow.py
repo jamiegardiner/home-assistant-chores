@@ -89,14 +89,14 @@ class ChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
 
         today = str(dt_util.now().date())
-        suggested = {
-            "last_completed": (
-                str(user_input.get("last_completed", today)) if user_input else today
-            ),
-            "default_snooze_days": (
-                int(user_input.get("default_snooze_days", 1)) if user_input else 1
-            ),
-        }
+        suggested = (
+            user_input
+            if user_input is not None
+            else {
+                "last_completed": today,
+                "default_snooze_days": 1,
+            }
+        )
         return self.async_show_form(
             step_id="user",
             data_schema=self.add_suggested_values_to_schema(_chore_schema(), suggested),

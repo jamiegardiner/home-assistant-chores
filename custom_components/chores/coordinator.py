@@ -15,6 +15,7 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.event import async_track_point_in_time
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
@@ -253,6 +254,18 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "snooze_until": rt.snooze_until,
             "default_snooze_days": rt.config.default_snooze_days,
         }
+
+
+class _ChoreDeviceMixin:
+    """Shared device_info property for chore sensor and button entities."""
+
+    _entry_id: str
+    coordinator: ChoresCoordinator
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        name = (self.coordinator.data or {}).get("name", "Chore")
+        return DeviceInfo(identifiers={(DOMAIN, self._entry_id)}, name=name)
 
 
 def _parse_date(value: str | None) -> date | None:

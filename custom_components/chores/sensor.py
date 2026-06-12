@@ -11,7 +11,6 @@ from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import (
     AddEntitiesCallback,
     async_get_current_platform,
@@ -19,8 +18,8 @@ from homeassistant.helpers.entity_platform import (
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
 
-from .const import CHORE_SERVICE_FEATURE, DOMAIN, STATUS_OPTIONS
-from .coordinator import ChoresCoordinator
+from .const import CHORE_SERVICE_FEATURE, STATUS_OPTIONS
+from .coordinator import ChoresCoordinator, _ChoreDeviceMixin
 from .services import (
     COMPLETE_SCHEMA,
     SERVICE_COMPLETE,
@@ -90,7 +89,9 @@ async def async_setup_entry(
     )
 
 
-class ChoreSensor(CoordinatorEntity[ChoresCoordinator], SensorEntity):
+class ChoreSensor(
+    _ChoreDeviceMixin, CoordinatorEntity[ChoresCoordinator], SensorEntity
+):
     """Primary sensor entity representing a single chore (one per config entry)."""
 
     _attr_device_class = SensorDeviceClass.ENUM
@@ -106,11 +107,6 @@ class ChoreSensor(CoordinatorEntity[ChoresCoordinator], SensorEntity):
         self._entry_id = entry.entry_id
 
     @property
-    def device_info(self) -> DeviceInfo:
-        name = (self.coordinator.data or {}).get("name", "Chore")
-        return DeviceInfo(identifiers={(DOMAIN, self._entry_id)}, name=name)
-
-    @property
     def suggested_object_id(self) -> str:
         name = (self.coordinator.data or {}).get("name", "Chore")
         return f"chore_{slugify(name)}"
@@ -121,7 +117,9 @@ class ChoreSensor(CoordinatorEntity[ChoresCoordinator], SensorEntity):
         return (self.coordinator.data or {}).get("status")
 
 
-class _ChoreDateSensor(CoordinatorEntity[ChoresCoordinator], SensorEntity):
+class _ChoreDateSensor(
+    _ChoreDeviceMixin, CoordinatorEntity[ChoresCoordinator], SensorEntity
+):
     """Base class for diagnostic date sensors on a chore device."""
 
     _attr_has_entity_name = True
@@ -138,11 +136,6 @@ class _ChoreDateSensor(CoordinatorEntity[ChoresCoordinator], SensorEntity):
         self._data_key = data_key
         self._attr_unique_id = f"{entry.entry_id}_{unique_suffix}"
         self._entry_id = entry.entry_id
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        name = (self.coordinator.data or {}).get("name", "Chore")
-        return DeviceInfo(identifiers={(DOMAIN, self._entry_id)}, name=name)
 
     @property
     def native_value(self) -> str | None:
@@ -176,7 +169,9 @@ class ChoreSnoozeUntilSensor(_ChoreDateSensor):
         super().__init__(coordinator, entry, "snooze_until", "snooze_until")
 
 
-class ChoreDefaultSnoozeDaysSensor(CoordinatorEntity[ChoresCoordinator], SensorEntity):
+class ChoreDefaultSnoozeDaysSensor(
+    _ChoreDeviceMixin, CoordinatorEntity[ChoresCoordinator], SensorEntity
+):
     """Diagnostic sensor surfacing the default snooze duration in days."""
 
     _attr_has_entity_name = True
@@ -187,11 +182,6 @@ class ChoreDefaultSnoozeDaysSensor(CoordinatorEntity[ChoresCoordinator], SensorE
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_default_snooze_days"
         self._entry_id = entry.entry_id
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        name = (self.coordinator.data or {}).get("name", "Chore")
-        return DeviceInfo(identifiers={(DOMAIN, self._entry_id)}, name=name)
 
     @property
     def native_value(self) -> int | None:

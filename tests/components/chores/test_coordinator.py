@@ -343,8 +343,8 @@ async def test_snooze_expiry_recomputes_state(hass: Any) -> None:
 @pytest.mark.parametrize(
     "bad_date",
     [
-        pytest.param(dt_util.now().date() - timedelta(days=1), id="yesterday"),
-        pytest.param(dt_util.now().date(), id="today"),
+        pytest.param(date(2026, 6, 11), id="yesterday"),
+        pytest.param(date(2026, 6, 12), id="today"),
     ],
 )
 async def test_snooze_non_future_date_raises(hass: Any, bad_date: date) -> None:
@@ -352,7 +352,16 @@ async def test_snooze_non_future_date_raises(hass: Any, bad_date: date) -> None:
     entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
 
-    with patch("custom_components.chores.coordinator.async_track_point_in_time"):
+    # Pin dt_util.now so the coordinator's "today" matches the parametrized dates
+    # regardless of the test runner's local timezone vs UTC.
+    fixed_now = datetime(2026, 6, 12, 12, 0, tzinfo=UTC)
+    with (
+        patch("custom_components.chores.coordinator.async_track_point_in_time"),
+        patch(
+            "custom_components.chores.coordinator.dt_util.now",
+            return_value=fixed_now,
+        ),
+    ):
         coord = ChoresCoordinator(hass, entry)
         await coord.async_initialize()
 
