@@ -1,6 +1,6 @@
 """Sensor platform for the Chores integration.
 
-Five sensor entities per config entry: primary status sensor plus four diagnostics.
+Six sensor entities per config entry: primary status sensor plus five diagnostics.
 """
 
 from __future__ import annotations
@@ -57,7 +57,8 @@ async def async_setup_entry(
             ChoreLastCompletedSensor(coordinator, entry),
             ChoreNextDueSensor(coordinator, entry),
             ChoreSnoozeUntilSensor(coordinator, entry),
-            ChoreDefaultSnoozeDaysSensor(coordinator, entry),
+            ChoreDefaultSnoozeValueSensor(coordinator, entry),
+            ChoreDefaultSnoozeUnitSensor(coordinator, entry),
         ]
     )
 
@@ -165,20 +166,39 @@ class ChoreSnoozeUntilSensor(_ChoreDateSensor):
         super().__init__(coordinator, entry, "snooze_until", "snooze_until")
 
 
-class ChoreDefaultSnoozeDaysSensor(
+class ChoreDefaultSnoozeValueSensor(
     _ChoreDeviceMixin, CoordinatorEntity[ChoresCoordinator], SensorEntity
 ):
-    """Diagnostic sensor surfacing the default snooze duration in days."""
+    """Diagnostic sensor surfacing the default snooze value (count)."""
 
     _attr_has_entity_name = True
     _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_translation_key = "default_snooze_days"
+    _attr_translation_key = "default_snooze_value"
 
     def __init__(self, coordinator: ChoresCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.entry_id}_default_snooze_days"
+        self._attr_unique_id = f"{entry.entry_id}_default_snooze_value"
         self._entry_id = entry.entry_id
 
     @property
     def native_value(self) -> int | None:
-        return (self.coordinator.data or {}).get("default_snooze_days")
+        return (self.coordinator.data or {}).get("default_snooze_value")
+
+
+class ChoreDefaultSnoozeUnitSensor(
+    _ChoreDeviceMixin, CoordinatorEntity[ChoresCoordinator], SensorEntity
+):
+    """Diagnostic sensor surfacing the default snooze unit (e.g. hours, days)."""
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "default_snooze_unit"
+
+    def __init__(self, coordinator: ChoresCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_default_snooze_unit"
+        self._entry_id = entry.entry_id
+
+    @property
+    def native_value(self) -> str | None:
+        return (self.coordinator.data or {}).get("default_snooze_unit")

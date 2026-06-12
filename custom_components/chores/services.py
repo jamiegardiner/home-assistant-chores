@@ -7,11 +7,11 @@ from datetime import datetime, timedelta
 import voluptuous as vol
 from homeassistant.util import dt as dt_util
 
+from .const import SNOOZE_UNITS
+
 SERVICE_COMPLETE = "complete"
 SERVICE_SNOOZE = "snooze"
 SERVICE_UNSNOOZE = "unsnooze"
-
-SNOOZE_UNITS: tuple[str, ...] = ("minutes", "hours", "days", "weeks")
 
 # Schemas are plain dicts so HA can wrap them with make_entity_service_schema,
 # which adds the entity/area/device/label target fields automatically.
