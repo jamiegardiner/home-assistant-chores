@@ -3,12 +3,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from .const import SNOOZE_UNITS
+
 
 @dataclass(frozen=True, slots=True)
 class ChoreConfig:
     name: str
     interval_days: int
-    default_snooze_days: int = 1
+    default_snooze_value: int = 1
+    default_snooze_unit: str = "days"
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> ChoreConfig:
@@ -25,17 +28,23 @@ class ChoreConfig:
             raise ValueError(
                 f"Invalid interval_days {interval_days!r}; must be a positive integer"
             )
-        default_snooze_days = data.get("default_snooze_days", 1)
+        default_snooze_value = data.get("default_snooze_value", 1)
         if (
-            not isinstance(default_snooze_days, int)
-            or isinstance(default_snooze_days, bool)
-            or default_snooze_days < 1
+            not isinstance(default_snooze_value, int)
+            or isinstance(default_snooze_value, bool)
+            or default_snooze_value < 1
         ):
             raise ValueError(
-                f"Invalid default_snooze_days {default_snooze_days!r}; must be a positive integer"
+                f"Invalid default_snooze_value {default_snooze_value!r}; must be a positive integer"
+            )
+        default_snooze_unit = data.get("default_snooze_unit", "days")
+        if default_snooze_unit not in SNOOZE_UNITS:
+            raise ValueError(
+                f"Invalid default_snooze_unit {default_snooze_unit!r}; must be one of {SNOOZE_UNITS}"
             )
         return cls(
             name=data["name"],
             interval_days=interval_days,
-            default_snooze_days=default_snooze_days,
+            default_snooze_value=default_snooze_value,
+            default_snooze_unit=default_snooze_unit,
         )

@@ -190,11 +190,13 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.async_set_updated_data(self._snapshot())
 
     async def async_snooze_default(self) -> None:
-        """Snooze by default_snooze_days from now."""
+        """Snooze by default_snooze_value + default_snooze_unit from now."""
         assert self._runtime is not None
-        snooze_until = dt_util.now() + timedelta(
-            days=self._runtime.config.default_snooze_days
-        )
+        cfg = self._runtime.config
+        delta_kwargs: dict[str, int] = {
+            cfg.default_snooze_unit: cfg.default_snooze_value
+        }
+        snooze_until = dt_util.now() + timedelta(**delta_kwargs)
         await self.async_snooze(snooze_until)
 
     async def async_snooze(self, snooze_until: datetime) -> None:
@@ -249,7 +251,8 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "status": rt.status,
             "next_due": rt.next_due,
             "snooze_until": rt.snooze_until,
-            "default_snooze_days": rt.config.default_snooze_days,
+            "default_snooze_value": rt.config.default_snooze_value,
+            "default_snooze_unit": rt.config.default_snooze_unit,
         }
 
 

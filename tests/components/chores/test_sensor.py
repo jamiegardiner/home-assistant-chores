@@ -17,7 +17,8 @@ CHORE_STATE = {
     "last_completed": date(2026, 6, 1),
     "next_due": date(2026, 6, 8),
     "snooze_until": None,
-    "default_snooze_days": 1,
+    "default_snooze_value": 1,
+    "default_snooze_unit": "days",
 }
 
 CHORE_STATE_B = {
@@ -26,7 +27,8 @@ CHORE_STATE_B = {
     "last_completed": date(2026, 6, 5),
     "next_due": date(2026, 6, 12),
     "snooze_until": None,
-    "default_snooze_days": 3,
+    "default_snooze_value": 2,
+    "default_snooze_unit": "hours",
 }
 
 
@@ -95,14 +97,24 @@ def _make_snooze_until_sensor(coordinator=None, entry=None):
     return ChoreSnoozeUntilSensor(coordinator, entry)
 
 
-def _make_default_snooze_days_sensor(coordinator=None, entry=None):
-    from custom_components.chores.sensor import ChoreDefaultSnoozeDaysSensor
+def _make_default_snooze_value_sensor(coordinator=None, entry=None):
+    from custom_components.chores.sensor import ChoreDefaultSnoozeValueSensor
 
     if coordinator is None:
         coordinator = FakeCoordinator()
     if entry is None:
         entry = _make_entry()
-    return ChoreDefaultSnoozeDaysSensor(coordinator, entry)
+    return ChoreDefaultSnoozeValueSensor(coordinator, entry)
+
+
+def _make_default_snooze_unit_sensor(coordinator=None, entry=None):
+    from custom_components.chores.sensor import ChoreDefaultSnoozeUnitSensor
+
+    if coordinator is None:
+        coordinator = FakeCoordinator()
+    if entry is None:
+        entry = _make_entry()
+    return ChoreDefaultSnoozeUnitSensor(coordinator, entry)
 
 
 # ---------------------------------------------------------------------------
@@ -113,8 +125,8 @@ def _make_default_snooze_days_sensor(coordinator=None, entry=None):
 class TestAsyncSetupEntry:
     """Tests for async_setup_entry."""
 
-    async def test_five_sensors_per_entry(self):
-        """async_setup_entry must add exactly five entities per config entry."""
+    async def test_six_sensors_per_entry(self):
+        """async_setup_entry must add exactly six entities per config entry."""
         from custom_components.chores.sensor import async_setup_entry
 
         coordinator = FakeCoordinator()
@@ -130,12 +142,13 @@ class TestAsyncSetupEntry:
         with patch("custom_components.chores.sensor.async_get_current_platform"):
             await async_setup_entry(hass, entry, sync_add)
 
-        assert len(added) == 5
+        assert len(added) == 6
 
     async def test_setup_entry_entity_types(self):
-        """Five distinct entity classes are created."""
+        """Six distinct entity classes are created."""
         from custom_components.chores.sensor import (
-            ChoreDefaultSnoozeDaysSensor,
+            ChoreDefaultSnoozeUnitSensor,
+            ChoreDefaultSnoozeValueSensor,
             ChoreLastCompletedSensor,
             ChoreNextDueSensor,
             ChoreSensor,
@@ -158,7 +171,8 @@ class TestAsyncSetupEntry:
             ChoreLastCompletedSensor,
             ChoreNextDueSensor,
             ChoreSnoozeUntilSensor,
-            ChoreDefaultSnoozeDaysSensor,
+            ChoreDefaultSnoozeValueSensor,
+            ChoreDefaultSnoozeUnitSensor,
         }
 
 
@@ -350,28 +364,66 @@ class TestChoreSnoozeUntilSensor:
         assert sensor.translation_key == "snooze_until"
 
 
-class TestChoreDefaultSnoozeDaysSensor:
+class TestChoreDefaultSnoozeValueSensor:
     def test_native_value(self):
-        sensor = _make_default_snooze_days_sensor()
+        sensor = _make_default_snooze_value_sensor()
         assert sensor.native_value == 1
 
     def test_native_value_custom(self):
-        coordinator = FakeCoordinator({**CHORE_STATE, "default_snooze_days": 5})
-        sensor = _make_default_snooze_days_sensor(coordinator=coordinator)
+        coordinator = FakeCoordinator({**CHORE_STATE, "default_snooze_value": 5})
+        sensor = _make_default_snooze_value_sensor(coordinator=coordinator)
         assert sensor.native_value == 5
 
     def test_entity_category_diagnostic(self):
-        sensor = _make_default_snooze_days_sensor()
+        sensor = _make_default_snooze_value_sensor()
         assert sensor.entity_category == EntityCategory.DIAGNOSTIC
 
     def test_unique_id_format(self):
         entry = _make_entry(entry_id="abc")
-        sensor = _make_default_snooze_days_sensor(entry=entry)
-        assert sensor.unique_id == "abc_default_snooze_days"
+        sensor = _make_default_snooze_value_sensor(entry=entry)
+        assert sensor.unique_id == "abc_default_snooze_value"
 
     def test_translation_key(self):
-        sensor = _make_default_snooze_days_sensor()
-        assert sensor.translation_key == "default_snooze_days"
+        sensor = _make_default_snooze_value_sensor()
+        assert sensor.translation_key == "default_snooze_value"
+
+    def test_native_value_none_when_missing(self):
+        coordinator = FakeCoordinator(
+            {k: v for k, v in CHORE_STATE.items() if k != "default_snooze_value"}
+        )
+        sensor = _make_default_snooze_value_sensor(coordinator=coordinator)
+        assert sensor.native_value is None
+
+
+class TestChoreDefaultSnoozeUnitSensor:
+    def test_native_value(self):
+        sensor = _make_default_snooze_unit_sensor()
+        assert sensor.native_value == "days"
+
+    def test_native_value_hours(self):
+        coordinator = FakeCoordinator({**CHORE_STATE, "default_snooze_unit": "hours"})
+        sensor = _make_default_snooze_unit_sensor(coordinator=coordinator)
+        assert sensor.native_value == "hours"
+
+    def test_entity_category_diagnostic(self):
+        sensor = _make_default_snooze_unit_sensor()
+        assert sensor.entity_category == EntityCategory.DIAGNOSTIC
+
+    def test_unique_id_format(self):
+        entry = _make_entry(entry_id="abc")
+        sensor = _make_default_snooze_unit_sensor(entry=entry)
+        assert sensor.unique_id == "abc_default_snooze_unit"
+
+    def test_translation_key(self):
+        sensor = _make_default_snooze_unit_sensor()
+        assert sensor.translation_key == "default_snooze_unit"
+
+    def test_native_value_none_when_missing(self):
+        coordinator = FakeCoordinator(
+            {k: v for k, v in CHORE_STATE.items() if k != "default_snooze_unit"}
+        )
+        sensor = _make_default_snooze_unit_sensor(coordinator=coordinator)
+        assert sensor.native_value is None
 
 
 class TestDiagnosticSensorDeviceInfo:

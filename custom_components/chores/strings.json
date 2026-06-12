@@ -16,7 +16,8 @@
       "last_completed": { "name": "Last Completed" },
       "next_due": { "name": "Next Due" },
       "snooze_until": { "name": "Snooze Until" },
-      "default_snooze_days": { "name": "Default Snooze Days" }
+      "default_snooze_value": { "name": "Default Snooze Value" },
+      "default_snooze_unit": { "name": "Default Snooze Unit" }
     }
   },
   "config": {
@@ -27,7 +28,8 @@
         "data": {
           "name": "Name",
           "interval_days": "Interval (days)",
-          "default_snooze_days": "Default snooze (days)",
+          "default_snooze_value": "Default snooze value",
+          "default_snooze_unit": "Default snooze unit",
           "last_completed": "Last completed date"
         }
       }
@@ -40,7 +42,8 @@
         "data": {
           "name": "Name",
           "interval_days": "Interval (days)",
-          "default_snooze_days": "Default snooze (days)",
+          "default_snooze_value": "Default snooze value",
+          "default_snooze_unit": "Default snooze unit",
           "last_completed": "Last completed date"
         }
       }
@@ -48,6 +51,7 @@
     "error": {
       "name_required": "Name cannot be empty.",
       "invalid_interval": "Interval must be a positive number.",
+      "invalid_snooze_unit": "Snooze unit must be one of: minutes, hours, days, or weeks.",
       "invalid_date": "Date must be in YYYY-MM-DD format."
     }
   },

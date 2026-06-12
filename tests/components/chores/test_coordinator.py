@@ -22,7 +22,8 @@ from custom_components.chores.coordinator import ChoresCoordinator
 def _make_entry(
     name: str = "Bins",
     interval_days: int = 7,
-    default_snooze_days: int = 1,
+    default_snooze_value: int = 1,
+    default_snooze_unit: str = "days",
     days_ago: int = 0,
     snooze_until: str | None = None,
     entry_id: str = "test_entry_id",
@@ -32,7 +33,8 @@ def _make_entry(
     opts: dict[str, Any] = {
         "name": name,
         "interval_days": interval_days,
-        "default_snooze_days": default_snooze_days,
+        "default_snooze_value": default_snooze_value,
+        "default_snooze_unit": default_snooze_unit,
         "last_completed": last_completed,
         "snooze_until": snooze_until,
     }
@@ -452,9 +454,36 @@ async def test_unsnooze_done_chore(hass: Any) -> None:
     assert coord.data["status"] == "done"
 
 
-async def test_snooze_default_uses_default_snooze_days(hass: Any) -> None:
-    """async_snooze_default snoozes for default_snooze_days from now."""
-    entry = _make_entry(days_ago=30, interval_days=14, default_snooze_days=3)
+async def test_snooze_default_uses_default_snooze_value_and_unit(hass: Any) -> None:
+    """async_snooze_default snoozes for default_snooze_value + default_snooze_unit from now."""
+    entry = _make_entry(
+        days_ago=30,
+        interval_days=14,
+        default_snooze_value=2,
+        default_snooze_unit="hours",
+    )
+    entry.add_to_hass(hass)
+
+    with patch("custom_components.chores.coordinator.async_track_point_in_time"):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+        before = dt_util.now()
+        await coord.async_snooze_default()
+        after = dt_util.now()
+
+    snooze_until = coord.data["snooze_until"]
+    assert before + timedelta(hours=2) <= snooze_until <= after + timedelta(hours=2)
+    assert coord.data["status"] == "snoozed"
+
+
+async def test_snooze_default_days_unit(hass: Any) -> None:
+    """async_snooze_default with unit=days defers by the configured number of days."""
+    entry = _make_entry(
+        days_ago=30,
+        interval_days=14,
+        default_snooze_value=3,
+        default_snooze_unit="days",
+    )
     entry.add_to_hass(hass)
 
     with patch("custom_components.chores.coordinator.async_track_point_in_time"):
