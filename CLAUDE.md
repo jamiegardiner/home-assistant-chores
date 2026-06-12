@@ -100,7 +100,7 @@ Options updates (from config flow edits) are handled in-place via `async_update_
 
 ### Status transitions
 
-- **`done` → `overdue`**: HA point-in-time timer fires at `next_due` (`notification_time` on the local day of `last_completed + interval`; defaults to `00:00`)
+- **`done` → `overdue`**: HA point-in-time timer fires at `next_due` (`notification_time` on the local day of `last_completed + interval`)
 - **`overdue` → `done`**: `chores.complete` service call sets `last_completed` to now (or the supplied `completed_at` datetime), persists to `entry.options`, recomputes `next_due`, schedules new timer
 - **`snoozed`**: any state can be snoozed; `chores.snooze` sets `snooze_until` in `entry.options` as a timezone-aware ISO datetime; a snooze-expiry timer fires at exactly `snooze_until`
 
@@ -222,5 +222,5 @@ ______________________________________________________________________
 - Interval is stored as `interval_days` (int, days only). The UI previously offered a weeks selector; it no longer does.
 - `default_snooze_value` (default: 1) + `default_snooze_unit` (default: `"days"`) control how far ahead the Snooze button defers the chore. Both the Snooze button and the `chores.snooze` service share the same unit set: `minutes`, `hours`, `days`, `weeks`. These are managed via the CONFIG number/select entities on the device page, not the config/options flow.
 - `last_completed` is stored as a timezone-aware ISO 8601 datetime string in `entry.options` (e.g. `"2026-06-01T14:30:00+10:00"`). Old date-only strings are silently dropped on load (no migration — integration is still in development). `next_due` is computed as `notification_time` on the local due date.
-- `notification_time` (default: `"00:00"`) is stored as an `"HH:MM"` string in `entry.options` and controls when both `done → overdue` and `snoozed → overdue` transitions fire. Managed via the CONFIG time entity on the device page.
+- `notification_time` is stored as an `"HH:MM"` string in `entry.options` and controls when the `done → overdue` transition fires each day. Managed via the CONFIG time entity on the device page.
 - The `chores.complete` service accepts an optional `completed_at` datetime (must not be in the future). Omit it to default to now.

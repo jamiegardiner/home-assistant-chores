@@ -128,7 +128,7 @@ def test_from_dict_default_notification_time() -> None:
     assert config.notification_time == "08:00"
 
 
-def test_from_dict_notification_time_absent_defaults_to_midnight() -> None:
+def test_from_dict_notification_time_absent_uses_default() -> None:
     data = {"name": "Bins", "interval_days": 14}
     config = ChoreConfig.from_dict(data)
     assert config.notification_time == "08:00"
