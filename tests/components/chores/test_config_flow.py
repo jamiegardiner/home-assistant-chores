@@ -44,8 +44,6 @@ async def test_user_flow_creates_entry_with_options(hass):
         {
             "name": "Bins",
             "interval_days": 14,
-            "default_snooze_value": 3,
-            "default_snooze_unit": "hours",
             "last_completed": "2026-06-01 00:00:00",
         },
     )
@@ -55,8 +53,8 @@ async def test_user_flow_creates_entry_with_options(hass):
     opts = result["options"]
     assert opts["name"] == "Bins"
     assert opts["interval_days"] == 14
-    assert opts["default_snooze_value"] == 3
-    assert opts["default_snooze_unit"] == "hours"
+    assert opts["default_snooze_value"] == 1
+    assert opts["default_snooze_unit"] == "days"
     stored_dt = datetime.fromisoformat(opts["last_completed"])
     assert stored_dt.tzinfo is not None
     assert stored_dt.date().isoformat() == "2026-06-01"
@@ -64,8 +62,8 @@ async def test_user_flow_creates_entry_with_options(hass):
     assert "default_snooze_days" not in opts
 
 
-async def test_user_flow_default_snooze_defaults(hass):
-    """interval_days=7 with no explicit snooze fields saves value=1, unit=days."""
+async def test_user_flow_snooze_defaults_hardcoded(hass):
+    """New chores always default to default_snooze_value=1 and default_snooze_unit=days."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": "user"}
     )
@@ -74,34 +72,12 @@ async def test_user_flow_default_snooze_defaults(hass):
         {
             "name": "Bins",
             "interval_days": 7,
-            "default_snooze_value": 1,
-            "default_snooze_unit": "days",
             "last_completed": "2026-06-01 00:00:00",
         },
     )
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert result["options"]["default_snooze_value"] == 1
     assert result["options"]["default_snooze_unit"] == "days"
-
-
-async def test_user_flow_all_valid_units(hass):
-    """All supported snooze units are accepted."""
-    for unit in ("minutes", "hours", "days", "weeks"):
-        result = await hass.config_entries.flow.async_init(
-            DOMAIN, context={"source": "user"}
-        )
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            {
-                "name": "Bins",
-                "interval_days": 7,
-                "default_snooze_value": 1,
-                "default_snooze_unit": unit,
-                "last_completed": "2026-06-01 00:00:00",
-            },
-        )
-        assert result["type"] == FlowResultType.CREATE_ENTRY
-        assert result["options"]["default_snooze_unit"] == unit
 
 
 async def test_user_flow_multiple_entries_allowed(hass):
@@ -115,8 +91,6 @@ async def test_user_flow_multiple_entries_allowed(hass):
             {
                 "name": name,
                 "interval_days": 7,
-                "default_snooze_value": 1,
-                "default_snooze_unit": "days",
                 "last_completed": "2026-06-01 00:00:00",
             },
         )
@@ -150,8 +124,6 @@ async def test_user_flow_rejects_empty_name(hass):
         {
             "name": "   ",
             "interval_days": 1,
-            "default_snooze_value": 1,
-            "default_snooze_unit": "days",
             "last_completed": "2026-06-01 00:00:00",
         },
     )
@@ -171,8 +143,6 @@ async def test_user_flow_rejects_non_positive_interval(hass):
             {
                 "name": "Valid Name",
                 "interval_days": 0,
-                "default_snooze_value": 1,
-                "default_snooze_unit": "days",
                 "last_completed": "2026-06-01 00:00:00",
             },
         )
@@ -189,8 +159,6 @@ async def test_user_flow_rejects_invalid_datetime(hass):
             {
                 "name": "Valid Name",
                 "interval_days": 1,
-                "default_snooze_value": 1,
-                "default_snooze_unit": "days",
                 "last_completed": "not-a-datetime",
             },
         )
@@ -207,8 +175,6 @@ async def test_user_flow_rejects_future_datetime(hass):
         {
             "name": "Bins",
             "interval_days": 7,
-            "default_snooze_value": 1,
-            "default_snooze_unit": "days",
             "last_completed": future.isoformat(sep=" ", timespec="seconds"),
         },
     )
@@ -243,7 +209,7 @@ async def test_options_flow_shows_form(hass):
 
 
 async def test_options_flow_prefills_current_values(hass):
-    """Edit form is prefilled with existing option values."""
+    """Edit form is prefilled with name, interval_days, and last_completed."""
     entry = MockConfigEntry(domain=DOMAIN, options=dict(_BASE_OPTS))
     entry.add_to_hass(hass)
     await hass.config_entries.async_setup(entry.entry_id)
@@ -262,7 +228,6 @@ async def test_options_flow_prefills_current_values(hass):
         for k in schema.schema
         if isinstance(k, vol.Required) and k.schema == "last_completed"
     )
-    # Suggested value is a naive local-time string (what DateTimeSelector expects)
     stored_dt = datetime.fromisoformat("2026-06-01T00:00:00+00:00")
     expected_suggestion = dt_util.as_local(stored_dt).strftime("%Y-%m-%d %H:%M:%S")
     assert lc_key.description["suggested_value"] == expected_suggestion
@@ -276,7 +241,7 @@ async def test_options_flow_prefills_current_values(hass):
 
 
 async def test_options_flow_saves_edits(hass):
-    """Submitting valid edit data updates the entry options with a tz-aware last_completed."""
+    """Submitting valid edit data updates name, interval, and last_completed."""
     entry = MockConfigEntry(domain=DOMAIN, options=dict(_BASE_OPTS))
     entry.add_to_hass(hass)
     await hass.config_entries.async_setup(entry.entry_id)
@@ -287,20 +252,37 @@ async def test_options_flow_saves_edits(hass):
         {
             "name": "Wheelie Bins",
             "interval_days": 14,
-            "default_snooze_value": 2,
-            "default_snooze_unit": "hours",
             "last_completed": "2026-06-08 14:30:00",
         },
     )
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert entry.options["name"] == "Wheelie Bins"
     assert entry.options["interval_days"] == 14
-    assert entry.options["default_snooze_value"] == 2
-    assert entry.options["default_snooze_unit"] == "hours"
     stored_dt = datetime.fromisoformat(entry.options["last_completed"])
     assert stored_dt.tzinfo is not None
     assert stored_dt.date().isoformat() == "2026-06-08"
     assert "default_snooze_days" not in entry.options
+
+
+async def test_options_flow_preserves_snooze_defaults(hass):
+    """Saving the options form preserves entity-managed snooze value and unit."""
+    opts = {**_BASE_OPTS, "default_snooze_value": 3, "default_snooze_unit": "hours"}
+    entry = MockConfigEntry(domain=DOMAIN, options=opts)
+    entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry.entry_id)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            "name": "Bins",
+            "interval_days": 7,
+            "last_completed": "2026-06-01 00:00:00",
+        },
+    )
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert entry.options["default_snooze_value"] == 3
+    assert entry.options["default_snooze_unit"] == "hours"
 
 
 async def test_options_flow_preserves_snooze_until(hass):
@@ -317,8 +299,6 @@ async def test_options_flow_preserves_snooze_until(hass):
         {
             "name": "Wheelie Bins",
             "interval_days": 7,
-            "default_snooze_value": 1,
-            "default_snooze_unit": "days",
             "last_completed": "2026-06-01 00:00:00",
         },
     )
@@ -338,8 +318,6 @@ async def test_options_flow_rejects_empty_name(hass):
         {
             "name": "   ",
             "interval_days": 1,
-            "default_snooze_value": 1,
-            "default_snooze_unit": "days",
             "last_completed": "2026-06-01 00:00:00",
         },
     )
@@ -361,8 +339,6 @@ async def test_options_flow_rejects_non_positive_interval(hass):
             {
                 "name": "Bins",
                 "interval_days": 0,
-                "default_snooze_value": 1,
-                "default_snooze_unit": "days",
                 "last_completed": "2026-06-01 00:00:00",
             },
         )
@@ -381,8 +357,6 @@ async def test_options_flow_rejects_future_datetime(hass):
         {
             "name": "Bins",
             "interval_days": 7,
-            "default_snooze_value": 1,
-            "default_snooze_unit": "days",
             "last_completed": future.isoformat(sep=" ", timespec="seconds"),
         },
     )

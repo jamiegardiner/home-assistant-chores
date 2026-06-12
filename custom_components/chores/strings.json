@@ -5,6 +5,21 @@
       "snooze": { "name": "Snooze" },
       "unsnooze": { "name": "Unsnooze" }
     },
+    "number": {
+      "interval_days": { "name": "Interval" },
+      "default_snooze_value": { "name": "Default Snooze Value" }
+    },
+    "select": {
+      "default_snooze_unit": {
+        "name": "Default Snooze Unit",
+        "state": {
+          "minutes": "Minutes",
+          "hours": "Hours",
+          "days": "Days",
+          "weeks": "Weeks"
+        }
+      }
+    },
     "sensor": {
       "chore": {
         "state": {
@@ -15,9 +30,7 @@
       },
       "last_completed": { "name": "Last Completed" },
       "next_due": { "name": "Next Due" },
-      "snooze_until": { "name": "Snooze Expiry" },
-      "default_snooze_value": { "name": "Default Snooze Value" },
-      "default_snooze_unit": { "name": "Default Snooze Unit" }
+      "snooze_until": { "name": "Snooze Expiry" }
     }
   },
   "config": {
@@ -35,16 +48,12 @@
         "data": {
           "name": "Name",
           "interval_days": "Interval (days)",
-          "last_completed": "Last completed",
-          "default_snooze_value": "Default snooze value",
-          "default_snooze_unit": "Default snooze unit"
+          "last_completed": "Last completed"
         },
         "data_description": {
           "name": "A short label for this chore, e.g. Bins or Vacuuming.",
           "interval_days": "How many days between completions.",
-          "last_completed": "The date and time this chore was last done.",
-          "default_snooze_value": "How many units to defer the chore when the Snooze button is pressed.",
-          "default_snooze_unit": "Time unit for the default snooze duration."
+          "last_completed": "The date and time this chore was last done."
         }
       }
     }
@@ -56,16 +65,12 @@
         "data": {
           "name": "Name",
           "interval_days": "Interval (days)",
-          "last_completed": "Last completed",
-          "default_snooze_value": "Default snooze value",
-          "default_snooze_unit": "Default snooze unit"
+          "last_completed": "Last completed"
         },
         "data_description": {
           "name": "A short label for this chore, e.g. Bins or Vacuuming.",
           "interval_days": "How many days between completions.",
-          "last_completed": "The date and time this chore was last done.",
-          "default_snooze_value": "How many units to defer the chore when the Snooze button is pressed.",
-          "default_snooze_unit": "Time unit for the default snooze duration."
+          "last_completed": "The date and time this chore was last done."
         }
       }
     },
