@@ -17,6 +17,7 @@ Scrutinise every changed file against all of the following categories. Flag anyt
 - [ ] `from __future__ import annotations` present in every module
 - [ ] All functions and methods have complete type annotations (arguments and return type)
 - [ ] No bare `except:` — always catch a specific exception type
+- **Note:** `except TypeError, ValueError:` without parentheses is **valid Python 3.14+ syntax** (PEP 758). Ruff enforces the parenthesis-free form. Do not flag it as an error.
 - [ ] `is None` / `is not None` used (not `== None`)
 - [ ] f-strings used over `.format()` or `%` string formatting
 - [ ] No mutable default arguments (e.g. `def f(x=[])`)

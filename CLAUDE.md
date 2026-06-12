@@ -198,7 +198,7 @@ ______________________________________________________________________
 - Each chore is a separate config entry — multiple entries are allowed. **Adding a chore** = "Add Integration → Chores". **Removing a chore** = delete that config entry.
 - No YAML configuration — all setup is through the UI.
 - All chore state (`last_completed`, `snooze_until`) lives in `entry.options`. The update listener calls `coordinator.async_update_config` (never `async_reload`) so edits are applied in-place without entity teardown.
-- Python `>=3.14.2` (matches Home Assistant's own requirement).
+- Python `>=3.14.2` (matches Home Assistant's own requirement). This enables PEP 758 — `except TypeError, ValueError:` without parentheses is **valid syntax** at this version. Ruff enforces the parenthesis-free form; do not flag it as a bug.
 - `integration_type: device` in `manifest.json` — chores appear in the Devices & Services panel, not the Helpers panel.
 - Interval is stored as `interval_days` (int, days only). The UI previously offered a weeks selector; it no longer does.
 - `default_snooze_days` (default: 1) controls how far ahead the Snooze button defers the chore.
