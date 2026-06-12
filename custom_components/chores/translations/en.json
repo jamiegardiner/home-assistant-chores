@@ -25,7 +25,8 @@
       "name_required": "Name cannot be empty.",
       "invalid_interval": "Interval must be a positive number.",
       "invalid_snooze_unit": "Snooze unit must be one of: minutes, hours, days, or weeks.",
-      "invalid_date": "Date must be in YYYY-MM-DD format."
+      "invalid_date": "Date must be in YYYY-MM-DD format.",
+      "future_completed_at": "Completion date and time cannot be in the future."
     },
     "step": {
       "user": {
@@ -34,14 +35,14 @@
         "data": {
           "name": "Name",
           "interval_days": "Interval (days)",
-          "last_completed": "Last completed date",
+          "last_completed": "Last completed",
           "default_snooze_value": "Default snooze value",
           "default_snooze_unit": "Default snooze unit"
         },
         "data_description": {
           "name": "A short label for this chore, e.g. Bins or Vacuuming.",
           "interval_days": "How many days between completions.",
-          "last_completed": "The date this chore was last done.",
+          "last_completed": "The date and time this chore was last done.",
           "default_snooze_value": "How many units to defer the chore when the Snooze button is pressed.",
           "default_snooze_unit": "Time unit for the default snooze duration."
         }
@@ -55,14 +56,14 @@
         "data": {
           "name": "Name",
           "interval_days": "Interval (days)",
-          "last_completed": "Last completed date",
+          "last_completed": "Last completed",
           "default_snooze_value": "Default snooze value",
           "default_snooze_unit": "Default snooze unit"
         },
         "data_description": {
           "name": "A short label for this chore, e.g. Bins or Vacuuming.",
           "interval_days": "How many days between completions.",
-          "last_completed": "The date this chore was last done.",
+          "last_completed": "The date and time this chore was last done.",
           "default_snooze_value": "How many units to defer the chore when the Snooze button is pressed.",
           "default_snooze_unit": "Time unit for the default snooze duration."
         }
@@ -72,13 +73,20 @@
       "name_required": "Name cannot be empty.",
       "invalid_interval": "Interval must be a positive number.",
       "invalid_snooze_unit": "Snooze unit must be one of: minutes, hours, days, or weeks.",
-      "invalid_date": "Date must be in YYYY-MM-DD format."
+      "invalid_date": "Date must be in YYYY-MM-DD format.",
+      "future_completed_at": "Completion date and time cannot be in the future."
     }
   },
   "services": {
     "complete": {
       "name": "Complete chore",
-      "description": "Mark a chore as completed now, returning it to \"done\"."
+      "description": "Mark a chore as completed, returning it to \"done\". Optionally supply completed_at to record a specific past datetime; omit to default to now.",
+      "fields": {
+        "completed_at": {
+          "name": "Completed at",
+          "description": "The datetime the chore was completed. Must not be in the future. Defaults to now if omitted."
+        }
+      }
     },
     "snooze": {
       "name": "Snooze chore",

@@ -29,7 +29,7 @@ def _make_entry(
     entry_id: str = "test_entry_id",
 ) -> MockConfigEntry:
     """Return a single-chore MockConfigEntry."""
-    last_completed = (dt_util.now().date() - timedelta(days=days_ago)).isoformat()
+    last_completed = (dt_util.now() - timedelta(days=days_ago)).isoformat()
     opts: dict[str, Any] = {
         "name": name,
         "interval_days": interval_days,
@@ -124,7 +124,7 @@ async def test_complete_resets_to_done(hass: Any) -> None:
         await coord.async_complete()
 
     assert coord.data["status"] == "done"
-    assert coord.data["last_completed"] == dt_util.now().date()
+    assert coord.data["last_completed"].date() == dt_util.now().date()
     assert coord.data["next_due"] > datetime.now(tz=UTC)
 
 
@@ -138,7 +138,9 @@ async def test_complete_persists_to_entry_options(hass: Any) -> None:
         await coord.async_initialize()
         await coord.async_complete()
 
-    assert entry.options["last_completed"] == dt_util.now().date().isoformat()
+    persisted = entry.options["last_completed"]
+    assert datetime.fromisoformat(persisted).tzinfo is not None
+    assert datetime.fromisoformat(persisted).date() == dt_util.now().date()
     assert entry.options["snooze_until"] is None
 
 
@@ -210,7 +212,7 @@ async def test_update_config_recomputes_from_preserved_last_completed(
         }
         await coord.async_update_config(new_opts)
 
-    assert coord.data["last_completed"] == last_completed_date
+    assert coord.data["last_completed"].date() == last_completed_date
     expected_next_due = last_completed_date + timedelta(days=14)
     assert coord.data["next_due"].date() == expected_next_due
     assert coord.data["status"] == "done"
@@ -515,3 +517,69 @@ async def test_unsnooze_on_non_snoozed_is_noop(hass: Any) -> None:
     assert coord.data["snooze_until"] is None
     # Options unchanged since it was a no-op
     assert dict(entry.options) == initial_options
+
+
+# ---------------------------------------------------------------------------
+# async_complete with completed_at tests
+# ---------------------------------------------------------------------------
+
+
+async def test_complete_with_explicit_completed_at(hass: Any) -> None:
+    """async_complete with a past datetime stores that datetime."""
+    entry = _make_entry(days_ago=30, interval_days=7)
+    entry.add_to_hass(hass)
+
+    with patch("custom_components.chores.coordinator.async_track_point_in_time"):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+
+        past_dt = dt_util.now() - timedelta(hours=3)
+        await coord.async_complete(past_dt)
+
+    assert coord.data["last_completed"] == past_dt
+    assert coord.data["status"] == "done"
+
+
+async def test_complete_future_completed_at_raises(hass: Any) -> None:
+    """async_complete with a future datetime raises HomeAssistantError."""
+    entry = _make_entry(days_ago=30, interval_days=7)
+    entry.add_to_hass(hass)
+
+    with patch("custom_components.chores.coordinator.async_track_point_in_time"):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+
+        original_last = coord.data["last_completed"]
+        future_dt = dt_util.now() + timedelta(hours=1)
+
+        with pytest.raises(HomeAssistantError):
+            await coord.async_complete(future_dt)
+
+    assert coord.data["last_completed"] == original_last
+
+
+async def test_last_completed_is_datetime_not_date(hass: Any) -> None:
+    """Snapshot last_completed is a datetime, not a date."""
+    entry = _make_entry(days_ago=0, interval_days=7)
+    entry.add_to_hass(hass)
+
+    with patch("custom_components.chores.coordinator.async_track_point_in_time"):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+
+    assert isinstance(coord.data["last_completed"], datetime)
+
+
+async def test_complete_persists_tz_aware_datetime(hass: Any) -> None:
+    """async_complete stores a tz-aware ISO datetime string in entry.options."""
+    entry = _make_entry(days_ago=30, interval_days=7)
+    entry.add_to_hass(hass)
+
+    with patch("custom_components.chores.coordinator.async_track_point_in_time"):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+        await coord.async_complete()
+
+    stored = entry.options["last_completed"]
+    parsed = datetime.fromisoformat(stored)
+    assert parsed.tzinfo is not None

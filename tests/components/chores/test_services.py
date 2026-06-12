@@ -77,15 +77,31 @@ class TestParseSnoozeDateTime:
 
 
 class TestHandleComplete:
-    async def test_calls_coordinator_async_complete(self):
+    async def test_calls_coordinator_async_complete_no_completed_at(self):
+        """Calling complete without completed_at passes None to the coordinator."""
         entity = _make_entity()
         await _handle_complete(entity, _make_call({}))
-        entity.coordinator.async_complete.assert_called_once_with()
+        entity.coordinator.async_complete.assert_called_once_with(None)
+
+    async def test_calls_coordinator_async_complete_with_completed_at(self):
+        """Calling complete with a past completed_at passes the datetime to the coordinator.
+
+        cv.datetime in the schema converts the string before the handler fires,
+        so the handler receives a datetime object (possibly naive from YAML automations).
+        """
+        entity = _make_entity()
+        past = dt_util.now() - timedelta(hours=2)
+        await _handle_complete(entity, _make_call({"completed_at": past}))
+        entity.coordinator.async_complete.assert_called_once()
+        passed = entity.coordinator.async_complete.call_args[0][0]
+        assert passed is not None
+        assert passed.tzinfo is not None
+        assert abs((passed - past).total_seconds()) < 1
 
     async def test_complete_second_entity_also_works(self):
         entity = _make_entity()
         await _handle_complete(entity, _make_call({}))
-        entity.coordinator.async_complete.assert_called_once_with()
+        entity.coordinator.async_complete.assert_called_once_with(None)
 
 
 class TestHandleSnooze:

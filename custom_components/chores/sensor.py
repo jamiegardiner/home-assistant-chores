@@ -16,6 +16,7 @@ from homeassistant.helpers.entity_platform import (
     async_get_current_platform,
 )
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 from homeassistant.util import slugify
 
 from .const import STATUS_OPTIONS, ChoreSensorEntityFeature
@@ -32,7 +33,13 @@ from .services import (
 
 
 async def _handle_complete(entity: ChoreSensor, call: ServiceCall) -> None:
-    await entity.coordinator.async_complete()
+    raw: datetime | None = call.data.get("completed_at")
+    completed_at = (
+        (raw if raw.tzinfo is not None else dt_util.as_local(raw))
+        if raw is not None
+        else None
+    )
+    await entity.coordinator.async_complete(completed_at)
 
 
 async def _handle_snooze(entity: ChoreSensor, call: ServiceCall) -> None:
@@ -137,9 +144,9 @@ class _ChoreDateSensor(
 
 
 class ChoreLastCompletedSensor(_ChoreDateSensor):
-    """Diagnostic sensor surfacing the last completed date."""
+    """Diagnostic sensor surfacing the last completed datetime."""
 
-    _attr_device_class = SensorDeviceClass.DATE
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_translation_key = "last_completed"
 
     def __init__(self, coordinator: ChoresCoordinator, entry: ConfigEntry) -> None:

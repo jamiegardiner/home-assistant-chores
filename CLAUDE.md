@@ -51,7 +51,7 @@ Each chore is a separate config entry (`integration_type: device`). All state li
   "interval_days": 14,
   "default_snooze_value": 1,
   "default_snooze_unit": "days",
-  "last_completed": "2026-06-01",
+  "last_completed": "2026-06-01T14:30:00+10:00",
   "snooze_until": null
 }
 ```
@@ -81,7 +81,7 @@ Options updates (from config flow edits) are handled in-place via `async_update_
 | Type                            | File             | Purpose                                                                          |
 | ------------------------------- | ---------------- | -------------------------------------------------------------------------------- |
 | `ChoreConfig`                   | `models.py`      | Immutable config: name, interval_days, default_snooze_value, default_snooze_unit |
-| `ChoreRuntime`                  | `coordinator.py` | Mutable runtime state: status, next_due, timer cancel fns                        |
+| `ChoreRuntime`                  | `coordinator.py` | Mutable runtime state: last_completed (datetime), status, next_due, timer fns    |
 | `ChoresCoordinator`             | `coordinator.py` | Owns one chore, pushes updates to the sensor                                     |
 | `ChoreSensor`                   | `sensor.py`      | Primary `CoordinatorEntity` — reads status from coordinator snapshot             |
 | `_ChoreDateSensor`              | `sensor.py`      | Base class for the 3 diagnostic date sensors                                     |
@@ -92,7 +92,7 @@ Options updates (from config flow edits) are handled in-place via `async_update_
 ### Status transitions
 
 - **`done` → `overdue`**: HA point-in-time timer fires at `next_due` (start of local day of `last_completed + interval`)
-- **`overdue` → `done`**: `chores.complete` service call resets `last_completed` to today, persists to `entry.options`, recomputes `next_due`, schedules new timer
+- **`overdue` → `done`**: `chores.complete` service call sets `last_completed` to now (or the supplied `completed_at` datetime), persists to `entry.options`, recomputes `next_due`, schedules new timer
 - **`snoozed`**: any state can be snoozed; `chores.snooze` sets `snooze_until` in `entry.options` as a timezone-aware ISO datetime; a snooze-expiry timer fires at that exact datetime
 
 ______________________________________________________________________
@@ -165,6 +165,12 @@ They must be kept in sync. If you add to one, add to the other.
 
 ______________________________________________________________________
 
+## Code style
+
+- **All imports must be at the top of the file.** Inline imports (`import x` or `__import__("x")` inside functions, methods, or class bodies) are not allowed anywhere in the codebase — production code or tests. If a module is needed, add it to the top-level import block.
+
+______________________________________________________________________
+
 ## Testing conventions
 
 - Framework: `pytest` + `pytest-homeassistant-custom-component`
@@ -204,3 +210,5 @@ ______________________________________________________________________
 - `integration_type: device` in `manifest.json` — chores appear in the Devices & Services panel, not the Helpers panel.
 - Interval is stored as `interval_days` (int, days only). The UI previously offered a weeks selector; it no longer does.
 - `default_snooze_value` (default: 1) + `default_snooze_unit` (default: `"days"`) control how far ahead the Snooze button defers the chore. Both the Snooze button and the `chores.snooze` service share the same unit set: `minutes`, `hours`, `days`, `weeks`.
+- `last_completed` is stored as a timezone-aware ISO 8601 datetime string in `entry.options` (e.g. `"2026-06-01T14:30:00+10:00"`). Old date-only strings are silently dropped on load (no migration — integration is still in development). `next_due` remains start-of-local-day regardless of the time component of `last_completed`.
+- The `chores.complete` service accepts an optional `completed_at` datetime (must not be in the future). Omit it to default to now.

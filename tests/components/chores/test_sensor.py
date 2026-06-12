@@ -5,16 +5,31 @@ from __future__ import annotations
 from datetime import UTC, date, datetime
 from unittest.mock import MagicMock, patch
 
+from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import EntityCategory
+
+from custom_components.chores.const import DOMAIN
+from custom_components.chores.sensor import (
+    ChoreDefaultSnoozeUnitSensor,
+    ChoreDefaultSnoozeValueSensor,
+    ChoreLastCompletedSensor,
+    ChoreNextDueSensor,
+    ChoreSensor,
+    ChoreSnoozeUntilSensor,
+    async_setup_entry,
+)
 
 # ---------------------------------------------------------------------------
 # Fake coordinator — single-chore flat-dict model
 # ---------------------------------------------------------------------------
 
+_LC = datetime(2026, 6, 1, 14, 30, tzinfo=UTC)
+_LC_B = datetime(2026, 6, 5, 9, 0, tzinfo=UTC)
+
 CHORE_STATE = {
     "name": "Dishes",
     "status": "overdue",
-    "last_completed": date(2026, 6, 1),
+    "last_completed": _LC,
     "next_due": date(2026, 6, 8),
     "snooze_until": None,
     "default_snooze_value": 1,
@@ -24,7 +39,7 @@ CHORE_STATE = {
 CHORE_STATE_B = {
     "name": "Vacuum",
     "status": "done",
-    "last_completed": date(2026, 6, 5),
+    "last_completed": _LC_B,
     "next_due": date(2026, 6, 12),
     "snooze_until": None,
     "default_snooze_value": 2,
@@ -58,8 +73,6 @@ def _make_entry(entry_id: str = "test_entry_id") -> MagicMock:
 
 def _make_sensor(coordinator=None, entry=None):
     """Build a ChoreSensor without going through async_setup_entry."""
-    from custom_components.chores.sensor import ChoreSensor
-
     if coordinator is None:
         coordinator = FakeCoordinator()
     if entry is None:
@@ -68,8 +81,6 @@ def _make_sensor(coordinator=None, entry=None):
 
 
 def _make_last_completed_sensor(coordinator=None, entry=None):
-    from custom_components.chores.sensor import ChoreLastCompletedSensor
-
     if coordinator is None:
         coordinator = FakeCoordinator()
     if entry is None:
@@ -78,8 +89,6 @@ def _make_last_completed_sensor(coordinator=None, entry=None):
 
 
 def _make_next_due_sensor(coordinator=None, entry=None):
-    from custom_components.chores.sensor import ChoreNextDueSensor
-
     if coordinator is None:
         coordinator = FakeCoordinator()
     if entry is None:
@@ -88,8 +97,6 @@ def _make_next_due_sensor(coordinator=None, entry=None):
 
 
 def _make_snooze_until_sensor(coordinator=None, entry=None):
-    from custom_components.chores.sensor import ChoreSnoozeUntilSensor
-
     if coordinator is None:
         coordinator = FakeCoordinator()
     if entry is None:
@@ -98,8 +105,6 @@ def _make_snooze_until_sensor(coordinator=None, entry=None):
 
 
 def _make_default_snooze_value_sensor(coordinator=None, entry=None):
-    from custom_components.chores.sensor import ChoreDefaultSnoozeValueSensor
-
     if coordinator is None:
         coordinator = FakeCoordinator()
     if entry is None:
@@ -108,8 +113,6 @@ def _make_default_snooze_value_sensor(coordinator=None, entry=None):
 
 
 def _make_default_snooze_unit_sensor(coordinator=None, entry=None):
-    from custom_components.chores.sensor import ChoreDefaultSnoozeUnitSensor
-
     if coordinator is None:
         coordinator = FakeCoordinator()
     if entry is None:
@@ -127,8 +130,6 @@ class TestAsyncSetupEntry:
 
     async def test_six_sensors_per_entry(self):
         """async_setup_entry must add exactly six entities per config entry."""
-        from custom_components.chores.sensor import async_setup_entry
-
         coordinator = FakeCoordinator()
         entry = _make_entry()
         entry.runtime_data = coordinator
@@ -146,16 +147,6 @@ class TestAsyncSetupEntry:
 
     async def test_setup_entry_entity_types(self):
         """Six distinct entity classes are created."""
-        from custom_components.chores.sensor import (
-            ChoreDefaultSnoozeUnitSensor,
-            ChoreDefaultSnoozeValueSensor,
-            ChoreLastCompletedSensor,
-            ChoreNextDueSensor,
-            ChoreSensor,
-            ChoreSnoozeUntilSensor,
-            async_setup_entry,
-        )
-
         coordinator = FakeCoordinator()
         entry = _make_entry()
         entry.runtime_data = coordinator
@@ -202,8 +193,6 @@ class TestChoreSensorDeviceInfo:
         assert sensor.device_info["name"] == "Plates"
 
     def test_device_info_identifiers_contain_entry_id(self):
-        from custom_components.chores.const import DOMAIN
-
         entry = _make_entry(entry_id="my_entry_id")
         sensor = _make_sensor(entry=entry)
         assert (DOMAIN, "my_entry_id") in sensor.device_info["identifiers"]
@@ -250,8 +239,6 @@ class TestChoreSensorConventions:
     """Tests for HA entity conventions: enum device class, options, translation_key."""
 
     def test_device_class_is_enum(self):
-        from homeassistant.components.sensor import SensorDeviceClass
-
         sensor = _make_sensor()
         assert sensor.device_class == SensorDeviceClass.ENUM
 
@@ -279,13 +266,11 @@ class TestChoreSensorConventions:
 class TestChoreLastCompletedSensor:
     def test_native_value(self):
         sensor = _make_last_completed_sensor()
-        assert sensor.native_value == date(2026, 6, 1)
+        assert sensor.native_value == _LC
 
-    def test_device_class_date(self):
-        from homeassistant.components.sensor import SensorDeviceClass
-
+    def test_device_class_timestamp(self):
         sensor = _make_last_completed_sensor()
-        assert sensor.device_class == SensorDeviceClass.DATE
+        assert sensor.device_class == SensorDeviceClass.TIMESTAMP
 
     def test_entity_category_diagnostic(self):
         sensor = _make_last_completed_sensor()
@@ -312,8 +297,6 @@ class TestChoreNextDueSensor:
         assert sensor.native_value == date(2026, 6, 8)
 
     def test_device_class_timestamp(self):
-        from homeassistant.components.sensor import SensorDeviceClass
-
         sensor = _make_next_due_sensor()
         assert sensor.device_class == SensorDeviceClass.TIMESTAMP
 
@@ -345,8 +328,6 @@ class TestChoreSnoozeUntilSensor:
         assert sensor.native_value == _SNOOZE_DT
 
     def test_device_class_timestamp(self):
-        from homeassistant.components.sensor import SensorDeviceClass
-
         sensor = _make_snooze_until_sensor()
         assert sensor.device_class == SensorDeviceClass.TIMESTAMP
 

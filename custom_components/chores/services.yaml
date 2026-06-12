@@ -4,6 +4,11 @@ complete:
       integration: chores
       domain: sensor
       device_class: enum
+  fields:
+    completed_at:
+      required: false
+      selector:
+        datetime:
 
 snooze:
   target:
