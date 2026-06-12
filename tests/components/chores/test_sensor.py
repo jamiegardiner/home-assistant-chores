@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import UTC, date, datetime
 from unittest.mock import MagicMock, patch
 
 from homeassistant.const import EntityCategory
@@ -263,9 +263,15 @@ class TestChoreSensorConventions:
 
 
 class TestChoreLastCompletedSensor:
-    def test_native_value_iso(self):
+    def test_native_value(self):
         sensor = _make_last_completed_sensor()
-        assert sensor.native_value == "2026-06-01"
+        assert sensor.native_value == date(2026, 6, 1)
+
+    def test_device_class_date(self):
+        from homeassistant.components.sensor import SensorDeviceClass
+
+        sensor = _make_last_completed_sensor()
+        assert sensor.device_class == SensorDeviceClass.DATE
 
     def test_entity_category_diagnostic(self):
         sensor = _make_last_completed_sensor()
@@ -287,9 +293,15 @@ class TestChoreLastCompletedSensor:
 
 
 class TestChoreNextDueSensor:
-    def test_native_value_iso(self):
+    def test_native_value(self):
         sensor = _make_next_due_sensor()
-        assert sensor.native_value == "2026-06-08"
+        assert sensor.native_value == date(2026, 6, 8)
+
+    def test_device_class_timestamp(self):
+        from homeassistant.components.sensor import SensorDeviceClass
+
+        sensor = _make_next_due_sensor()
+        assert sensor.device_class == SensorDeviceClass.TIMESTAMP
 
     def test_entity_category_diagnostic(self):
         sensor = _make_next_due_sensor()
@@ -305,17 +317,24 @@ class TestChoreNextDueSensor:
         assert sensor.translation_key == "next_due"
 
 
+_SNOOZE_DT = datetime(2026, 6, 15, 12, 0, tzinfo=UTC)
+
+
 class TestChoreSnoozeUntilSensor:
     def test_native_value_none_when_not_snoozed(self):
         sensor = _make_snooze_until_sensor()
         assert sensor.native_value is None
 
-    def test_native_value_iso_when_snoozed(self):
-        coordinator = FakeCoordinator(
-            {**CHORE_STATE, "snooze_until": date(2026, 6, 15)}
-        )
+    def test_native_value_when_snoozed(self):
+        coordinator = FakeCoordinator({**CHORE_STATE, "snooze_until": _SNOOZE_DT})
         sensor = _make_snooze_until_sensor(coordinator=coordinator)
-        assert sensor.native_value == "2026-06-15"
+        assert sensor.native_value == _SNOOZE_DT
+
+    def test_device_class_timestamp(self):
+        from homeassistant.components.sensor import SensorDeviceClass
+
+        sensor = _make_snooze_until_sensor()
+        assert sensor.device_class == SensorDeviceClass.TIMESTAMP
 
     def test_entity_category_diagnostic(self):
         sensor = _make_snooze_until_sensor()
@@ -364,22 +383,3 @@ class TestDiagnosticSensorDeviceInfo:
         primary = _make_sensor(coordinator=coordinator, entry=entry)
         diag = _make_last_completed_sensor(coordinator=coordinator, entry=entry)
         assert primary.device_info["identifiers"] == diag.device_info["identifiers"]
-
-
-class TestIsoHelper:
-    """Tests for the _iso date-formatting helper."""
-
-    def test_date_converted_to_iso(self):
-        from custom_components.chores.sensor import _iso
-
-        assert _iso(date(2026, 1, 15)) == "2026-01-15"
-
-    def test_none_passed_through(self):
-        from custom_components.chores.sensor import _iso
-
-        assert _iso(None) is None
-
-    def test_string_passed_through(self):
-        from custom_components.chores.sensor import _iso
-
-        assert _iso("already-a-string") == "already-a-string"
