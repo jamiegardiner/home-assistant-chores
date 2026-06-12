@@ -13,7 +13,7 @@ class ChoreConfig:
     interval_days: int
     default_snooze_value: int = 1
     default_snooze_unit: str = "days"
-    notification_time: str = "00:00"
+    notification_time: str = "08:00"
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> ChoreConfig:
@@ -44,7 +44,7 @@ class ChoreConfig:
             raise ValueError(
                 f"Invalid default_snooze_unit {default_snooze_unit!r}; must be one of {SNOOZE_UNITS}"
             )
-        notification_time = data.get("notification_time", "00:00")
+        notification_time = data.get("notification_time", "08:00")
         try:
             if notification_time != datetime.strptime(
                 notification_time, "%H:%M"

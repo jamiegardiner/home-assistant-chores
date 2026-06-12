@@ -609,7 +609,7 @@ async def test_next_due_at_notification_time(hass: Any) -> None:
 
 
 async def test_next_due_default_notification_time_is_midnight(hass: Any) -> None:
-    """Default notification_time 00:00 preserves midnight behaviour."""
+    """notification_time 00:00 gives midnight next_due."""
     entry = _make_entry(days_ago=0, interval_days=7, notification_time="00:00")
     entry.add_to_hass(hass)
 

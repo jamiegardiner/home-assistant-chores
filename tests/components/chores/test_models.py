@@ -125,13 +125,13 @@ def test_const_domain() -> None:
 
 def test_from_dict_default_notification_time() -> None:
     config = ChoreConfig.from_dict({"name": "Bins", "interval_days": 7})
-    assert config.notification_time == "00:00"
+    assert config.notification_time == "08:00"
 
 
 def test_from_dict_notification_time_absent_defaults_to_midnight() -> None:
     data = {"name": "Bins", "interval_days": 14}
     config = ChoreConfig.from_dict(data)
-    assert config.notification_time == "00:00"
+    assert config.notification_time == "08:00"
 
 
 def test_from_dict_custom_notification_time() -> None:
