@@ -27,7 +27,7 @@ from .services import (
     SERVICE_UNSNOOZE,
     SNOOZE_SCHEMA,
     UNSNOOZE_SCHEMA,
-    _parse_snooze_until,
+    _parse_snooze_datetime,
 )
 
 
@@ -43,7 +43,7 @@ async def _handle_complete(entity: ChoreSensor, call: ServiceCall) -> None:
 
 
 async def _handle_snooze(entity: ChoreSensor, call: ServiceCall) -> None:
-    snooze_until = _parse_snooze_until(call.data)
+    snooze_until = _parse_snooze_datetime(call.data)
     await entity.coordinator.async_snooze(snooze_until)
 
 

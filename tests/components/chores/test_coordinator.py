@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -236,9 +236,9 @@ async def test_update_config_name_change_no_status_change(hass: Any) -> None:
 
 async def test_update_config_preserves_snooze(hass: Any) -> None:
     """async_update_config preserves snooze_until when options still carry it."""
-    snooze_date = dt_util.now().date() + timedelta(days=3)
+    snooze_dt = dt_util.now() + timedelta(days=3)
     entry = _make_entry(
-        days_ago=30, interval_days=7, snooze_until=snooze_date.isoformat()
+        days_ago=30, interval_days=7, snooze_until=snooze_dt.isoformat()
     )
     entry.add_to_hass(hass)
 
@@ -252,7 +252,7 @@ async def test_update_config_preserves_snooze(hass: Any) -> None:
         await coord.async_update_config(new_opts)
 
     assert coord.data["status"] == "snoozed"
-    assert coord.data["snooze_until"] == snooze_date
+    assert coord.data["snooze_until"] == snooze_dt
 
 
 # ---------------------------------------------------------------------------
@@ -268,11 +268,11 @@ async def test_snooze_transitions_to_snoozed(hass: Any) -> None:
         coord = ChoresCoordinator(hass, entry)
         await coord.async_initialize()
 
-        snooze_date = dt_util.now().date() + timedelta(days=3)
-        await coord.async_snooze(snooze_date)
+        snooze_dt = dt_util.now() + timedelta(days=3)
+        await coord.async_snooze(snooze_dt)
 
     assert coord.data["status"] == "snoozed"
-    assert coord.data["snooze_until"] == snooze_date
+    assert coord.data["snooze_until"] == snooze_dt
 
 
 async def test_snooze_persists_to_entry_options(hass: Any) -> None:
@@ -283,10 +283,10 @@ async def test_snooze_persists_to_entry_options(hass: Any) -> None:
         coord = ChoresCoordinator(hass, entry)
         await coord.async_initialize()
 
-        snooze_date = dt_util.now().date() + timedelta(days=3)
-        await coord.async_snooze(snooze_date)
+        snooze_dt = dt_util.now() + timedelta(days=3)
+        await coord.async_snooze(snooze_dt)
 
-    assert entry.options["snooze_until"] == snooze_date.isoformat()
+    assert entry.options["snooze_until"] == snooze_dt.isoformat()
 
 
 async def test_snooze_survives_restart(hass: Any) -> None:
@@ -298,14 +298,14 @@ async def test_snooze_survives_restart(hass: Any) -> None:
         coord = ChoresCoordinator(hass, entry)
         await coord.async_initialize()
 
-        snooze_date = dt_util.now().date() + timedelta(days=5)
-        await coord.async_snooze(snooze_date)
+        snooze_dt = dt_util.now() + timedelta(days=5)
+        await coord.async_snooze(snooze_dt)
 
         coord2 = ChoresCoordinator(hass, entry)
         await coord2.async_initialize()
 
     assert coord2.data["status"] == "snoozed"
-    assert coord2.data["snooze_until"] == snooze_date
+    assert coord2.data["snooze_until"] == snooze_dt
 
 
 async def test_snooze_expiry_recomputes_state(hass: Any) -> None:
@@ -326,8 +326,8 @@ async def test_snooze_expiry_recomputes_state(hass: Any) -> None:
         coord = ChoresCoordinator(hass, entry)
         await coord.async_initialize()
 
-        snooze_date = dt_util.now().date() + timedelta(days=3)
-        await coord.async_snooze(snooze_date)
+        snooze_dt = dt_util.now() + timedelta(days=3)
+        await coord.async_snooze(snooze_dt)
 
     assert coord.data["status"] == "snoozed"
     assert "cb" in captured
@@ -341,19 +341,17 @@ async def test_snooze_expiry_recomputes_state(hass: Any) -> None:
 
 
 @pytest.mark.parametrize(
-    "bad_date",
+    "bad_dt",
     [
-        pytest.param(date(2026, 6, 11), id="yesterday"),
-        pytest.param(date(2026, 6, 12), id="today"),
+        pytest.param(datetime(2026, 6, 12, 11, 0, tzinfo=UTC), id="one_hour_before"),
+        pytest.param(datetime(2026, 6, 12, 12, 0, tzinfo=UTC), id="exactly_now"),
     ],
 )
-async def test_snooze_non_future_date_raises(hass: Any, bad_date: date) -> None:
-    """async_snooze with today or a past date raises HomeAssistantError."""
+async def test_snooze_non_future_datetime_raises(hass: Any, bad_dt: datetime) -> None:
+    """async_snooze with a past or present datetime raises HomeAssistantError."""
     entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
 
-    # Pin dt_util.now so the coordinator's "today" matches the parametrized dates
-    # regardless of the test runner's local timezone vs UTC.
     fixed_now = datetime(2026, 6, 12, 12, 0, tzinfo=UTC)
     with (
         patch("custom_components.chores.coordinator.async_track_point_in_time"),
@@ -366,7 +364,7 @@ async def test_snooze_non_future_date_raises(hass: Any, bad_date: date) -> None:
         await coord.async_initialize()
 
         with pytest.raises(HomeAssistantError):
-            await coord.async_snooze(bad_date)
+            await coord.async_snooze(bad_dt)
 
     assert coord.data["status"] != "snoozed"
     assert coord.data["snooze_until"] is None
@@ -381,8 +379,8 @@ async def test_complete_clears_snooze(hass: Any) -> None:
         coord = ChoresCoordinator(hass, entry)
         await coord.async_initialize()
 
-        snooze_date = dt_util.now().date() + timedelta(days=3)
-        await coord.async_snooze(snooze_date)
+        snooze_dt = dt_util.now() + timedelta(days=3)
+        await coord.async_snooze(snooze_dt)
         assert coord.data["status"] == "snoozed"
 
         await coord.async_complete()
@@ -393,10 +391,8 @@ async def test_complete_clears_snooze(hass: Any) -> None:
 
 async def test_expired_snooze_not_restored_on_restart(hass: Any) -> None:
     """An expired snooze_until is discarded on restart."""
-    snooze_date = dt_util.now().date() - timedelta(days=1)
-    entry = _make_entry(
-        days_ago=30, interval_days=7, snooze_until=snooze_date.isoformat()
-    )
+    expired_dt = (dt_util.now() - timedelta(hours=1)).isoformat()
+    entry = _make_entry(days_ago=30, interval_days=7, snooze_until=expired_dt)
     entry.add_to_hass(hass)
 
     with patch("custom_components.chores.coordinator.async_track_point_in_time"):
@@ -409,9 +405,9 @@ async def test_expired_snooze_not_restored_on_restart(hass: Any) -> None:
 
 async def test_unsnooze_clears_snooze_and_recalculates(hass: Any) -> None:
     """Unsnoozed overdue chore returns to overdue."""
-    snooze_date = dt_util.now().date() + timedelta(days=3)
+    snooze_dt = dt_util.now() + timedelta(days=3)
     entry = _make_entry(
-        days_ago=30, interval_days=7, snooze_until=snooze_date.isoformat()
+        days_ago=30, interval_days=7, snooze_until=snooze_dt.isoformat()
     )
     entry.add_to_hass(hass)
 
@@ -428,10 +424,8 @@ async def test_unsnooze_clears_snooze_and_recalculates(hass: Any) -> None:
 
 async def test_unsnooze_done_chore(hass: Any) -> None:
     """Unsnoozed done chore (not yet overdue) returns to done."""
-    snooze_date = dt_util.now().date() + timedelta(days=3)
-    entry = _make_entry(
-        days_ago=1, interval_days=7, snooze_until=snooze_date.isoformat()
-    )
+    snooze_dt = dt_util.now() + timedelta(days=3)
+    entry = _make_entry(days_ago=1, interval_days=7, snooze_until=snooze_dt.isoformat())
     entry.add_to_hass(hass)
 
     with patch("custom_components.chores.coordinator.async_track_point_in_time"):
@@ -446,17 +440,19 @@ async def test_unsnooze_done_chore(hass: Any) -> None:
 
 
 async def test_snooze_default_uses_default_snooze_days(hass: Any) -> None:
-    """async_snooze_default snoozes for default_snooze_days, not the interval."""
+    """async_snooze_default snoozes for default_snooze_days from now."""
     entry = _make_entry(days_ago=30, interval_days=14, default_snooze_days=3)
     entry.add_to_hass(hass)
 
     with patch("custom_components.chores.coordinator.async_track_point_in_time"):
         coord = ChoresCoordinator(hass, entry)
         await coord.async_initialize()
+        before = dt_util.now()
         await coord.async_snooze_default()
+        after = dt_util.now()
 
-    expected = dt_util.now().date() + timedelta(days=3)
-    assert coord.data["snooze_until"] == expected
+    snooze_until = coord.data["snooze_until"]
+    assert before + timedelta(days=3) <= snooze_until <= after + timedelta(days=3)
     assert coord.data["status"] == "snoozed"
 
 

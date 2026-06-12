@@ -34,7 +34,7 @@ class ChoreRuntime:
     last_completed: date
     status: str = STATUS_DONE
     next_due: datetime = field(default_factory=dt_util.now)
-    snooze_until: date | None = None
+    snooze_until: datetime | None = None
     _cancel_timer: Callable[[], None] | None = field(default=None, repr=False)
     _cancel_snooze_timer: Callable[[], None] | None = field(default=None, repr=False)
 
@@ -93,9 +93,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
         now = dt_util.now()
 
-        if rt.snooze_until is not None and now < dt_util.start_of_local_day(
-            rt.snooze_until
-        ):
+        if rt.snooze_until is not None and now < rt.snooze_until:
             rt.status = STATUS_SNOOZED
             return
 
@@ -139,8 +137,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if rt.snooze_until is None:
             return
 
-        snooze_dt = dt_util.start_of_local_day(rt.snooze_until)
-        if snooze_dt <= dt_util.now():
+        if rt.snooze_until <= dt_util.now():
             return
 
         @callback
@@ -154,7 +151,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.async_set_updated_data(self._snapshot())
 
         rt._cancel_snooze_timer = async_track_point_in_time(
-            self.hass, _snooze_expiry_callback, snooze_dt
+            self.hass, _snooze_expiry_callback, rt.snooze_until
         )
 
     @callback
@@ -193,19 +190,19 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.async_set_updated_data(self._snapshot())
 
     async def async_snooze_default(self) -> None:
-        """Snooze by default_snooze_days (today + default_snooze_days)."""
+        """Snooze by default_snooze_days from now."""
         assert self._runtime is not None
-        snooze_until = dt_util.now().date() + timedelta(
+        snooze_until = dt_util.now() + timedelta(
             days=self._runtime.config.default_snooze_days
         )
         await self.async_snooze(snooze_until)
 
-    async def async_snooze(self, snooze_until: date) -> None:
+    async def async_snooze(self, snooze_until: datetime) -> None:
         """Snooze the chore until snooze_until."""
         assert self._runtime is not None
-        if snooze_until <= dt_util.now().date():
+        if snooze_until <= dt_util.now():
             raise HomeAssistantError(
-                f"snooze_until must be a future date, got {snooze_until}"
+                f"snooze_until must be a future datetime, got {snooze_until}"
             )
 
         rt = self._runtime
@@ -278,12 +275,21 @@ def _parse_date(value: str | None) -> date | None:
         return None
 
 
-def _parse_snooze(value: str | None) -> date | None:
-    """Parse a snooze_until ISO string and discard if already expired."""
-    candidate = _parse_date(value)
-    if candidate is None:
+def _parse_snooze(value: str | None) -> datetime | None:
+    """Parse a snooze_until ISO datetime string; discard if naive or expired.
+
+    Naive datetimes (including old date-only strings) are dropped — breaking
+    change per issue #70; no migration of pre-datetime snooze values.
+    """
+    if not value:
         return None
-    if dt_util.now() >= dt_util.start_of_local_day(candidate):
+    try:
+        candidate = datetime.fromisoformat(value)
+    except TypeError, ValueError:
+        return None
+    if candidate.tzinfo is None:
+        return None
+    if dt_util.now() >= candidate:
         return None
     return candidate
 
