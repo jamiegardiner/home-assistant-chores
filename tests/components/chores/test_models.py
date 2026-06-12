@@ -121,3 +121,39 @@ def test_from_dict_ignores_extra_keys() -> None:
 
 def test_const_domain() -> None:
     assert DOMAIN == "chores"
+
+
+def test_from_dict_default_notification_time() -> None:
+    config = ChoreConfig.from_dict({"name": "Bins", "interval_days": 7})
+    assert config.notification_time == "08:00"
+
+
+def test_from_dict_notification_time_absent_uses_default() -> None:
+    data = {"name": "Bins", "interval_days": 14}
+    config = ChoreConfig.from_dict(data)
+    assert config.notification_time == "08:00"
+
+
+def test_from_dict_custom_notification_time() -> None:
+    config = ChoreConfig.from_dict(
+        {"name": "Bins", "interval_days": 7, "notification_time": "08:30"}
+    )
+    assert config.notification_time == "08:30"
+
+
+@pytest.mark.parametrize(
+    "bad_time",
+    [
+        pytest.param("25:00", id="hour_out_of_range"),
+        pytest.param("12:60", id="minute_out_of_range"),
+        pytest.param("abc", id="not_time_format"),
+        pytest.param("8:00", id="missing_leading_zero"),
+        pytest.param("", id="empty_string"),
+        pytest.param(None, id="none_value"),
+    ],
+)
+def test_from_dict_invalid_notification_time_raises(bad_time) -> None:
+    with pytest.raises(ValueError, match="Invalid notification_time"):
+        ChoreConfig.from_dict(
+            {"name": "Bins", "interval_days": 7, "notification_time": bad_time}
+        )

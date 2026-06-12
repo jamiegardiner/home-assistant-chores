@@ -20,6 +20,9 @@
         }
       }
     },
+    "time": {
+      "notification_time": { "name": "Notification Time" }
+    },
     "sensor": {
       "chore": {
         "state": {
