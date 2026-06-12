@@ -11,10 +11,13 @@ from homeassistant.const import EntityCategory
 # Fake coordinator — single-chore flat-dict model
 # ---------------------------------------------------------------------------
 
+_LC = datetime(2026, 6, 1, 14, 30, tzinfo=UTC)
+_LC_B = datetime(2026, 6, 5, 9, 0, tzinfo=UTC)
+
 CHORE_STATE = {
     "name": "Dishes",
     "status": "overdue",
-    "last_completed": date(2026, 6, 1),
+    "last_completed": _LC,
     "next_due": date(2026, 6, 8),
     "snooze_until": None,
     "default_snooze_value": 1,
@@ -24,7 +27,7 @@ CHORE_STATE = {
 CHORE_STATE_B = {
     "name": "Vacuum",
     "status": "done",
-    "last_completed": date(2026, 6, 5),
+    "last_completed": _LC_B,
     "next_due": date(2026, 6, 12),
     "snooze_until": None,
     "default_snooze_value": 2,
@@ -279,13 +282,13 @@ class TestChoreSensorConventions:
 class TestChoreLastCompletedSensor:
     def test_native_value(self):
         sensor = _make_last_completed_sensor()
-        assert sensor.native_value == date(2026, 6, 1)
+        assert sensor.native_value == _LC
 
-    def test_device_class_date(self):
+    def test_device_class_timestamp(self):
         from homeassistant.components.sensor import SensorDeviceClass
 
         sensor = _make_last_completed_sensor()
-        assert sensor.device_class == SensorDeviceClass.DATE
+        assert sensor.device_class == SensorDeviceClass.TIMESTAMP
 
     def test_entity_category_diagnostic(self):
         sensor = _make_last_completed_sensor()

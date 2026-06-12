@@ -15,7 +15,9 @@ SERVICE_UNSNOOZE = "unsnooze"
 
 # Schemas are plain dicts so HA can wrap them with make_entity_service_schema,
 # which adds the entity/area/device/label target fields automatically.
-COMPLETE_SCHEMA: dict = {}
+COMPLETE_SCHEMA: dict = {
+    vol.Optional("completed_at"): str,
+}
 UNSNOOZE_SCHEMA: dict = {}
 
 SNOOZE_SCHEMA: dict = {

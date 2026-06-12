@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -31,7 +31,7 @@ class ChoreRuntime:
     """Runtime state for the single chore managed by this coordinator."""
 
     config: ChoreConfig
-    last_completed: date
+    last_completed: datetime
     status: str = STATUS_DONE
     next_due: datetime = field(default_factory=dt_util.now)
     snooze_until: datetime | None = None
@@ -68,7 +68,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._cancel_timers(rt)
         rt.config = ChoreConfig.from_dict(new_options)
         rt.last_completed = (
-            _parse_date(new_options.get("last_completed")) or rt.last_completed
+            _parse_completed_at(new_options.get("last_completed")) or rt.last_completed
         )
         rt.snooze_until = _parse_snooze(new_options.get("snooze_until"))
         self._recompute(rt)
@@ -78,7 +78,9 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def _build_runtime(self, opts: dict[str, Any]) -> ChoreRuntime:
         """Construct a ChoreRuntime from an options dict."""
         config = ChoreConfig.from_dict(opts)
-        last_completed = _parse_date(opts.get("last_completed")) or dt_util.now().date()
+        last_completed = (
+            _parse_completed_at(opts.get("last_completed")) or dt_util.now()
+        )
         snooze_until = _parse_snooze(opts.get("snooze_until"))
         rt = ChoreRuntime(
             config=config, last_completed=last_completed, snooze_until=snooze_until
@@ -89,7 +91,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def _recompute(self, rt: ChoreRuntime) -> None:
         """Recompute status and next_due."""
         rt.next_due = dt_util.start_of_local_day(
-            rt.last_completed + timedelta(days=rt.config.interval_days)
+            rt.last_completed.date() + timedelta(days=rt.config.interval_days)
         )
         now = dt_util.now()
 
@@ -170,9 +172,20 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         new_opts = {**self.config_entry.options, **fields}
         self.hass.config_entries.async_update_entry(self.config_entry, options=new_opts)
 
-    async def async_complete(self) -> None:
-        """Mark the chore as completed now, recompute state, and persist."""
+    async def async_complete(self, completed_at: datetime | None = None) -> None:
+        """Mark the chore as completed, recompute state, and persist.
+
+        completed_at defaults to now; raises HomeAssistantError if in the future.
+        """
         assert self._runtime is not None
+        now = dt_util.now()
+        if completed_at is None:
+            completed_at = now
+        elif completed_at > now:
+            raise HomeAssistantError(
+                f"completed_at must not be in the future, got {completed_at}"
+            )
+
         rt = self._runtime
 
         if rt.snooze_until is not None:
@@ -181,7 +194,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 rt._cancel_snooze_timer = None
             rt.snooze_until = None
 
-        rt.last_completed = dt_util.now().date()
+        rt.last_completed = completed_at
         self._recompute(rt)
         self._schedule(rt)
         self._persist(
@@ -268,14 +281,21 @@ class _ChoreDeviceMixin:
         return DeviceInfo(identifiers={(DOMAIN, self._entry_id)}, name=name)
 
 
-def _parse_date(value: str | None) -> date | None:
-    """Parse an ISO date string; return None on missing or invalid input."""
+def _parse_completed_at(value: str | None) -> datetime | None:
+    """Parse a last_completed ISO datetime string; drop naive datetimes.
+
+    Naive datetimes (including old date-only strings) are dropped — breaking
+    change per issue #72; no migration of pre-datetime last_completed values.
+    """
     if not value:
         return None
     try:
-        return date.fromisoformat(value)
+        candidate = datetime.fromisoformat(value)
     except TypeError, ValueError:
         return None
+    if candidate.tzinfo is None:
+        return None
+    return candidate
 
 
 def _parse_snooze(value: str | None) -> datetime | None:
