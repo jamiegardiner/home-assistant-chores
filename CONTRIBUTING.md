@@ -10,7 +10,7 @@ This project follows [Semantic Versioning](https://semver.org). The version bump
 |---|---|
 | `fix:` | patch (e.g. `0.1.0` → `0.1.1`) |
 | `feat:` | minor (e.g. `0.1.0` → `0.2.0`) |
-| `feat!:` or `BREAKING CHANGE:` footer | major (e.g. `0.1.0` → `1.0.0`) |
+| `feat(scope)!:` or `BREAKING CHANGE:` footer | major at `>=1.0.0`; minor at `0.x` (see below) |
 | `chore:`, `docs:`, `refactor:`, `test:`, `ci:` | no release on their own |
 
 ### Pre-1.0 rule
@@ -78,7 +78,7 @@ Use the prefix that reflects the PR's **most significant** change:
 - `test` — test additions or changes only
 - `ci` — CI/CD pipeline changes only
 
-Append `!` for a breaking change: `feat!(issue-X): remove weeks option`.
+Append `!` after the scope for a breaking change: `feat(issue-X)!: remove weeks option`.
 
 ### Contributor flow
 
