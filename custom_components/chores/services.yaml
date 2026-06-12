@@ -1,7 +1,5 @@
 complete:
   target:
-    device:
-      integration: chores
     entity:
       integration: chores
       domain: sensor
@@ -9,8 +7,6 @@ complete:
 
 snooze:
   target:
-    device:
-      integration: chores
     entity:
       integration: chores
       domain: sensor
@@ -37,8 +33,6 @@ snooze:
 
 unsnooze:
   target:
-    device:
-      integration: chores
     entity:
       integration: chores
       domain: sensor
