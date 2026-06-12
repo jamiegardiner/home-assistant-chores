@@ -41,7 +41,7 @@ The primary entity (`sensor.chore_<name>`) reports the chore's current state:
 
 | Entity               | Type     | Description                                                         |
 | -------------------- | -------- | ------------------------------------------------------------------- |
-| Last completed       | Date     | The date the chore was last marked complete                         |
+| Last completed       | Datetime | The date and time the chore was last marked complete                |
 | Next due             | Datetime | The datetime the chore will next transition to `overdue`            |
 | Snooze Expiry        | Datetime | The datetime an active snooze expires; unavailable when not snoozed |
 | Default snooze value | Integer  | The count used when the Snooze button is pressed                    |
@@ -65,13 +65,13 @@ All configuration is done through the Home Assistant UI — there is no YAML.
 
 1. Go to **Settings → Devices & Services**
 2. Click **Add Integration** and search for **Chore Tracker**
-3. Enter a name, recurrence interval (days), default snooze duration, and last-completed date
+3. Enter a name, recurrence interval (days), default snooze duration, and last-completed date and time
 
 **To edit a chore:**
 
 1. Go to **Settings → Devices & Services**
 2. Find **Chore Tracker**, open the integration, and click the chore device
-3. Click **Configure** to update the name, interval, snooze duration, or last-completed date
+3. Click **Configure** to update the name, interval, snooze duration, or last-completed date and time
 
 **To remove a chore:**
 
@@ -88,12 +88,26 @@ Services target the primary status sensor (`sensor.chore_<name>`) or the chore's
 
 ### `chores.complete`
 
-Mark a chore as done. Resets `last_completed` to today and schedules the next `overdue` transition.
+Mark a chore as done. Records `last_completed` as the current datetime (or a supplied past datetime) and schedules the next `overdue` transition.
+
+| Field          | Required | Description                                                                 |
+| -------------- | -------- | --------------------------------------------------------------------------- |
+| `completed_at` | No       | ISO 8601 datetime of completion. Must not be in the future. Defaults to now |
 
 ```yaml
 action: chores.complete
 target:
   entity_id: sensor.chore_vacuum_living_room
+```
+
+**Record a specific past completion time:**
+
+```yaml
+action: chores.complete
+target:
+  entity_id: sensor.chore_vacuum_living_room
+data:
+  completed_at: "2026-06-08 14:30:00"
 ```
 
 ______________________________________________________________________
