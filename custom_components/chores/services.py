@@ -25,11 +25,7 @@ SNOOZE_SCHEMA: dict = {
 
 
 def _parse_snooze_datetime(call_data: dict) -> datetime:
-    """Compute the snooze target datetime from service call data.
-
-    Raises HomeAssistantError if unit is not in SNOOZE_UNITS (should not occur
-    after schema validation, but kept for safety).
-    """
+    """Compute the snooze target datetime from service call data."""
     value: int = call_data["value"]
     unit: str = call_data["unit"]
 

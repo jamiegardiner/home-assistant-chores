@@ -403,6 +403,19 @@ async def test_expired_snooze_not_restored_on_restart(hass: Any) -> None:
     assert coord.data["snooze_until"] is None
 
 
+async def test_naive_snooze_not_restored_on_restart(hass: Any) -> None:
+    """A date-only (naive) snooze_until string is dropped on load — breaking change."""
+    entry = _make_entry(days_ago=30, interval_days=7, snooze_until="2099-12-31")
+    entry.add_to_hass(hass)
+
+    with patch("custom_components.chores.coordinator.async_track_point_in_time"):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+
+    assert coord.data["snooze_until"] is None
+    assert coord.data["status"] != "snoozed"
+
+
 async def test_unsnooze_clears_snooze_and_recalculates(hass: Any) -> None:
     """Unsnoozed overdue chore returns to overdue."""
     snooze_dt = dt_util.now() + timedelta(days=3)

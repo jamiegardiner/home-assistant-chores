@@ -42,7 +42,7 @@ The primary entity (`sensor.chore_<name>`) reports the chore's current state:
 | Entity              | Type     | Description                                                         |
 | ------------------- | -------- | ------------------------------------------------------------------- |
 | Last completed      | Date     | The date the chore was last marked complete                         |
-| Next due            | Date     | The date the chore will next transition to `overdue`                |
+| Next due            | Datetime | The datetime the chore will next transition to `overdue`            |
 | Snooze until        | Datetime | The datetime an active snooze expires; unavailable when not snoozed |
 | Default snooze days | Integer  | How many days the Snooze button defers the chore                    |
 
