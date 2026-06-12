@@ -262,7 +262,10 @@ async def test_options_flow_prefills_current_values(hass):
         for k in schema.schema
         if isinstance(k, vol.Required) and k.schema == "last_completed"
     )
-    assert lc_key.description["suggested_value"] == "2026-06-01T00:00:00+00:00"
+    # Suggested value is a naive local-time string (what DateTimeSelector expects)
+    stored_dt = datetime.fromisoformat("2026-06-01T00:00:00+00:00")
+    expected_suggestion = dt_util.as_local(stored_dt).strftime("%Y-%m-%d %H:%M:%S")
+    assert lc_key.description["suggested_value"] == expected_suggestion
 
     interval_key = next(
         k

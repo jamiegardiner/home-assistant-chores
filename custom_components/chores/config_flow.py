@@ -22,6 +22,11 @@ from homeassistant.util import dt as dt_util
 from .const import DOMAIN, SNOOZE_UNITS
 
 
+def _dt_to_selector_str(dt: datetime) -> str:
+    """Format a datetime as the naive local string DateTimeSelector expects."""
+    return dt_util.as_local(dt).strftime("%Y-%m-%d %H:%M:%S")
+
+
 def _chore_schema() -> vol.Schema:
     """Return the shared schema for the chore create/edit form."""
     return vol.Schema(
@@ -113,14 +118,11 @@ class ChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     },
                 )
 
-        now_local = dt_util.as_local(dt_util.now()).isoformat(
-            sep=" ", timespec="seconds"
-        )
         suggested = (
             user_input
             if user_input is not None
             else {
-                "last_completed": now_local,
+                "last_completed": _dt_to_selector_str(dt_util.now()),
                 "default_snooze_value": 1,
                 "default_snooze_unit": "days",
             }
@@ -176,9 +178,10 @@ class ChoresOptionsFlow(config_entries.OptionsFlow):
             "interval_days": opts.get("interval_days", 7),
             "default_snooze_value": opts.get("default_snooze_value", 1),
             "default_snooze_unit": opts.get("default_snooze_unit", "days"),
-            "last_completed": opts.get(
-                "last_completed",
-                dt_util.as_local(dt_util.now()).isoformat(sep=" ", timespec="seconds"),
+            "last_completed": _dt_to_selector_str(
+                datetime.fromisoformat(opts["last_completed"])
+                if opts.get("last_completed")
+                else dt_util.now()
             ),
         }
         return self.async_show_form(
