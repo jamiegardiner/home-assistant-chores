@@ -1,16 +1,15 @@
 """Sensor platform for the Chores integration.
 
-One sensor entity per config entry (each entry represents one chore).
-State is ``done``, ``overdue``, or ``snoozed``, sourced from the coordinator.
+Five sensor entities per config entry: primary status sensor plus four diagnostics.
 """
 
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Any
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.entity_platform import (
     AddEntitiesCallback,
@@ -19,8 +18,8 @@ from homeassistant.helpers.entity_platform import (
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
 
-from .const import STATUS_OPTIONS
-from .coordinator import ChoresCoordinator
+from .const import STATUS_OPTIONS, ChoreSensorEntityFeature
+from .coordinator import ChoresCoordinator, _ChoreDeviceMixin
 from .services import (
     COMPLETE_SCHEMA,
     SERVICE_COMPLETE,
@@ -57,54 +56,133 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up a single ChoreSensor for this config entry."""
+    """Set up all sensor entities for this config entry."""
     coordinator = entry.runtime_data
-    async_add_entities([ChoreSensor(coordinator, entry)])
+    async_add_entities(
+        [
+            ChoreSensor(coordinator, entry),
+            ChoreLastCompletedSensor(coordinator, entry),
+            ChoreNextDueSensor(coordinator, entry),
+            ChoreSnoozeUntilSensor(coordinator, entry),
+            ChoreDefaultSnoozeDaysSensor(coordinator, entry),
+        ]
+    )
 
     platform = async_get_current_platform()
     platform.async_register_entity_service(
-        SERVICE_COMPLETE, COMPLETE_SCHEMA, _handle_complete
+        SERVICE_COMPLETE,
+        COMPLETE_SCHEMA,
+        _handle_complete,
+        required_features=[ChoreSensorEntityFeature.TARGETABLE],
     )
     platform.async_register_entity_service(
-        SERVICE_SNOOZE, SNOOZE_SCHEMA, _handle_snooze
+        SERVICE_SNOOZE,
+        SNOOZE_SCHEMA,
+        _handle_snooze,
+        required_features=[ChoreSensorEntityFeature.TARGETABLE],
     )
     platform.async_register_entity_service(
-        SERVICE_UNSNOOZE, UNSNOOZE_SCHEMA, _handle_unsnooze
+        SERVICE_UNSNOOZE,
+        UNSNOOZE_SCHEMA,
+        _handle_unsnooze,
+        required_features=[ChoreSensorEntityFeature.TARGETABLE],
     )
 
 
-class ChoreSensor(CoordinatorEntity[ChoresCoordinator], SensorEntity):
-    """Sensor entity representing a single chore (one per config entry)."""
+class ChoreSensor(
+    _ChoreDeviceMixin, CoordinatorEntity[ChoresCoordinator], SensorEntity
+):
+    """Primary sensor entity representing a single chore (one per config entry)."""
 
     _attr_device_class = SensorDeviceClass.ENUM
+    _attr_has_entity_name = True
     _attr_translation_key = "chore"
     _attr_options = STATUS_OPTIONS
+    _attr_supported_features = ChoreSensorEntityFeature.TARGETABLE
 
     def __init__(self, coordinator: ChoresCoordinator, entry: ConfigEntry) -> None:
         """Initialise the sensor."""
         super().__init__(coordinator)
         self._attr_unique_id = entry.entry_id
-
-    @property
-    def name(self) -> str:
-        """Return the chore display name."""
-        return (self.coordinator.data or {}).get("name", "Chore")
+        self._entry_id = entry.entry_id
 
     @property
     def suggested_object_id(self) -> str:
-        return f"chore_{slugify(self.name)}"
+        name = (self.coordinator.data or {}).get("name", "Chore")
+        return f"chore_{slugify(name)}"
 
     @property
     def native_value(self) -> str | None:
         """Return ``done``, ``overdue``, ``snoozed``, or None when unknown."""
         return (self.coordinator.data or {}).get("status")
 
+
+class _ChoreDateSensor(
+    _ChoreDeviceMixin, CoordinatorEntity[ChoresCoordinator], SensorEntity
+):
+    """Base class for diagnostic date sensors on a chore device."""
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(
+        self,
+        coordinator: ChoresCoordinator,
+        entry: ConfigEntry,
+        data_key: str,
+        unique_suffix: str,
+    ) -> None:
+        super().__init__(coordinator)
+        self._data_key = data_key
+        self._attr_unique_id = f"{entry.entry_id}_{unique_suffix}"
+        self._entry_id = entry.entry_id
+
     @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Return last_completed, next_due, and snooze_until as ISO strings (or None)."""
-        data = self.coordinator.data or {}
-        return {
-            "last_completed": _iso(data.get("last_completed")),
-            "next_due": _iso(data.get("next_due")),
-            "snooze_until": _iso(data.get("snooze_until")),
-        }
+    def native_value(self) -> str | None:
+        return _iso((self.coordinator.data or {}).get(self._data_key))
+
+
+class ChoreLastCompletedSensor(_ChoreDateSensor):
+    """Diagnostic sensor surfacing the last completed date."""
+
+    _attr_translation_key = "last_completed"
+
+    def __init__(self, coordinator: ChoresCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator, entry, "last_completed", "last_completed")
+
+
+class ChoreNextDueSensor(_ChoreDateSensor):
+    """Diagnostic sensor surfacing the next due date."""
+
+    _attr_translation_key = "next_due"
+
+    def __init__(self, coordinator: ChoresCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator, entry, "next_due", "next_due")
+
+
+class ChoreSnoozeUntilSensor(_ChoreDateSensor):
+    """Diagnostic sensor surfacing snooze_until (unavailable when not snoozed)."""
+
+    _attr_translation_key = "snooze_until"
+
+    def __init__(self, coordinator: ChoresCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator, entry, "snooze_until", "snooze_until")
+
+
+class ChoreDefaultSnoozeDaysSensor(
+    _ChoreDeviceMixin, CoordinatorEntity[ChoresCoordinator], SensorEntity
+):
+    """Diagnostic sensor surfacing the default snooze duration in days."""
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "default_snooze_days"
+
+    def __init__(self, coordinator: ChoresCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_default_snooze_days"
+        self._entry_id = entry.entry_id
+
+    @property
+    def native_value(self) -> int | None:
+        return (self.coordinator.data or {}).get("default_snooze_days")

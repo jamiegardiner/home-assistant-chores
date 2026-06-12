@@ -1,8 +1,8 @@
-# Chores
+# Chore Tracker
 
-A [HACS](https://hacs.xyz)-compatible custom integration for [Home Assistant](https://www.home-assistant.io) that tracks recurring household chores and surfaces their status as sensor entities.
+A [HACS](https://hacs.xyz)-compatible custom integration for [Home Assistant](https://www.home-assistant.io) that tracks recurring household chores and surfaces their status as HA devices.
 
-Each chore becomes a sensor whose state is `done`, `overdue`, or `snoozed`, transitioning automatically at the configured interval — no polling required. Mark a chore complete from an automation, a dashboard button, or the Developer Tools, and the clock resets.
+Each chore becomes a device with 8 entities — a primary status sensor, 4 diagnostic sensors, and 3 action buttons — transitioning automatically between `done` and `overdue` at the configured interval with no polling.
 
 ---
 
@@ -17,31 +17,42 @@ Each chore becomes a sensor whose state is `done`, `overdue`, or `snoozed`, tran
 1. In Home Assistant go to **Settings → HACS**
 2. Click the three-dot menu (⋮) in the top-right corner and choose **Custom repositories**
 3. Paste `https://github.com/jamiegardiner/home-assistant-chores` and set the category to **Integration**, then click **Add**
-4. Search for **Chores** in the HACS store and click **Download**
+4. Search for **Chore Tracker** in the HACS store and click **Download**
 5. Restart Home Assistant
-6. Go to **Settings → Devices & Services → Add Integration**, search for **Chores**, and follow the setup wizard
+6. Go to **Settings → Devices & Services → Add Integration**, search for **Chore Tracker**, and follow the setup wizard
 
 ---
 
-## Sensor entities
+## Entities
 
-Each chore you create becomes a sensor entity named `sensor.chore_<name>`.
+Each chore appears in **Settings → Devices & Services** as a device with 8 entities.
 
-### States
+### Status sensor
+
+The primary entity (`sensor.chore_<name>`) reports the chore's current state:
 
 | State | Meaning |
 |-------|---------|
 | `done` | The chore has been completed and is not yet due again |
 | `overdue` | The chore's due date has passed without being marked complete |
-| `snoozed` | The chore has been snoozed; overdue transitions are suppressed until the snooze date |
+| `snoozed` | The chore is snoozed; overdue transitions are suppressed until the snooze date |
 
-### Attributes
+### Diagnostic sensors
 
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `last_completed` | ISO date or `null` | The date the chore was last marked complete |
-| `next_due` | ISO date or `null` | The date the chore will next transition to `overdue` |
-| `snooze_until` | ISO date or `null` | The date an active snooze expires; `null` when not snoozed |
+| Entity | Type | Description |
+|--------|------|-------------|
+| Last completed | Date | The date the chore was last marked complete |
+| Next due | Date | The date the chore will next transition to `overdue` |
+| Snooze until | Date | The date an active snooze expires; unavailable when not snoozed |
+| Default snooze days | Integer | How many days the Snooze button defers the chore |
+
+### Buttons
+
+| Button | Action |
+|--------|--------|
+| Complete | Marks the chore as done today and schedules the next due date |
+| Snooze | Defers the chore by the configured default snooze days |
+| Unsnooze | Cancels an active snooze immediately |
 
 ---
 
@@ -51,26 +62,28 @@ All configuration is done through the Home Assistant UI — there is no YAML.
 
 **To add a chore:**
 
-1. Go to **Settings → Devices & Services → Helpers**
-2. Click **Add helper** and search for **Chore**
-3. Enter a name, recurrence interval, and last-completed date
+1. Go to **Settings → Devices & Services**
+2. Click **Add Integration** and search for **Chore Tracker**
+3. Enter a name, recurrence interval (days), default snooze duration, and last-completed date
 
 **To edit a chore:**
 
-1. Go to **Settings → Devices & Services → Helpers**
-2. Find the chore and click **Configure**
-3. Update the name, interval, or last-completed date
+1. Go to **Settings → Devices & Services**
+2. Find **Chore Tracker**, open the integration, and click the chore device
+3. Click **Configure** to update the name, interval, snooze duration, or last-completed date
 
 **To remove a chore:**
 
-1. Go to **Settings → Devices & Services → Helpers**
-2. Find the chore, click the three-dot menu (⋮), and choose **Delete**
+1. Go to **Settings → Devices & Services**
+2. Find **Chore Tracker**, open the integration, click the three-dot menu (⋮) next to the chore entry, and choose **Delete**
 
-Removing a chore's config entry removes just that chore — all other chores are unaffected.
+Removing a config entry removes just that chore — all other chores are unaffected.
 
 ---
 
 ## Services
+
+Services target the primary status sensor (`sensor.chore_<name>`) or the chore's device.
 
 ### `chores.complete`
 
@@ -130,4 +143,3 @@ action: chores.unsnooze
 target:
   entity_id: sensor.chore_vacuum_living_room
 ```
-

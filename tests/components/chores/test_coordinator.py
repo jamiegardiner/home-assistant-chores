@@ -12,11 +12,7 @@ from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.chores.const import DOMAIN
-from custom_components.chores.coordinator import (
-    ChoresCoordinator,
-    _interval_to_timedelta,
-)
-from custom_components.chores.models import ChoreConfig
+from custom_components.chores.coordinator import ChoresCoordinator
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -25,8 +21,8 @@ from custom_components.chores.models import ChoreConfig
 
 def _make_entry(
     name: str = "Bins",
-    interval_value: int = 7,
-    interval_unit: str = "days",
+    interval_days: int = 7,
+    default_snooze_days: int = 1,
     days_ago: int = 0,
     snooze_until: str | None = None,
     entry_id: str = "test_entry_id",
@@ -35,27 +31,12 @@ def _make_entry(
     last_completed = (dt_util.now().date() - timedelta(days=days_ago)).isoformat()
     opts: dict[str, Any] = {
         "name": name,
-        "interval_value": interval_value,
-        "interval_unit": interval_unit,
+        "interval_days": interval_days,
+        "default_snooze_days": default_snooze_days,
         "last_completed": last_completed,
         "snooze_until": snooze_until,
     }
     return MockConfigEntry(domain=DOMAIN, entry_id=entry_id, options=opts)
-
-
-# ---------------------------------------------------------------------------
-# Unit tests: helpers (no HA required)
-# ---------------------------------------------------------------------------
-
-
-def test_interval_to_timedelta_days() -> None:
-    config = ChoreConfig(name="test", interval_value=14, interval_unit="days")
-    assert _interval_to_timedelta(config) == timedelta(days=14)
-
-
-def test_interval_to_timedelta_weeks() -> None:
-    config = ChoreConfig(name="test", interval_value=2, interval_unit="weeks")
-    assert _interval_to_timedelta(config) == timedelta(days=14)
 
 
 # ---------------------------------------------------------------------------
@@ -65,7 +46,7 @@ def test_interval_to_timedelta_weeks() -> None:
 
 async def test_initial_status_overdue(hass: Any) -> None:
     """Chore last completed 30 days ago with 7-day interval is overdue."""
-    entry = _make_entry(days_ago=30, interval_value=7)
+    entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
 
     with patch("custom_components.chores.coordinator.async_track_point_in_time"):
@@ -77,7 +58,7 @@ async def test_initial_status_overdue(hass: Any) -> None:
 
 async def test_initial_status_done(hass: Any) -> None:
     """Chore last completed today with 7-day interval is done."""
-    entry = _make_entry(days_ago=0, interval_value=7)
+    entry = _make_entry(days_ago=0, interval_days=7)
     entry.add_to_hass(hass)
 
     with patch("custom_components.chores.coordinator.async_track_point_in_time"):
@@ -89,7 +70,7 @@ async def test_initial_status_done(hass: Any) -> None:
 
 async def test_next_due_computed_correctly(hass: Any) -> None:
     """next_due is last_completed + interval, expressed as start of that local day."""
-    entry = _make_entry(days_ago=0, interval_value=7)
+    entry = _make_entry(days_ago=0, interval_days=7)
     entry.add_to_hass(hass)
 
     with patch("custom_components.chores.coordinator.async_track_point_in_time"):
@@ -108,7 +89,7 @@ async def test_timer_fires_overdue_transition(hass: Any) -> None:
         captured["cb"] = cb
         return MagicMock()
 
-    entry = _make_entry(days_ago=0, interval_value=7)
+    entry = _make_entry(days_ago=0, interval_days=7)
     entry.add_to_hass(hass)
 
     with patch(
@@ -130,7 +111,7 @@ async def test_timer_fires_overdue_transition(hass: Any) -> None:
 
 async def test_complete_resets_to_done(hass: Any) -> None:
     """async_complete sets last_completed to today, status to done."""
-    entry = _make_entry(days_ago=30, interval_value=7)
+    entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
 
     with patch("custom_components.chores.coordinator.async_track_point_in_time"):
@@ -147,7 +128,7 @@ async def test_complete_resets_to_done(hass: Any) -> None:
 
 async def test_complete_persists_to_entry_options(hass: Any) -> None:
     """async_complete writes last_completed to entry.options."""
-    entry = _make_entry(days_ago=30, interval_value=7)
+    entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
 
     with patch("custom_components.chores.coordinator.async_track_point_in_time"):
@@ -161,7 +142,7 @@ async def test_complete_persists_to_entry_options(hass: Any) -> None:
 
 async def test_last_completed_survives_restart(hass: Any) -> None:
     """After completing, a new coordinator reads last_completed from entry.options."""
-    entry = _make_entry(days_ago=30, interval_value=7)
+    entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
 
     with patch("custom_components.chores.coordinator.async_track_point_in_time"):
@@ -186,7 +167,7 @@ async def test_unload_cancels_timers(hass: Any) -> None:
         cancel_mocks.append(cancel)
         return cancel
 
-    entry = _make_entry(days_ago=0, interval_value=7)
+    entry = _make_entry(days_ago=0, interval_days=7)
     entry.add_to_hass(hass)
 
     with patch(
@@ -212,7 +193,7 @@ async def test_update_config_recomputes_from_preserved_last_completed(
 ) -> None:
     """Changing interval recomputes next_due from the existing last_completed, not today."""
     last_completed_date = dt_util.now().date() - timedelta(days=7)
-    entry = _make_entry(days_ago=7, interval_value=7)
+    entry = _make_entry(days_ago=7, interval_days=7)
     entry.add_to_hass(hass)
 
     with patch("custom_components.chores.coordinator.async_track_point_in_time"):
@@ -223,8 +204,7 @@ async def test_update_config_recomputes_from_preserved_last_completed(
 
         new_opts = {
             **dict(entry.options),
-            "interval_value": 14,
-            "interval_unit": "days",
+            "interval_days": 14,
         }
         await coord.async_update_config(new_opts)
 
@@ -236,7 +216,7 @@ async def test_update_config_recomputes_from_preserved_last_completed(
 
 async def test_update_config_name_change_no_status_change(hass: Any) -> None:
     """Editing the name does not change status or next_due."""
-    entry = _make_entry(name="Bins", days_ago=0, interval_value=7)
+    entry = _make_entry(name="Bins", days_ago=0, interval_days=7)
     entry.add_to_hass(hass)
 
     with patch("custom_components.chores.coordinator.async_track_point_in_time"):
@@ -258,7 +238,7 @@ async def test_update_config_preserves_snooze(hass: Any) -> None:
     """async_update_config preserves snooze_until when options still carry it."""
     snooze_date = dt_util.now().date() + timedelta(days=3)
     entry = _make_entry(
-        days_ago=30, interval_value=7, snooze_until=snooze_date.isoformat()
+        days_ago=30, interval_days=7, snooze_until=snooze_date.isoformat()
     )
     entry.add_to_hass(hass)
 
@@ -281,7 +261,7 @@ async def test_update_config_preserves_snooze(hass: Any) -> None:
 
 
 async def test_snooze_transitions_to_snoozed(hass: Any) -> None:
-    entry = _make_entry(days_ago=30, interval_value=7)
+    entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
 
     with patch("custom_components.chores.coordinator.async_track_point_in_time"):
@@ -296,7 +276,7 @@ async def test_snooze_transitions_to_snoozed(hass: Any) -> None:
 
 
 async def test_snooze_persists_to_entry_options(hass: Any) -> None:
-    entry = _make_entry(days_ago=30, interval_value=7)
+    entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
 
     with patch("custom_components.chores.coordinator.async_track_point_in_time"):
@@ -311,7 +291,7 @@ async def test_snooze_persists_to_entry_options(hass: Any) -> None:
 
 async def test_snooze_survives_restart(hass: Any) -> None:
     """snooze_until in entry.options is restored on a new coordinator."""
-    entry = _make_entry(days_ago=30, interval_value=7)
+    entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
 
     with patch("custom_components.chores.coordinator.async_track_point_in_time"):
@@ -336,7 +316,7 @@ async def test_snooze_expiry_recomputes_state(hass: Any) -> None:
         captured["cb"] = cb
         return MagicMock()
 
-    entry = _make_entry(days_ago=30, interval_value=7)
+    entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
 
     with patch(
@@ -363,16 +343,25 @@ async def test_snooze_expiry_recomputes_state(hass: Any) -> None:
 @pytest.mark.parametrize(
     "bad_date",
     [
-        pytest.param(dt_util.now().date() - timedelta(days=1), id="yesterday"),
-        pytest.param(dt_util.now().date(), id="today"),
+        pytest.param(date(2026, 6, 11), id="yesterday"),
+        pytest.param(date(2026, 6, 12), id="today"),
     ],
 )
 async def test_snooze_non_future_date_raises(hass: Any, bad_date: date) -> None:
     """async_snooze with today or a past date raises HomeAssistantError."""
-    entry = _make_entry(days_ago=30, interval_value=7)
+    entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
 
-    with patch("custom_components.chores.coordinator.async_track_point_in_time"):
+    # Pin dt_util.now so the coordinator's "today" matches the parametrized dates
+    # regardless of the test runner's local timezone vs UTC.
+    fixed_now = datetime(2026, 6, 12, 12, 0, tzinfo=UTC)
+    with (
+        patch("custom_components.chores.coordinator.async_track_point_in_time"),
+        patch(
+            "custom_components.chores.coordinator.dt_util.now",
+            return_value=fixed_now,
+        ),
+    ):
         coord = ChoresCoordinator(hass, entry)
         await coord.async_initialize()
 
@@ -385,7 +374,7 @@ async def test_snooze_non_future_date_raises(hass: Any, bad_date: date) -> None:
 
 async def test_complete_clears_snooze(hass: Any) -> None:
     """Completing a snoozed chore clears the snooze and marks it done."""
-    entry = _make_entry(days_ago=30, interval_value=7)
+    entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
 
     with patch("custom_components.chores.coordinator.async_track_point_in_time"):
@@ -406,7 +395,7 @@ async def test_expired_snooze_not_restored_on_restart(hass: Any) -> None:
     """An expired snooze_until is discarded on restart."""
     snooze_date = dt_util.now().date() - timedelta(days=1)
     entry = _make_entry(
-        days_ago=30, interval_value=7, snooze_until=snooze_date.isoformat()
+        days_ago=30, interval_days=7, snooze_until=snooze_date.isoformat()
     )
     entry.add_to_hass(hass)
 
@@ -422,7 +411,7 @@ async def test_unsnooze_clears_snooze_and_recalculates(hass: Any) -> None:
     """Unsnoozed overdue chore returns to overdue."""
     snooze_date = dt_util.now().date() + timedelta(days=3)
     entry = _make_entry(
-        days_ago=30, interval_value=7, snooze_until=snooze_date.isoformat()
+        days_ago=30, interval_days=7, snooze_until=snooze_date.isoformat()
     )
     entry.add_to_hass(hass)
 
@@ -441,7 +430,7 @@ async def test_unsnooze_done_chore(hass: Any) -> None:
     """Unsnoozed done chore (not yet overdue) returns to done."""
     snooze_date = dt_util.now().date() + timedelta(days=3)
     entry = _make_entry(
-        days_ago=1, interval_value=7, snooze_until=snooze_date.isoformat()
+        days_ago=1, interval_days=7, snooze_until=snooze_date.isoformat()
     )
     entry.add_to_hass(hass)
 
@@ -456,9 +445,24 @@ async def test_unsnooze_done_chore(hass: Any) -> None:
     assert coord.data["status"] == "done"
 
 
+async def test_snooze_default_uses_default_snooze_days(hass: Any) -> None:
+    """async_snooze_default snoozes for default_snooze_days, not the interval."""
+    entry = _make_entry(days_ago=30, interval_days=14, default_snooze_days=3)
+    entry.add_to_hass(hass)
+
+    with patch("custom_components.chores.coordinator.async_track_point_in_time"):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+        await coord.async_snooze_default()
+
+    expected = dt_util.now().date() + timedelta(days=3)
+    assert coord.data["snooze_until"] == expected
+    assert coord.data["status"] == "snoozed"
+
+
 async def test_unsnooze_on_non_snoozed_is_noop(hass: Any) -> None:
     """Calling async_unsnooze on a non-snoozed chore is a no-op."""
-    entry = _make_entry(days_ago=30, interval_value=7)
+    entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
 
     with patch("custom_components.chores.coordinator.async_track_point_in_time"):

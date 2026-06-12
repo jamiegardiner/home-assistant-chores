@@ -3,12 +3,14 @@ complete:
     entity:
       integration: chores
       domain: sensor
+      device_class: enum
 
 snooze:
   target:
     entity:
       integration: chores
       domain: sensor
+      device_class: enum
   fields:
     snooze_days:
       required: false
@@ -34,3 +36,4 @@ unsnooze:
     entity:
       integration: chores
       domain: sensor
+      device_class: enum
