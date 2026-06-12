@@ -30,13 +30,13 @@ def _chore_schema() -> vol.Schema:
             vol.Required("interval_days"): NumberSelector(
                 NumberSelectorConfig(min=1, step=1, mode=NumberSelectorMode.BOX)
             ),
+            vol.Required("last_completed"): DateSelector(),
             vol.Required("default_snooze_value"): NumberSelector(
                 NumberSelectorConfig(min=1, step=1, mode=NumberSelectorMode.BOX)
             ),
             vol.Required("default_snooze_unit"): SelectSelector(
                 SelectSelectorConfig(options=list(SNOOZE_UNITS))
             ),
-            vol.Required("last_completed"): DateSelector(),
         }
     )
 

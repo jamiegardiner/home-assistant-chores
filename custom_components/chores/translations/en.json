@@ -15,7 +15,7 @@
       },
       "last_completed": { "name": "Last Completed" },
       "next_due": { "name": "Next Due" },
-      "snooze_until": { "name": "Snooze Until" },
+      "snooze_until": { "name": "Snooze Expiry" },
       "default_snooze_value": { "name": "Default Snooze Value" },
       "default_snooze_unit": { "name": "Default Snooze Unit" }
     }
@@ -28,9 +28,16 @@
         "data": {
           "name": "Name",
           "interval_days": "Interval (days)",
+          "last_completed": "Last completed date",
           "default_snooze_value": "Default snooze value",
-          "default_snooze_unit": "Default snooze unit",
-          "last_completed": "Last completed date"
+          "default_snooze_unit": "Default snooze unit"
+        },
+        "data_description": {
+          "name": "A short label for this chore, e.g. Bins or Vacuuming.",
+          "interval_days": "How many days between completions.",
+          "last_completed": "The date this chore was last done.",
+          "default_snooze_value": "How many units to defer the chore when the Snooze button is pressed.",
+          "default_snooze_unit": "Time unit for the default snooze duration."
         }
       }
     }
@@ -42,9 +49,16 @@
         "data": {
           "name": "Name",
           "interval_days": "Interval (days)",
+          "last_completed": "Last completed date",
           "default_snooze_value": "Default snooze value",
-          "default_snooze_unit": "Default snooze unit",
-          "last_completed": "Last completed date"
+          "default_snooze_unit": "Default snooze unit"
+        },
+        "data_description": {
+          "name": "A short label for this chore, e.g. Bins or Vacuuming.",
+          "interval_days": "How many days between completions.",
+          "last_completed": "The date this chore was last done.",
+          "default_snooze_value": "How many units to defer the chore when the Snooze button is pressed.",
+          "default_snooze_unit": "Time unit for the default snooze duration."
         }
       }
     },
