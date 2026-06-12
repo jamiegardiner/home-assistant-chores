@@ -37,14 +37,16 @@ typecheck: ## Run mypy type checking
 lint: ## Check code with ruff (linter — catches bugs and style issues)
 	$(UV) run ruff check custom_components tests
 
-format: ## Auto-fix formatting (ruff format) and lint issues where possible (ruff check --fix)
+format: ## Auto-fix formatting (ruff format, ruff check --fix, mdformat) and lint issues where possible
 	$(UV) run ruff format custom_components tests
 	$(UV) run ruff check --fix custom_components tests
+	$(UV) run mdformat .
 
-check: ## Check code (read-only): lint, format, typecheck, tests — mirrors CI
+check: ## Check code (read-only): lint, format, typecheck, markdown, tests — mirrors CI
 	$(UV) run ruff check custom_components tests
 	$(UV) run ruff format --check custom_components tests
 	$(UV) run mypy custom_components/chores
+	$(UV) run mdformat --check .
 	$(UV) run pytest
 
 # ── Docker ─────────────────────────────────────────────────────────────────────

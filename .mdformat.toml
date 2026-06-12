@@ -1,0 +1,7 @@
+[mdformat]
+wrap = 80
+extensions = ["gfm", "frontmatter"]
+exclude = [
+  ".venv/**",
+  ".pytest_cache/**",
+]
