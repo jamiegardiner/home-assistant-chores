@@ -33,14 +33,12 @@ from .services import (
 
 
 async def _handle_complete(entity: ChoreSensor, call: ServiceCall) -> None:
-    completed_at = None
-    raw = call.data.get("completed_at")
-    if raw is not None:
-        parsed = dt_util.parse_datetime(str(raw))
-        if parsed is not None:
-            completed_at = (
-                parsed if parsed.tzinfo is not None else dt_util.as_local(parsed)
-            )
+    raw: datetime | None = call.data.get("completed_at")
+    completed_at = (
+        (raw if raw.tzinfo is not None else dt_util.as_local(raw))
+        if raw is not None
+        else None
+    )
     await entity.coordinator.async_complete(completed_at)
 
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 
 import voluptuous as vol
+from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
 from .const import SNOOZE_UNITS
@@ -16,7 +17,7 @@ SERVICE_UNSNOOZE = "unsnooze"
 # Schemas are plain dicts so HA can wrap them with make_entity_service_schema,
 # which adds the entity/area/device/label target fields automatically.
 COMPLETE_SCHEMA: dict = {
-    vol.Optional("completed_at"): str,
+    vol.Optional("completed_at"): cv.datetime,
 }
 UNSNOOZE_SCHEMA: dict = {}
 

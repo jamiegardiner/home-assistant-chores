@@ -165,6 +165,12 @@ They must be kept in sync. If you add to one, add to the other.
 
 ______________________________________________________________________
 
+## Code style
+
+- **All imports must be at the top of the file.** Inline imports (`import x` or `__import__("x")` inside functions, methods, or class bodies) are not allowed anywhere in the codebase — production code or tests. If a module is needed, add it to the top-level import block.
+
+______________________________________________________________________
+
 ## Testing conventions
 
 - Framework: `pytest` + `pytest-homeassistant-custom-component`

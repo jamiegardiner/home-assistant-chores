@@ -91,7 +91,8 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def _recompute(self, rt: ChoreRuntime) -> None:
         """Recompute status and next_due."""
         rt.next_due = dt_util.start_of_local_day(
-            rt.last_completed.date() + timedelta(days=rt.config.interval_days)
+            dt_util.as_local(rt.last_completed).date()
+            + timedelta(days=rt.config.interval_days)
         )
         now = dt_util.now()
 

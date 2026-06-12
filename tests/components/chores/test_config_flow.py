@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 import voluptuous as vol
@@ -201,7 +201,7 @@ async def test_user_flow_rejects_future_datetime(hass):
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": "user"}
     )
-    future = dt_util.now() + __import__("datetime").timedelta(days=1)
+    future = dt_util.now() + timedelta(days=1)
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
         {
@@ -305,7 +305,7 @@ async def test_options_flow_saves_edits(hass):
 
 async def test_options_flow_preserves_snooze_until(hass):
     """Editing name/interval does not clear snooze_until."""
-    snooze_dt = (dt_util.now() + __import__("datetime").timedelta(days=3)).isoformat()
+    snooze_dt = (dt_util.now() + timedelta(days=3)).isoformat()
     opts = {**_BASE_OPTS, "snooze_until": snooze_dt}
     entry = MockConfigEntry(domain=DOMAIN, options=opts)
     entry.add_to_hass(hass)
@@ -374,7 +374,7 @@ async def test_options_flow_rejects_future_datetime(hass):
     entry.add_to_hass(hass)
     await hass.config_entries.async_setup(entry.entry_id)
 
-    future = dt_util.now() + __import__("datetime").timedelta(days=1)
+    future = dt_util.now() + timedelta(days=1)
     result = await hass.config_entries.options.async_init(entry.entry_id)
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],

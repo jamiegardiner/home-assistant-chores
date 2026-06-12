@@ -84,10 +84,14 @@ class TestHandleComplete:
         entity.coordinator.async_complete.assert_called_once_with(None)
 
     async def test_calls_coordinator_async_complete_with_completed_at(self):
-        """Calling complete with a past completed_at parses it and passes the datetime."""
+        """Calling complete with a past completed_at passes the datetime to the coordinator.
+
+        cv.datetime in the schema converts the string before the handler fires,
+        so the handler receives a datetime object (possibly naive from YAML automations).
+        """
         entity = _make_entity()
         past = dt_util.now() - timedelta(hours=2)
-        await _handle_complete(entity, _make_call({"completed_at": past.isoformat()}))
+        await _handle_complete(entity, _make_call({"completed_at": past}))
         entity.coordinator.async_complete.assert_called_once()
         passed = entity.coordinator.async_complete.call_args[0][0]
         assert passed is not None
