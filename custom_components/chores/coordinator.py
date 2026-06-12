@@ -265,6 +265,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "status": rt.status,
             "next_due": rt.next_due,
             "snooze_until": rt.snooze_until,
+            "interval_days": rt.config.interval_days,
             "default_snooze_value": rt.config.default_snooze_value,
             "default_snooze_unit": rt.config.default_snooze_unit,
         }
