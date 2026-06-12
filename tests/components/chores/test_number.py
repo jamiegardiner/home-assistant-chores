@@ -135,6 +135,10 @@ class TestChoreIntervalNumber:
         entity = _make_interval_number()
         assert entity.native_min_value == 1.0
 
+    def test_max_value(self):
+        entity = _make_interval_number()
+        assert entity.native_max_value == 365.0
+
     def test_step(self):
         entity = _make_interval_number()
         assert entity.native_step == 1.0
