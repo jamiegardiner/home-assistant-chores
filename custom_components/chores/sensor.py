@@ -27,15 +27,8 @@ from .services import (
     SERVICE_UNSNOOZE,
     SNOOZE_SCHEMA,
     UNSNOOZE_SCHEMA,
-    _parse_snooze_until,
+    _parse_snooze_datetime,
 )
-
-
-def _iso(value: date | datetime | None) -> str | None:
-    """Convert date/datetime to ISO-8601 string; pass through None unchanged."""
-    if isinstance(value, (date, datetime)):
-        return value.isoformat()
-    return value
 
 
 async def _handle_complete(entity: ChoreSensor, call: ServiceCall) -> None:
@@ -43,7 +36,7 @@ async def _handle_complete(entity: ChoreSensor, call: ServiceCall) -> None:
 
 
 async def _handle_snooze(entity: ChoreSensor, call: ServiceCall) -> None:
-    snooze_until = _parse_snooze_until(call.data)
+    snooze_until = _parse_snooze_datetime(call.data)
     await entity.coordinator.async_snooze(snooze_until)
 
 
@@ -120,7 +113,7 @@ class ChoreSensor(
 class _ChoreDateSensor(
     _ChoreDeviceMixin, CoordinatorEntity[ChoresCoordinator], SensorEntity
 ):
-    """Base class for diagnostic date sensors on a chore device."""
+    """Base class for diagnostic date/datetime sensors on a chore device."""
 
     _attr_has_entity_name = True
     _attr_entity_category = EntityCategory.DIAGNOSTIC
@@ -138,13 +131,14 @@ class _ChoreDateSensor(
         self._entry_id = entry.entry_id
 
     @property
-    def native_value(self) -> str | None:
-        return _iso((self.coordinator.data or {}).get(self._data_key))
+    def native_value(self) -> date | datetime | None:
+        return (self.coordinator.data or {}).get(self._data_key)
 
 
 class ChoreLastCompletedSensor(_ChoreDateSensor):
     """Diagnostic sensor surfacing the last completed date."""
 
+    _attr_device_class = SensorDeviceClass.DATE
     _attr_translation_key = "last_completed"
 
     def __init__(self, coordinator: ChoresCoordinator, entry: ConfigEntry) -> None:
@@ -152,8 +146,9 @@ class ChoreLastCompletedSensor(_ChoreDateSensor):
 
 
 class ChoreNextDueSensor(_ChoreDateSensor):
-    """Diagnostic sensor surfacing the next due date."""
+    """Diagnostic sensor surfacing the next due datetime."""
 
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_translation_key = "next_due"
 
     def __init__(self, coordinator: ChoresCoordinator, entry: ConfigEntry) -> None:
@@ -163,6 +158,7 @@ class ChoreNextDueSensor(_ChoreDateSensor):
 class ChoreSnoozeUntilSensor(_ChoreDateSensor):
     """Diagnostic sensor surfacing snooze_until (unavailable when not snoozed)."""
 
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_translation_key = "snooze_until"
 
     def __init__(self, coordinator: ChoresCoordinator, entry: ConfigEntry) -> None:

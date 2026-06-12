@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import datetime, timedelta
 
-import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from homeassistant.exceptions import HomeAssistantError
 from homeassistant.util import dt as dt_util
 
 SERVICE_COMPLETE = "complete"
 SERVICE_SNOOZE = "snooze"
 SERVICE_UNSNOOZE = "unsnooze"
+
+SNOOZE_UNITS: tuple[str, ...] = ("minutes", "hours", "days", "weeks")
 
 # Schemas are plain dicts so HA can wrap them with make_entity_service_schema,
 # which adds the entity/area/device/label target fields automatically.
@@ -19,41 +19,15 @@ COMPLETE_SCHEMA: dict = {}
 UNSNOOZE_SCHEMA: dict = {}
 
 SNOOZE_SCHEMA: dict = {
-    vol.Optional("snooze_days"): vol.All(vol.Coerce(int), vol.Range(min=1)),
-    vol.Optional("snooze_weeks"): vol.All(vol.Coerce(int), vol.Range(min=1)),
-    vol.Optional("snooze_until"): cv.string,
+    vol.Required("value"): vol.All(vol.Coerce(int), vol.Range(min=1)),
+    vol.Required("unit"): vol.In(SNOOZE_UNITS),
 }
 
 
-def _parse_snooze_until(call_data: dict) -> date:
-    """Parse and validate snooze target date from service call data.
+def _parse_snooze_datetime(call_data: dict) -> datetime:
+    """Compute the snooze target datetime from service call data."""
+    value: int = call_data["value"]
+    unit: str = call_data["unit"]
 
-    Exactly one of snooze_days, snooze_weeks, or snooze_until must be provided.
-    Future-date validation is enforced by the coordinator.
-
-    Raises HomeAssistantError on invalid input.
-    """
-    snooze_days: int | None = call_data.get("snooze_days")
-    snooze_weeks: int | None = call_data.get("snooze_weeks")
-    snooze_until_str: str | None = call_data.get("snooze_until")
-
-    provided = sum(x is not None for x in [snooze_days, snooze_weeks, snooze_until_str])
-    if provided != 1:
-        raise HomeAssistantError(
-            "Exactly one of snooze_days, snooze_weeks, or snooze_until must be provided"
-        )
-
-    today = dt_util.now().date()
-    if snooze_days is not None:
-        snooze_until: date = today + timedelta(days=snooze_days)
-    elif snooze_weeks is not None:
-        snooze_until = today + timedelta(weeks=snooze_weeks)
-    else:
-        try:
-            snooze_until = date.fromisoformat(str(snooze_until_str))
-        except ValueError as exc:
-            raise HomeAssistantError(
-                f"Invalid snooze_until date: {snooze_until_str!r}"
-            ) from exc
-
-    return snooze_until
+    delta_kwargs: dict[str, int] = {unit: value}
+    return dt_util.now() + timedelta(**delta_kwargs)

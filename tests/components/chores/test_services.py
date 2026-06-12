@@ -5,8 +5,6 @@ from __future__ import annotations
 from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
-from homeassistant.exceptions import HomeAssistantError
 from homeassistant.util import dt as dt_util
 
 from custom_components.chores.sensor import (
@@ -14,7 +12,7 @@ from custom_components.chores.sensor import (
     _handle_snooze,
     _handle_unsnooze,
 )
-from custom_components.chores.services import _parse_snooze_until
+from custom_components.chores.services import SNOOZE_UNITS, _parse_snooze_datetime
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -37,37 +35,40 @@ def _make_entity() -> MagicMock:
 
 
 # ---------------------------------------------------------------------------
-# _parse_snooze_until
+# _parse_snooze_datetime
 # ---------------------------------------------------------------------------
 
 
-class TestParseSnoozeUntil:
-    def test_snooze_days(self):
-        today = dt_util.now().date()
-        result = _parse_snooze_until({"snooze_days": 3})
-        assert result == today + timedelta(days=3)
+class TestParseSnoozeDateTime:
+    def test_minutes(self):
+        before = dt_util.now()
+        result = _parse_snooze_datetime({"value": 30, "unit": "minutes"})
+        after = dt_util.now()
+        assert before + timedelta(minutes=30) <= result <= after + timedelta(minutes=30)
 
-    def test_snooze_weeks(self):
-        today = dt_util.now().date()
-        result = _parse_snooze_until({"snooze_weeks": 2})
-        assert result == today + timedelta(weeks=2)
+    def test_hours(self):
+        before = dt_util.now()
+        result = _parse_snooze_datetime({"value": 2, "unit": "hours"})
+        after = dt_util.now()
+        assert before + timedelta(hours=2) <= result <= after + timedelta(hours=2)
 
-    def test_snooze_until_iso(self):
-        future = (dt_util.now().date() + timedelta(days=5)).isoformat()
-        result = _parse_snooze_until({"snooze_until": future})
-        assert result == dt_util.now().date() + timedelta(days=5)
+    def test_days(self):
+        before = dt_util.now()
+        result = _parse_snooze_datetime({"value": 3, "unit": "days"})
+        after = dt_util.now()
+        assert before + timedelta(days=3) <= result <= after + timedelta(days=3)
 
-    def test_raises_when_no_param_provided(self):
-        with pytest.raises(HomeAssistantError, match="Exactly one"):
-            _parse_snooze_until({})
+    def test_weeks(self):
+        before = dt_util.now()
+        result = _parse_snooze_datetime({"value": 2, "unit": "weeks"})
+        after = dt_util.now()
+        assert before + timedelta(weeks=2) <= result <= after + timedelta(weeks=2)
 
-    def test_raises_when_two_params_provided(self):
-        with pytest.raises(HomeAssistantError, match="Exactly one"):
-            _parse_snooze_until({"snooze_days": 1, "snooze_weeks": 1})
-
-    def test_raises_on_invalid_date_string(self):
-        with pytest.raises(HomeAssistantError, match="Invalid snooze_until"):
-            _parse_snooze_until({"snooze_until": "not-a-date"})
+    def test_all_units_are_covered(self):
+        """Every unit in SNOOZE_UNITS must produce a valid future datetime."""
+        for unit in SNOOZE_UNITS:
+            result = _parse_snooze_datetime({"value": 1, "unit": unit})
+            assert result > dt_util.now()
 
 
 # ---------------------------------------------------------------------------
@@ -90,25 +91,30 @@ class TestHandleComplete:
 class TestHandleSnooze:
     async def test_calls_coordinator_async_snooze_with_days(self):
         entity = _make_entity()
-        today = dt_util.now().date()
-        await _handle_snooze(entity, _make_call({"snooze_days": 3}))
-        entity.coordinator.async_snooze.assert_called_once_with(
-            today + timedelta(days=3)
-        )
+        before = dt_util.now()
+        await _handle_snooze(entity, _make_call({"value": 3, "unit": "days"}))
+        after = dt_util.now()
+        entity.coordinator.async_snooze.assert_called_once()
+        passed_dt = entity.coordinator.async_snooze.call_args[0][0]
+        assert before + timedelta(days=3) <= passed_dt <= after + timedelta(days=3)
+
+    async def test_calls_coordinator_async_snooze_with_hours(self):
+        entity = _make_entity()
+        before = dt_util.now()
+        await _handle_snooze(entity, _make_call({"value": 4, "unit": "hours"}))
+        after = dt_util.now()
+        entity.coordinator.async_snooze.assert_called_once()
+        passed_dt = entity.coordinator.async_snooze.call_args[0][0]
+        assert before + timedelta(hours=4) <= passed_dt <= after + timedelta(hours=4)
 
     async def test_calls_coordinator_async_snooze_with_weeks(self):
         entity = _make_entity()
-        today = dt_util.now().date()
-        await _handle_snooze(entity, _make_call({"snooze_weeks": 1}))
-        entity.coordinator.async_snooze.assert_called_once_with(
-            today + timedelta(weeks=1)
-        )
-
-    async def test_propagates_validation_error(self):
-        entity = _make_entity()
-        with pytest.raises(HomeAssistantError):
-            await _handle_snooze(entity, _make_call({}))
-        entity.coordinator.async_snooze.assert_not_called()
+        before = dt_util.now()
+        await _handle_snooze(entity, _make_call({"value": 1, "unit": "weeks"}))
+        after = dt_util.now()
+        entity.coordinator.async_snooze.assert_called_once()
+        passed_dt = entity.coordinator.async_snooze.call_args[0][0]
+        assert before + timedelta(weeks=1) <= passed_dt <= after + timedelta(weeks=1)
 
 
 class TestHandleUnsnooze:

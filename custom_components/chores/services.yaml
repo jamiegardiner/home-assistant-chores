@@ -12,24 +12,22 @@ snooze:
       domain: sensor
       device_class: enum
   fields:
-    snooze_days:
-      required: false
+    value:
+      required: true
       selector:
         number:
           min: 1
           step: 1
           mode: box
-    snooze_weeks:
-      required: false
+    unit:
+      required: true
       selector:
-        number:
-          min: 1
-          step: 1
-          mode: box
-    snooze_until:
-      required: false
-      selector:
-        date:
+        select:
+          options:
+            - minutes
+            - hours
+            - days
+            - weeks
 
 unsnooze:
   target:

@@ -58,19 +58,15 @@
     },
     "snooze": {
       "name": "Snooze chore",
-      "description": "Snooze a chore until a given date, suppressing overdue transitions until then. Provide exactly one of snooze_days, snooze_weeks, or snooze_until.",
+      "description": "Snooze a chore for a given duration, suppressing overdue transitions until then. Provide a value and a unit (minutes, hours, days, or weeks).",
       "fields": {
-        "snooze_days": {
-          "name": "Snooze days",
-          "description": "Number of days to snooze from today."
+        "value": {
+          "name": "Value",
+          "description": "Number of units to snooze from now."
         },
-        "snooze_weeks": {
-          "name": "Snooze weeks",
-          "description": "Number of weeks to snooze from today."
-        },
-        "snooze_until": {
-          "name": "Snooze until",
-          "description": "Specific date to snooze until (ISO format YYYY-MM-DD)."
+        "unit": {
+          "name": "Unit",
+          "description": "Time unit for the snooze duration (minutes, hours, days, or weeks)."
         }
       }
     },
