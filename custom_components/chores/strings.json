@@ -21,6 +21,12 @@
     }
   },
   "config": {
+    "error": {
+      "name_required": "Name cannot be empty.",
+      "invalid_interval": "Interval must be a positive number.",
+      "invalid_snooze_unit": "Snooze unit must be one of: minutes, hours, days, or weeks.",
+      "invalid_date": "Date must be in YYYY-MM-DD format."
+    },
     "step": {
       "user": {
         "title": "Add a chore",

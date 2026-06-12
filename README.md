@@ -2,7 +2,7 @@
 
 A [HACS](https://hacs.xyz)-compatible custom integration for [Home Assistant](https://www.home-assistant.io) that tracks recurring household chores and surfaces their status as HA devices.
 
-Each chore becomes a device with 8 entities — a primary status sensor, 4 diagnostic sensors, and 3 action buttons — transitioning automatically between `done` and `overdue` at the configured interval with no polling.
+Each chore becomes a device with 9 entities — a primary status sensor, 5 diagnostic sensors, and 3 action buttons — transitioning automatically between `done` and `overdue` at the configured interval with no polling.
 
 ______________________________________________________________________
 
@@ -25,7 +25,7 @@ ______________________________________________________________________
 
 ## Entities
 
-Each chore appears in **Settings → Devices & Services** as a device with 8 entities.
+Each chore appears in **Settings → Devices & Services** as a device with 9 entities.
 
 ### Status sensor
 
@@ -39,20 +39,21 @@ The primary entity (`sensor.chore_<name>`) reports the chore's current state:
 
 ### Diagnostic sensors
 
-| Entity              | Type     | Description                                                         |
-| ------------------- | -------- | ------------------------------------------------------------------- |
-| Last completed      | Date     | The date the chore was last marked complete                         |
-| Next due            | Datetime | The datetime the chore will next transition to `overdue`            |
-| Snooze until        | Datetime | The datetime an active snooze expires; unavailable when not snoozed |
-| Default snooze days | Integer  | How many days the Snooze button defers the chore                    |
+| Entity               | Type     | Description                                                         |
+| -------------------- | -------- | ------------------------------------------------------------------- |
+| Last completed       | Date     | The date the chore was last marked complete                         |
+| Next due             | Datetime | The datetime the chore will next transition to `overdue`            |
+| Snooze Expiry        | Datetime | The datetime an active snooze expires; unavailable when not snoozed |
+| Default snooze value | Integer  | The count used when the Snooze button is pressed                    |
+| Default snooze unit  | Text     | The time unit for the default snooze (minutes/hours/days/weeks)     |
 
 ### Buttons
 
-| Button   | Action                                                        |
-| -------- | ------------------------------------------------------------- |
-| Complete | Marks the chore as done today and schedules the next due date |
-| Snooze   | Defers the chore by the configured default snooze days        |
-| Unsnooze | Cancels an active snooze immediately                          |
+| Button   | Action                                                         |
+| -------- | -------------------------------------------------------------- |
+| Complete | Marks the chore as done today and schedules the next due date  |
+| Snooze   | Defers the chore by the configured default snooze value + unit |
+| Unsnooze | Cancels an active snooze immediately                           |
 
 ______________________________________________________________________
 
