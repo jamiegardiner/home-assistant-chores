@@ -6,8 +6,7 @@ Review the pull request number provided in $ARGUMENTS.
 
 ## Step 1 — Fetch the PR
 
-Run `gh pr view <number> --json title,body,headRefName` to get the PR details. Run `gh pr diff <number>` to get the full
-diff. Check out the branch locally to read complete file context where needed.
+Run `gh pr view <number> --json title,body,headRefName` to get the PR details. Run `gh pr diff <number>` to get the full diff. Check out the branch locally to read complete file context where needed.
 
 ## Step 2 — Review criteria
 
@@ -88,8 +87,7 @@ Present the full findings to the user in the terminal, grouped by file.
 
 ## Step 5 — Post inline PR review
 
-Post findings as a GitHub code review with inline comments on the exact lines using `gh api`. This creates proper
-line-level annotations visible in the GitHub diff view, with a summary at the top.
+Post findings as a GitHub code review with inline comments on the exact lines using `gh api`. This creates proper line-level annotations visible in the GitHub diff view, with a summary at the top.
 
 Get the repo owner/name first:
 
@@ -116,9 +114,7 @@ Build a JSON review file at `/tmp/pr-review.json`. The structure is:
 
 - `body`: markdown summary with a final verdict (✅ No issues / ⚠️ N issues found)
 - One entry in `comments` per finding
-- `line` must be a line that appears in the PR diff — use the diff output to confirm the line exists on the changed
-  side. If a line is not in the diff (e.g. it is unchanged context), place the comment on the nearest changed line and
-  note the actual line in the comment body
+- `line` must be a line that appears in the PR diff — use the diff output to confirm the line exists on the changed side. If a line is not in the diff (e.g. it is unchanged context), place the comment on the nearest changed line and note the actual line in the comment body
 - If there are no findings, omit the `comments` array and just post the summary via `gh pr comment <number> --body-file`
 
 Post the review:

@@ -36,8 +36,7 @@ Write the issue body using this structure:
 
 The format depends on the category:
 
-- **enhancement / bug** — BDD-style scenarios using Given/When/Then. Each scenario is a single testable behaviour. Do
-  not bundle multiple outcomes into one Then:
+- **enhancement / bug** — BDD-style scenarios using Given/When/Then. Each scenario is a single testable behaviour. Do not bundle multiple outcomes into one Then:
 
   ```
   Scenario: <short name>
@@ -46,16 +45,14 @@ The format depends on the category:
     Then <outcome>
   ```
 
-- **documentation / chore / security** — Simple bullet list of what must be true when the issue is done. No
-  Given/When/Then needed:
+- **documentation / chore / security** — Simple bullet list of what must be true when the issue is done. No Given/When/Then needed:
 
   ```
   - README contains an introduction section explaining what the integration does
   - Installation instructions cover adding the repo as a custom HACS repository
   ```
 
-For **enhancement** and **bug** issues, always include a bullet at the end of the acceptance criteria list covering
-documentation:
+For **enhancement** and **bug** issues, always include a bullet at the end of the acceptance criteria list covering documentation:
 
 ```
 - README.md and CLAUDE.md are updated if the change affects user-visible behaviour, services, configuration options, or architecture
@@ -67,18 +64,14 @@ documentation:
 
 Before creating the issue, assess whether it should be split:
 
-- **enhancement / bug**: more than 5 BDD scenarios, spans clearly separate concerns, or would naturally result in more
-  than one PR
-- **documentation / chore / security**: covers clearly distinct deliverables that could ship independently (e.g. README
-  \+ CLAUDE.md update are separable; a single README with multiple sections is not)
+- **enhancement / bug**: more than 5 BDD scenarios, spans clearly separate concerns, or would naturally result in more than one PR
+- **documentation / chore / security**: covers clearly distinct deliverables that could ship independently (e.g. README + CLAUDE.md update are separable; a single README with multiple sections is not)
 
-If any of these apply, propose a split: show the user the suggested sub-issues and ask whether to create them separately
-or proceed as one. Wait for their decision.
+If any of these apply, propose a split: show the user the suggested sub-issues and ask whether to create them separately or proceed as one. Wait for their decision.
 
 ## Step 4 — Create the issue
 
-Once the user is happy with the content and scope, write the issue body to a temp file and use `--body-file` to avoid
-shell escaping mangling backticks and code blocks:
+Once the user is happy with the content and scope, write the issue body to a temp file and use `--body-file` to avoid shell escaping mangling backticks and code blocks:
 
 ```
 cat > /tmp/issue-body.md << 'EOF'

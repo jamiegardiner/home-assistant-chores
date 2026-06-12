@@ -4,8 +4,7 @@
 
 ### SemVer driven by conventional commits
 
-This project follows [Semantic Versioning](https://semver.org). The version bump for each release is derived
-automatically from the conventional-commit prefixes of PRs merged to `main`:
+This project follows [Semantic Versioning](https://semver.org). The version bump for each release is derived automatically from the conventional-commit prefixes of PRs merged to `main`:
 
 | Commit prefix                                  | Bump                                           |
 | ---------------------------------------------- | ---------------------------------------------- |
@@ -16,15 +15,13 @@ automatically from the conventional-commit prefixes of PRs merged to `main`:
 
 ### Pre-1.0 rule
 
-While the project is at `0.x`, **breaking changes bump the minor version** (not major). The jump to `1.0.0` is a
-deliberate one-time decision made by the maintainer, not triggered automatically by a breaking change.
+While the project is at `0.x`, **breaking changes bump the minor version** (not major). The jump to `1.0.0` is a deliberate one-time decision made by the maintainer, not triggered automatically by a breaking change.
 
 ### Release mechanism
 
 Releases are managed by [release-please](https://github.com/googleapis/release-please):
 
-1. As PRs are merged to `main`, release-please accumulates their conventional-commit subjects and maintains a single
-   open "release PR" with a proposed version bump and `CHANGELOG.md` entry.
+1. As PRs are merged to `main`, release-please accumulates their conventional-commit subjects and maintains a single open "release PR" with a proposed version bump and `CHANGELOG.md` entry.
 1. When the maintainer is ready to cut a release, they merge that release PR.
 1. Merging the release PR automatically:
    - bumps the `version` field in `manifest.json`
@@ -33,13 +30,11 @@ Releases are managed by [release-please](https://github.com/googleapis/release-p
 
 HACS installs and updates from GitHub Releases, so no release tag means no HACS update.
 
-> **Note:** The release-please workflow, PR-title-lint check, and repo squash-only setting are not yet configured.
-> Implementation is deferred to [#66](../../issues/66).
+> **Note:** The release-please workflow, PR-title-lint check, and repo squash-only setting are not yet configured. Implementation is deferred to [#66](../../issues/66).
 
 ### Manifest ↔ tag sync
 
-`manifest.json` `version` and the `vX.Y.Z` git tag are kept in lockstep by release-please. **Do not edit the version
-field in `manifest.json` manually** — doing so will desync the manifest from the tag and break HACS update detection.
+`manifest.json` `version` and the `vX.Y.Z` git tag are kept in lockstep by release-please. **Do not edit the version field in `manifest.json` manually** — doing so will desync the manifest from the tag and break HACS update detection.
 
 ### Trunk-based development
 
@@ -47,16 +42,13 @@ field in `manifest.json` manually** — doing so will desync the manifest from t
 
 ### On-demand release cadence
 
-Merging a feature or fix PR to `main` does **not** publish a release. Release-please simply updates its open release PR
-to include the new change. Work can be stacked and accumulated freely. A release is cut only when the maintainer merges
-the release PR.
+Merging a feature or fix PR to `main` does **not** publish a release. Release-please simply updates its open release PR to include the new change. Work can be stacked and accumulated freely. A release is cut only when the maintainer merges the release PR.
 
 ### Squash-only merge model
 
 The repository is configured for **squash-merge only** (merge commits and rebase-merge are disabled).
 
-Under squash-merge, the entire PR is collapsed into **one commit on `main`** whose subject is the **PR title**.
-Individual branch commits do not appear in `main`'s history and are not seen by release-please.
+Under squash-merge, the entire PR is collapsed into **one commit on `main`** whose subject is the **PR title**. Individual branch commits do not appear in `main`'s history and are not seen by release-please.
 
 Therefore:
 
@@ -64,8 +56,7 @@ Therefore:
   - A PR that adds a feature plus some cleanup → title starts with `feat:` (not `chore:`)
   - A `chore:`-titled PR produces no release even if its branch contained `feat()` commits
 - A `BREAKING CHANGE:` footer in the squash-merge body is still honoured for a major bump.
-- PR-title-lint (enforced by CI — see [#66](../../issues/66)) is the authoritative gate; individual commit messages on
-  the branch are not linted.
+- PR-title-lint (enforced by CI — see [#66](../../issues/66)) is the authoritative gate; individual commit messages on the branch are not linted.
 
 ### PR title format
 
@@ -101,6 +92,4 @@ Append `!` after the scope for a breaking change: `feat(issue-X)!: remove weeks 
 
 ### Cutting the first 1.0.0
 
-When initial development is complete and the project is considered stable, the maintainer adds a `Release-As: 1.0.0`
-footer to a commit or PR body. Release-please will propose `1.0.0` as the next version regardless of the bump type of
-that commit.
+When initial development is complete and the project is considered stable, the maintainer adds a `Release-As: 1.0.0` footer to a commit or PR body. Release-please will propose `1.0.0` as the next version regardless of the bump type of that commit.

@@ -1,10 +1,8 @@
 # Chore Tracker
 
-A [HACS](https://hacs.xyz)-compatible custom integration for [Home Assistant](https://www.home-assistant.io) that tracks
-recurring household chores and surfaces their status as HA devices.
+A [HACS](https://hacs.xyz)-compatible custom integration for [Home Assistant](https://www.home-assistant.io) that tracks recurring household chores and surfaces their status as HA devices.
 
-Each chore becomes a device with 8 entities — a primary status sensor, 4 diagnostic sensors, and 3 action buttons —
-transitioning automatically between `done` and `overdue` at the configured interval with no polling.
+Each chore becomes a device with 8 entities — a primary status sensor, 4 diagnostic sensors, and 3 action buttons — transitioning automatically between `done` and `overdue` at the configured interval with no polling.
 
 ______________________________________________________________________
 
@@ -18,8 +16,7 @@ ______________________________________________________________________
 
 1. In Home Assistant go to **Settings → HACS**
 1. Click the three-dot menu (⋮) in the top-right corner and choose **Custom repositories**
-1. Paste `https://github.com/jamiegardiner/home-assistant-chores` and set the category to **Integration**, then click
-   **Add**
+1. Paste `https://github.com/jamiegardiner/home-assistant-chores` and set the category to **Integration**, then click **Add**
 1. Search for **Chore Tracker** in the HACS store and click **Download**
 1. Restart Home Assistant
 1. Go to **Settings → Devices & Services → Add Integration**, search for **Chore Tracker**, and follow the setup wizard
@@ -78,8 +75,7 @@ All configuration is done through the Home Assistant UI — there is no YAML.
 **To remove a chore:**
 
 1. Go to **Settings → Devices & Services**
-1. Find **Chore Tracker**, open the integration, click the three-dot menu (⋮) next to the chore entry, and choose
-   **Delete**
+1. Find **Chore Tracker**, open the integration, click the three-dot menu (⋮) next to the chore entry, and choose **Delete**
 
 Removing a config entry removes just that chore — all other chores are unaffected.
 
@@ -103,8 +99,7 @@ ______________________________________________________________________
 
 ### `chores.snooze`
 
-Snooze a chore until a given date, suppressing `overdue` transitions in the meantime. Provide **exactly one** of
-`snooze_days`, `snooze_weeks`, or `snooze_until`.
+Snooze a chore until a given date, suppressing `overdue` transitions in the meantime. Provide **exactly one** of `snooze_days`, `snooze_weeks`, or `snooze_until`.
 
 **Snooze for a number of days:**
 
@@ -152,5 +147,4 @@ ______________________________________________________________________
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the versioning model, release strategy, PR title conventions, and contributor
-flow.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the versioning model, release strategy, PR title conventions, and contributor flow.
