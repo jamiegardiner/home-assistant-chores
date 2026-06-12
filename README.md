@@ -57,11 +57,12 @@ The primary entity (`sensor.chore_<name>`) reports the chore's current state:
 
 These writable entities (in the device's **Configuration** section) edit the chore's settings in place — no reload, no entity teardown.
 
-| Entity               | Type   | Description                                                     |
-| -------------------- | ------ | --------------------------------------------------------------- |
-| Interval             | Number | Days between completions before the chore becomes `overdue`     |
-| Default snooze value | Number | The count used when the Snooze button is pressed                |
-| Default snooze unit  | Select | The time unit for the default snooze (minutes/hours/days/weeks) |
+| Entity               | Type   | Description                                                                                                |
+| -------------------- | ------ | ---------------------------------------------------------------------------------------------------------- |
+| Interval             | Number | Days between completions before the chore becomes `overdue`                                                |
+| Default snooze value | Number | The count used when the Snooze button is pressed                                                           |
+| Default snooze unit  | Select | The time unit for the default snooze (minutes/hours/days/weeks)                                            |
+| Notification time    | Time   | Time of day when `done → overdue` and `snoozed → overdue` transitions fire. Defaults to `00:00` (midnight) |
 
 ______________________________________________________________________
 
