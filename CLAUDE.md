@@ -106,9 +106,9 @@ make venv-destroy   # delete .venv entirely
 # Code quality (run before every commit)
 make test           # pytest
 make lint           # ruff check — flags bugs and style issues
-make format         # auto-fix formatting (ruff format) and fixable lint issues (ruff check --fix)
+make format         # auto-fix formatting: Python (ruff format + ruff check --fix) and all markdown (mdformat)
 make typecheck      # mypy
-make check          # lint + format-check + typecheck + test in one go (mirrors CI, read-only)
+make check          # lint + format-check + typecheck + markdown + test in one go (mirrors CI, read-only)
 
 # Docker (local HA instance at http://localhost:8123)
 make up             # start Home Assistant
@@ -119,6 +119,10 @@ make logs           # tail HA container logs
 ```
 
 Activate the venv for interactive use: `source .venv/bin/activate`
+
+### Markdown formatting
+
+Every committed `.md` file in the repository — including `CLAUDE.md`, `README.md`, `CONTRIBUTING.md`, `docs/**/*.md`, and `.claude/commands/*.md` — must pass `mdformat`. Run `make format` to auto-fix, `make check` to verify (read-only). Files are excluded from formatting **only** via `.mdformat.toml` at the repo root (`.venv/**` and `.pytest_cache/**` are excluded by default). Do not add per-file exceptions elsewhere.
 
 ---
 
