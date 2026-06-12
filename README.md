@@ -4,7 +4,7 @@ A [HACS](https://hacs.xyz)-compatible custom integration for [Home Assistant](ht
 
 Each chore becomes a device with 8 entities — a primary status sensor, 4 diagnostic sensors, and 3 action buttons — transitioning automatically between `done` and `overdue` at the configured interval with no polling.
 
----
+______________________________________________________________________
 
 ## Installation
 
@@ -21,7 +21,7 @@ Each chore becomes a device with 8 entities — a primary status sensor, 4 diagn
 5. Restart Home Assistant
 6. Go to **Settings → Devices & Services → Add Integration**, search for **Chore Tracker**, and follow the setup wizard
 
----
+______________________________________________________________________
 
 ## Entities
 
@@ -31,30 +31,30 @@ Each chore appears in **Settings → Devices & Services** as a device with 8 ent
 
 The primary entity (`sensor.chore_<name>`) reports the chore's current state:
 
-| State | Meaning |
-|-------|---------|
-| `done` | The chore has been completed and is not yet due again |
-| `overdue` | The chore's due date has passed without being marked complete |
+| State     | Meaning                                                                        |
+| --------- | ------------------------------------------------------------------------------ |
+| `done`    | The chore has been completed and is not yet due again                          |
+| `overdue` | The chore's due date has passed without being marked complete                  |
 | `snoozed` | The chore is snoozed; overdue transitions are suppressed until the snooze date |
 
 ### Diagnostic sensors
 
-| Entity | Type | Description |
-|--------|------|-------------|
-| Last completed | Date | The date the chore was last marked complete |
-| Next due | Date | The date the chore will next transition to `overdue` |
-| Snooze until | Date | The date an active snooze expires; unavailable when not snoozed |
-| Default snooze days | Integer | How many days the Snooze button defers the chore |
+| Entity              | Type    | Description                                                     |
+| ------------------- | ------- | --------------------------------------------------------------- |
+| Last completed      | Date    | The date the chore was last marked complete                     |
+| Next due            | Date    | The date the chore will next transition to `overdue`            |
+| Snooze until        | Date    | The date an active snooze expires; unavailable when not snoozed |
+| Default snooze days | Integer | How many days the Snooze button defers the chore                |
 
 ### Buttons
 
-| Button | Action |
-|--------|--------|
+| Button   | Action                                                        |
+| -------- | ------------------------------------------------------------- |
 | Complete | Marks the chore as done today and schedules the next due date |
-| Snooze | Defers the chore by the configured default snooze days |
-| Unsnooze | Cancels an active snooze immediately |
+| Snooze   | Defers the chore by the configured default snooze days        |
+| Unsnooze | Cancels an active snooze immediately                          |
 
----
+______________________________________________________________________
 
 ## Managing chores
 
@@ -79,7 +79,7 @@ All configuration is done through the Home Assistant UI — there is no YAML.
 
 Removing a config entry removes just that chore — all other chores are unaffected.
 
----
+______________________________________________________________________
 
 ## Services
 
@@ -95,12 +95,11 @@ target:
   entity_id: sensor.chore_vacuum_living_room
 ```
 
----
+______________________________________________________________________
 
 ### `chores.snooze`
 
-Snooze a chore until a given date, suppressing `overdue` transitions in the meantime.
-Provide **exactly one** of `snooze_days`, `snooze_weeks`, or `snooze_until`.
+Snooze a chore until a given date, suppressing `overdue` transitions in the meantime. Provide **exactly one** of `snooze_days`, `snooze_weeks`, or `snooze_until`.
 
 **Snooze for a number of days:**
 
@@ -132,7 +131,7 @@ data:
   snooze_until: "2026-07-01"
 ```
 
----
+______________________________________________________________________
 
 ### `chores.unsnooze`
 
@@ -144,7 +143,7 @@ target:
   entity_id: sensor.chore_vacuum_living_room
 ```
 
----
+______________________________________________________________________
 
 ## Contributing
 

@@ -6,12 +6,12 @@
 
 This project follows [Semantic Versioning](https://semver.org). The version bump for each release is derived automatically from the conventional-commit prefixes of PRs merged to `main`:
 
-| Commit prefix | Bump |
-|---|---|
-| `fix:` | patch (e.g. `0.1.0` → `0.1.1`) |
-| `feat:` | minor (e.g. `0.1.0` → `0.2.0`) |
-| `feat(scope)!:` or `BREAKING CHANGE:` footer | major at `>=1.0.0`; minor at `0.x` (see below) |
-| `chore:`, `docs:`, `refactor:`, `test:`, `ci:` | no release on their own |
+| Commit prefix                                  | Bump                                           |
+| ---------------------------------------------- | ---------------------------------------------- |
+| `fix:`                                         | patch (e.g. `0.1.0` → `0.1.1`)                 |
+| `feat:`                                        | minor (e.g. `0.1.0` → `0.2.0`)                 |
+| `feat(scope)!:` or `BREAKING CHANGE:` footer   | major at `>=1.0.0`; minor at `0.x` (see below) |
+| `chore:`, `docs:`, `refactor:`, `test:`, `ci:` | no release on their own                        |
 
 ### Pre-1.0 rule
 
@@ -70,6 +70,7 @@ chore(issue-71): upgrade pytest-homeassistant-custom-component
 ```
 
 Use the prefix that reflects the PR's **most significant** change:
+
 - `feat` — new user-visible capability
 - `fix` — corrects incorrect behaviour
 - `docs` — documentation only

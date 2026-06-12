@@ -6,15 +6,14 @@ Review the pull request number provided in $ARGUMENTS.
 
 ## Step 1 — Fetch the PR
 
-Run `gh pr view <number> --json title,body,headRefName` to get the PR details.
-Run `gh pr diff <number>` to get the full diff.
-Check out the branch locally to read complete file context where needed.
+Run `gh pr view <number> --json title,body,headRefName` to get the PR details. Run `gh pr diff <number>` to get the full diff. Check out the branch locally to read complete file context where needed.
 
 ## Step 2 — Review criteria
 
 Scrutinise every changed file against all of the following categories. Flag anything that fails.
 
 ### Python correctness & style
+
 - [ ] `from __future__ import annotations` present in every module
 - [ ] All functions and methods have complete type annotations (arguments and return type)
 - [ ] No bare `except:` — always catch a specific exception type
@@ -28,6 +27,7 @@ Scrutinise every changed file against all of the following categories. Flag anyt
 - [ ] No commented-out code or stray TODOs without a linked issue
 
 ### Pythonic patterns
+
 - [ ] Dataclasses use `field()` for mutable defaults, not bare mutable literals
 - [ ] `@property` used correctly — no side effects in getters
 - [ ] Context managers (`with`) used where appropriate (file I/O, locks)
@@ -35,6 +35,7 @@ Scrutinise every changed file against all of the following categories. Flag anyt
 - [ ] Early returns used to reduce nesting (guard clauses)
 
 ### Home Assistant best practices
+
 - [ ] `@callback` decorator on every synchronous function called from an async context
 - [ ] All async methods prefixed with `async_`
 - [ ] No `time.sleep()` — use `await asyncio.sleep()` or HA timer helpers
@@ -52,12 +53,14 @@ Scrutinise every changed file against all of the following categories. Flag anyt
 - [ ] No direct state mutations outside the coordinator
 
 ### Code smells
+
 - [ ] Functions do one thing (single responsibility — if a function needs sub-headings to describe it, split it)
 - [ ] No duplicated logic that should be extracted to a helper
 - [ ] No overly long functions (more than ~40 lines is worth questioning)
 - [ ] No unnecessary class — a module-level function is simpler when there's no state
 
 ### Documentation
+
 - [ ] If the PR adds or changes a service, `README.md` documents it (name, description, YAML example)
 - [ ] If the PR adds or changes sensor states or attributes, `README.md` reflects them
 - [ ] If the PR changes configuration options, setup steps, or architecture, `README.md` and/or `CLAUDE.md` are updated
@@ -67,6 +70,7 @@ Scrutinise every changed file against all of the following categories. Flag anyt
 ## Step 3 — Compile findings
 
 Group findings by file. For each issue record:
+
 - File path (relative to repo root, e.g. `custom_components/chores/config_flow.py`)
 - Line number in the file (use the diff to identify the exact line)
 - Which checklist item it violates
@@ -86,11 +90,13 @@ Present the full findings to the user in the terminal, grouped by file.
 Post findings as a GitHub code review with inline comments on the exact lines using `gh api`. This creates proper line-level annotations visible in the GitHub diff view, with a summary at the top.
 
 Get the repo owner/name first:
+
 ```
 gh repo view --json nameWithOwner -q .nameWithOwner
 ```
 
 Build a JSON review file at `/tmp/pr-review.json`. The structure is:
+
 ```json
 {
   "body": "<overall summary with verdict>",
@@ -112,6 +118,7 @@ Build a JSON review file at `/tmp/pr-review.json`. The structure is:
 - If there are no findings, omit the `comments` array and just post the summary via `gh pr comment <number> --body-file`
 
 Post the review:
+
 ```
 gh api repos/{owner}/{repo}/pulls/<number>/reviews --input /tmp/pr-review.json
 ```

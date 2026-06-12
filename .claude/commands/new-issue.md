@@ -7,6 +7,7 @@ Create a new GitHub issue from the task description in $ARGUMENTS.
 ## Step 1 — Gather requirements
 
 Ask the user clarifying questions before writing anything. Cover:
+
 - Who is the user and what are they trying to achieve? (needed to write the user story)
 - What triggers the behaviour or change?
 - What is the expected outcome / success state?
@@ -28,6 +29,7 @@ Write the issue body using this structure:
 **Category:** `<bug | enhancement | documentation | chore | security>`
 
 **User Story** *(enhancement and bug only)*
+
 > As a [type of user], I want [goal], so that [reason/value].
 
 **Acceptance Criteria**
@@ -35,6 +37,7 @@ Write the issue body using this structure:
 The format depends on the category:
 
 - **enhancement / bug** — BDD-style scenarios using Given/When/Then. Each scenario is a single testable behaviour. Do not bundle multiple outcomes into one Then:
+
   ```
   Scenario: <short name>
     Given <precondition>
@@ -43,22 +46,24 @@ The format depends on the category:
   ```
 
 - **documentation / chore / security** — Simple bullet list of what must be true when the issue is done. No Given/When/Then needed:
+
   ```
   - README contains an introduction section explaining what the integration does
   - Installation instructions cover adding the repo as a custom HACS repository
   ```
 
 For **enhancement** and **bug** issues, always include a bullet at the end of the acceptance criteria list covering documentation:
-  ```
-  - README.md and CLAUDE.md are updated if the change affects user-visible behaviour, services, configuration options, or architecture
-  ```
 
-**Notes** (omit if empty)
-Implementation hints, constraints, open questions, or links to related issues.
+```
+- README.md and CLAUDE.md are updated if the change affects user-visible behaviour, services, configuration options, or architecture
+```
+
+**Notes** (omit if empty) Implementation hints, constraints, open questions, or links to related issues.
 
 ## Step 3 — Check scope
 
 Before creating the issue, assess whether it should be split:
+
 - **enhancement / bug**: more than 5 BDD scenarios, spans clearly separate concerns, or would naturally result in more than one PR
 - **documentation / chore / security**: covers clearly distinct deliverables that could ship independently (e.g. README + CLAUDE.md update are separable; a single README with multiple sections is not)
 

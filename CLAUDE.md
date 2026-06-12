@@ -2,7 +2,7 @@
 
 A HACS-compatible custom integration that tracks recurring household chores and surfaces their status as HA devices. Each chore becomes a device with 8 entities — a primary status sensor, 4 diagnostic sensors, and 3 action buttons — automatically transitioning between `done` and `overdue` at the configured interval with no polling.
 
----
+______________________________________________________________________
 
 ## Project structure
 
@@ -37,7 +37,7 @@ requirements_test.txt  # pinned dev/test dependencies
 Makefile               # all common dev tasks (see below)
 ```
 
----
+______________________________________________________________________
 
 ## Architecture
 
@@ -77,15 +77,15 @@ Options updates (from config flow edits) are handled in-place via `async_update_
 
 ### Key types
 
-| Type | File | Purpose |
-|---|---|---|
-| `ChoreConfig` | `models.py` | Immutable config: name, interval_days, default_snooze_days |
-| `ChoreRuntime` | `coordinator.py` | Mutable runtime state: status, next_due, timer cancel fns |
-| `ChoresCoordinator` | `coordinator.py` | Owns one chore, pushes updates to the sensor |
-| `ChoreSensor` | `sensor.py` | Primary `CoordinatorEntity` — reads status from coordinator snapshot |
-| `_ChoreDateSensor` | `sensor.py` | Base class for the 3 diagnostic date sensors |
-| `ChoreDefaultSnoozeDaysSensor` | `sensor.py` | Diagnostic sensor for default_snooze_days |
-| `Chore*Button` | `button.py` | Complete / Snooze / Unsnooze button entities |
+| Type                           | File             | Purpose                                                              |
+| ------------------------------ | ---------------- | -------------------------------------------------------------------- |
+| `ChoreConfig`                  | `models.py`      | Immutable config: name, interval_days, default_snooze_days           |
+| `ChoreRuntime`                 | `coordinator.py` | Mutable runtime state: status, next_due, timer cancel fns            |
+| `ChoresCoordinator`            | `coordinator.py` | Owns one chore, pushes updates to the sensor                         |
+| `ChoreSensor`                  | `sensor.py`      | Primary `CoordinatorEntity` — reads status from coordinator snapshot |
+| `_ChoreDateSensor`             | `sensor.py`      | Base class for the 3 diagnostic date sensors                         |
+| `ChoreDefaultSnoozeDaysSensor` | `sensor.py`      | Diagnostic sensor for default_snooze_days                            |
+| `Chore*Button`                 | `button.py`      | Complete / Snooze / Unsnooze button entities                         |
 
 ### Status transitions
 
@@ -93,7 +93,7 @@ Options updates (from config flow edits) are handled in-place via `async_update_
 - **`overdue` → `done`**: `chores.complete` service call resets `last_completed` to today, persists to `entry.options`, recomputes `next_due`, schedules new timer
 - **`snoozed`**: any state can be snoozed; `chores.snooze` sets `snooze_until` in `entry.options`; a snooze-expiry timer fires at that date
 
----
+______________________________________________________________________
 
 ## Make commands
 
@@ -106,9 +106,9 @@ make venv-destroy   # delete .venv entirely
 # Code quality (run before every commit)
 make test           # pytest
 make lint           # ruff check — flags bugs and style issues
-make format         # auto-fix formatting (ruff format) and fixable lint issues (ruff check --fix)
+make format         # auto-fix formatting: Python (ruff format + ruff check --fix) and all markdown (mdformat)
 make typecheck      # mypy
-make check          # lint + format-check + typecheck + test in one go (mirrors CI, read-only)
+make check          # lint + format-check + typecheck + markdown + test in one go (mirrors CI, read-only)
 
 # Docker (local HA instance at http://localhost:8123)
 make up             # start Home Assistant
@@ -120,37 +120,48 @@ make logs           # tail HA container logs
 
 Activate the venv for interactive use: `source .venv/bin/activate`
 
----
+### Markdown formatting
+
+Every committed `.md` file in the repository — including `CLAUDE.md`, `README.md`, `CONTRIBUTING.md`, `docs/**/*.md`, and `.claude/commands/*.md` — must pass `mdformat`. Run `make format` to auto-fix, `make check` to verify (read-only). Files are excluded from formatting **only** via `.mdformat.toml` at the repo root (`.venv/**` and `.pytest_cache/**` are excluded by default). Do not add per-file exceptions elsewhere.
+
+______________________________________________________________________
 
 ## Adding a new feature
 
 ### 1. New sensor attribute
+
 Add the key to `coordinator.py:_snapshot()`. To surface it as a diagnostic entity, create a new sensor class in `sensor.py` and add it to `async_setup_entry`.
 
 ### 2. New service
+
 Services are entity services — HA handles all target resolution (entity, area, device, label) and fan-out automatically.
+
 1. Add the service name constant and schema dict to `services.py`.
 2. Add a handler function `_handle_<name>(entity: ChoreSensor, call: ServiceCall)` in `sensor.py` and register it in `async_setup_entry` via `platform.async_register_entity_service`.
 3. Add the service structure (target, fields, selectors) to `services.yaml` — but **not** `name`/`description`. Service and field display strings live under the `services` key in both `strings.json` and `translations/en.json` (kept in sync, per HA's 2023.8+ convention). No unregister step needed — entity services are torn down automatically when the platform unloads.
 
 ### 3. New platform (e.g. `button`, `select`)
+
 1. Add `Platform.BUTTON` (etc.) to `PLATFORMS` in `__init__.py`.
 2. Create `custom_components/chores/<platform>.py` implementing `async_setup_entry` and the entity class.
 3. The entity should be a `CoordinatorEntity` and read state from `coordinator.data` (flat dict).
 
 ### 4. New config option
+
 1. Add the field to `ChoreConfig` in `models.py` (update `from_dict`).
 2. Add the form field to `config_flow.py:_chore_schema()` (used by both user and options flow).
 3. Add the label to both `strings.json` and `translations/en.json` under both `config.step.user.data` and `options.step.init.data`.
 
 ### 5. Strings / translations
+
 Every user-visible string must exist in **both** files:
+
 - `strings.json` — used by HA tooling and validation
 - `translations/en.json` — loaded at runtime by HA
 
 They must be kept in sync. If you add to one, add to the other.
 
----
+______________________________________________________________________
 
 ## Testing conventions
 
@@ -165,7 +176,7 @@ They must be kept in sync. If you add to one, add to the other.
 - Use `MockConfigEntry` from `pytest_homeassistant_custom_component.common` to set up config entries in tests without going through the UI flow.
 - Coordinator tests must call `entry.add_to_hass(hass)` so that `hass.config_entries.async_update_entry` works (state lives in `entry.options`).
 
----
+______________________________________________________________________
 
 ## Issue → PR workflow
 
@@ -176,13 +187,11 @@ All feature and fix work goes through GitHub Issues:
 /implement <issue-number>        → plan mode → approval → code → PR
 ```
 
-**Branch naming:** `<type>/<number>-<slug>` (e.g. `feat/42-snooze-button`, `fix/13-dst-timer`)
-**Commit style:** `feat(issue-<number>): <description>` or `fix(issue-<number>): <description>`
-**PRs must contain** `Closes #<number>` so the issue auto-closes on merge.
+**Branch naming:** `<type>/<number>-<slug>` (e.g. `feat/42-snooze-button`, `fix/13-dst-timer`) **Commit style:** `feat(issue-<number>): <description>` or `fix(issue-<number>): <description>` **PRs must contain** `Closes #<number>` so the issue auto-closes on merge.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full versioning model, release strategy, squash-merge conventions, and PR title rules.
 
----
+______________________________________________________________________
 
 ## Constraints
 
