@@ -24,6 +24,7 @@ def _make_entry(
     interval_days: int = 7,
     default_snooze_value: int = 1,
     default_snooze_unit: str = "days",
+    notification_time: str = "00:00",
     days_ago: int = 0,
     snooze_until: str | None = None,
     entry_id: str = "test_entry_id",
@@ -35,6 +36,7 @@ def _make_entry(
         "interval_days": interval_days,
         "default_snooze_value": default_snooze_value,
         "default_snooze_unit": default_snooze_unit,
+        "notification_time": notification_time,
         "last_completed": last_completed,
         "snooze_until": snooze_until,
     }
@@ -583,3 +585,175 @@ async def test_complete_persists_tz_aware_datetime(hass: Any) -> None:
     stored = entry.options["last_completed"]
     parsed = datetime.fromisoformat(stored)
     assert parsed.tzinfo is not None
+
+
+# ---------------------------------------------------------------------------
+# notification_time tests
+# ---------------------------------------------------------------------------
+
+
+async def test_next_due_at_notification_time(hass: Any) -> None:
+    """next_due is at notification_time on the due date, not midnight."""
+    entry = _make_entry(days_ago=0, interval_days=7, notification_time="08:00")
+    entry.add_to_hass(hass)
+
+    with patch("custom_components.chores.coordinator.async_track_point_in_time"):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+
+    next_due = coord.data["next_due"]
+    assert next_due.hour == 8
+    assert next_due.minute == 0
+    expected_date = dt_util.now().date() + timedelta(days=7)
+    assert next_due.date() == expected_date
+
+
+async def test_next_due_default_notification_time_is_midnight(hass: Any) -> None:
+    """Default notification_time 00:00 preserves midnight behaviour."""
+    entry = _make_entry(days_ago=0, interval_days=7, notification_time="00:00")
+    entry.add_to_hass(hass)
+
+    with patch("custom_components.chores.coordinator.async_track_point_in_time"):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+
+    next_due = coord.data["next_due"]
+    assert next_due.hour == 0
+    assert next_due.minute == 0
+
+
+async def test_ha_starts_before_notification_time_is_done(hass: Any) -> None:
+    """Chore is done when HA starts before notification_time on the due date."""
+    # Compute times in local tz so the test is timezone-independent.
+    today_midnight = dt_util.start_of_local_day(dt_util.now())
+    last_completed = (today_midnight - timedelta(days=7)).isoformat()
+    before_notification = today_midnight + timedelta(hours=7)  # 07:00 local < 08:00
+
+    opts: dict[str, Any] = {
+        "name": "Bins",
+        "interval_days": 7,
+        "default_snooze_value": 1,
+        "default_snooze_unit": "days",
+        "notification_time": "08:00",
+        "last_completed": last_completed,
+        "snooze_until": None,
+    }
+    entry = MockConfigEntry(domain=DOMAIN, options=opts)
+    entry.add_to_hass(hass)
+
+    with (
+        patch("custom_components.chores.coordinator.async_track_point_in_time"),
+        patch(
+            "custom_components.chores.coordinator.dt_util.now",
+            return_value=before_notification,
+        ),
+    ):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+
+    assert coord.data["status"] == "done"
+
+
+async def test_ha_starts_after_notification_time_is_overdue(hass: Any) -> None:
+    """Chore is overdue when HA starts after notification_time on the due date."""
+    today_midnight = dt_util.start_of_local_day(dt_util.now())
+    last_completed = (today_midnight - timedelta(days=7)).isoformat()
+    after_notification = today_midnight + timedelta(hours=9)  # 09:00 local > 08:00
+
+    opts: dict[str, Any] = {
+        "name": "Bins",
+        "interval_days": 7,
+        "default_snooze_value": 1,
+        "default_snooze_unit": "days",
+        "notification_time": "08:00",
+        "last_completed": last_completed,
+        "snooze_until": None,
+    }
+    entry = MockConfigEntry(domain=DOMAIN, options=opts)
+    entry.add_to_hass(hass)
+
+    with (
+        patch("custom_components.chores.coordinator.async_track_point_in_time"),
+        patch(
+            "custom_components.chores.coordinator.dt_util.now",
+            return_value=after_notification,
+        ),
+    ):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+
+    assert coord.data["status"] == "overdue"
+
+
+async def test_snooze_timer_fires_at_notification_time_on_snooze_date(
+    hass: Any,
+) -> None:
+    """The snooze-expiry timer is scheduled at notification_time on the snooze date."""
+    timer_points: list[datetime] = []
+
+    def _fake_track(hass_, cb, point_in_time):
+        timer_points.append(point_in_time)
+        return MagicMock()
+
+    entry = _make_entry(days_ago=30, interval_days=7, notification_time="08:00")
+    entry.add_to_hass(hass)
+
+    with patch(
+        "custom_components.chores.coordinator.async_track_point_in_time",
+        side_effect=_fake_track,
+    ):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+
+        snooze_dt = dt_util.now() + timedelta(days=3)
+        await coord.async_snooze(snooze_dt)
+
+    snooze_date = dt_util.as_local(snooze_dt).date()
+    snooze_timer = timer_points[-1]
+    assert snooze_timer.date() == snooze_date
+    assert snooze_timer.hour == 8
+    assert snooze_timer.minute == 0
+
+
+async def test_snooze_expiry_fires_overdue_at_notification_time(hass: Any) -> None:
+    """When the snooze-expiry timer fires, status transitions to overdue."""
+    captured: dict[str, Any] = {}
+
+    def _fake_track(hass_, cb, point_in_time):
+        captured["cb"] = cb
+        return MagicMock()
+
+    entry = _make_entry(days_ago=30, interval_days=7, notification_time="08:00")
+    entry.add_to_hass(hass)
+
+    with patch(
+        "custom_components.chores.coordinator.async_track_point_in_time",
+        side_effect=_fake_track,
+    ):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+
+        snooze_dt = dt_util.now() + timedelta(days=3)
+        await coord.async_snooze(snooze_dt)
+
+    assert coord.data["status"] == "snoozed"
+    assert "cb" in captured
+
+    future = datetime.now(tz=UTC) + timedelta(days=4)
+    with patch("custom_components.chores.coordinator.dt_util.now", return_value=future):
+        captured["cb"](future)
+
+    assert coord.data["status"] == "overdue"
+    assert coord.data["snooze_until"] is None
+
+
+async def test_notification_time_in_snapshot(hass: Any) -> None:
+    """notification_time is included in the coordinator snapshot."""
+    entry = _make_entry(days_ago=0, interval_days=7, notification_time="08:30")
+    entry.add_to_hass(hass)
+
+    with patch("custom_components.chores.coordinator.async_track_point_in_time"):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+
+    assert coord.data["notification_time"] == "08:30"

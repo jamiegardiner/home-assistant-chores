@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 
 from .const import SNOOZE_UNITS
@@ -12,6 +13,7 @@ class ChoreConfig:
     interval_days: int
     default_snooze_value: int = 1
     default_snooze_unit: str = "days"
+    notification_time: str = "00:00"
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> ChoreConfig:
@@ -42,9 +44,20 @@ class ChoreConfig:
             raise ValueError(
                 f"Invalid default_snooze_unit {default_snooze_unit!r}; must be one of {SNOOZE_UNITS}"
             )
+        notification_time = data.get("notification_time", "00:00")
+        try:
+            if notification_time != datetime.strptime(
+                notification_time, "%H:%M"
+            ).strftime("%H:%M"):
+                raise ValueError(notification_time)
+        except TypeError, ValueError:
+            raise ValueError(
+                f"Invalid notification_time {notification_time!r}; must be HH:MM (00:00-23:59)"
+            ) from None
         return cls(
             name=data["name"],
             interval_days=interval_days,
             default_snooze_value=default_snooze_value,
             default_snooze_unit=default_snooze_unit,
+            notification_time=notification_time,
         )

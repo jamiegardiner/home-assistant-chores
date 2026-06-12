@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -90,17 +90,27 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     def _recompute(self, rt: ChoreRuntime) -> None:
         """Recompute status and next_due."""
-        rt.next_due = dt_util.start_of_local_day(
-            dt_util.as_local(rt.last_completed).date()
-            + timedelta(days=rt.config.interval_days)
+        due_date = dt_util.as_local(rt.last_completed).date() + timedelta(
+            days=rt.config.interval_days
         )
+        rt.next_due = self._time_on_local_date(due_date, rt.config.notification_time)
         now = dt_util.now()
 
-        if rt.snooze_until is not None and now < rt.snooze_until:
-            rt.status = STATUS_SNOOZED
-            return
+        if rt.snooze_until is not None:
+            effective_expiry = self._time_on_local_date(
+                dt_util.as_local(rt.snooze_until).date(), rt.config.notification_time
+            )
+            if now < effective_expiry:
+                rt.status = STATUS_SNOOZED
+                return
+            rt.snooze_until = None
 
         rt.status = STATUS_OVERDUE if now >= rt.next_due else STATUS_DONE
+
+    def _time_on_local_date(self, local_date: date, notification_time: str) -> datetime:
+        """Return a tz-aware datetime at notification_time on local_date."""
+        hour, minute = map(int, notification_time.split(":"))
+        return dt_util.start_of_local_day(local_date).replace(hour=hour, minute=minute)
 
     def _schedule_timers(self) -> None:
         """Schedule overdue and/or snooze timer based on current runtime state."""
@@ -132,7 +142,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
     def _schedule_snooze(self, rt: ChoreRuntime) -> None:
-        """Schedule a snooze-expiry timer at snooze_until."""
+        """Schedule a snooze-expiry timer at notification_time on the snooze date."""
         if rt._cancel_snooze_timer is not None:
             rt._cancel_snooze_timer()
             rt._cancel_snooze_timer = None
@@ -140,7 +150,11 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if rt.snooze_until is None:
             return
 
-        if rt.snooze_until <= dt_util.now():
+        effective_expiry = self._time_on_local_date(
+            dt_util.as_local(rt.snooze_until).date(), rt.config.notification_time
+        )
+
+        if effective_expiry <= dt_util.now():
             return
 
         @callback
@@ -154,7 +168,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.async_set_updated_data(self._snapshot())
 
         rt._cancel_snooze_timer = async_track_point_in_time(
-            self.hass, _snooze_expiry_callback, rt.snooze_until
+            self.hass, _snooze_expiry_callback, effective_expiry
         )
 
     @callback
@@ -268,6 +282,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "interval_days": rt.config.interval_days,
             "default_snooze_value": rt.config.default_snooze_value,
             "default_snooze_unit": rt.config.default_snooze_unit,
+            "notification_time": rt.config.notification_time,
         }
 
 
@@ -301,10 +316,11 @@ def _parse_completed_at(value: str | None) -> datetime | None:
 
 
 def _parse_snooze(value: str | None) -> datetime | None:
-    """Parse a snooze_until ISO datetime string; discard if naive or expired.
+    """Parse a snooze_until ISO datetime string; discard if naive or malformed.
 
     Naive datetimes (including old date-only strings) are dropped — breaking
     change per issue #70; no migration of pre-datetime snooze values.
+    Expiry checking is deferred to _recompute which has access to notification_time.
     """
     if not value:
         return None
@@ -313,8 +329,6 @@ def _parse_snooze(value: str | None) -> datetime | None:
     except TypeError, ValueError:
         return None
     if candidate.tzinfo is None:
-        return None
-    if dt_util.now() >= candidate:
         return None
     return candidate
 
