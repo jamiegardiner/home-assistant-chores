@@ -1,6 +1,6 @@
 # Chore Tracker — Home Assistant Custom Integration
 
-A HACS-compatible custom integration that tracks recurring household chores and surfaces their status as HA devices. Each chore becomes a device with 8 entities — a primary status sensor, 4 diagnostic sensors, and 3 action buttons — automatically transitioning between `done` and `overdue` at the configured interval with no polling.
+A HACS-compatible custom integration that tracks recurring household chores and surfaces their status as HA devices. Each chore becomes a device with 9 entities — a primary status sensor, 5 diagnostic sensors, and 3 action buttons — automatically transitioning between `done` and `overdue` at the configured interval with no polling.
 
 ______________________________________________________________________
 
@@ -10,10 +10,10 @@ ______________________________________________________________________
 custom_components/chores/
   __init__.py          # entry setup/teardown, forwards to platforms and services
   const.py             # DOMAIN, STATUS_* constants
-  models.py            # ChoreConfig dataclass (name, interval_days, default_snooze_days)
+  models.py            # ChoreConfig dataclass (name, interval_days, default_snooze_value, default_snooze_unit)
   coordinator.py       # ChoresCoordinator — runtime state, timers, persistence
   button.py            # Complete, Snooze, Unsnooze button entities
-  sensor.py            # ChoreSensor + 4 diagnostic sensor entities (one set per config entry)
+  sensor.py            # ChoreSensor + 5 diagnostic sensor entities (one set per config entry)
   config_flow.py       # UI config flow (create chore) + options flow (edit chore)
   services.py          # chores.complete/snooze/unsnooze service handlers
   services.yaml        # service structure for the HA UI (target, fields, selectors)
@@ -49,7 +49,8 @@ Each chore is a separate config entry (`integration_type: device`). All state li
 {
   "name": "Bins",
   "interval_days": 14,
-  "default_snooze_days": 1,
+  "default_snooze_value": 1,
+  "default_snooze_unit": "days",
   "last_completed": "2026-06-01",
   "snooze_until": null
 }
@@ -62,7 +63,7 @@ entry.options (one chore per entry)
         │
         ▼
 ChoresCoordinator.async_initialize()
-  ├── reads last_completed / snooze_until / interval_days / default_snooze_days from entry.options
+  ├── reads last_completed / snooze_until / interval_days / default_snooze_value / default_snooze_unit from entry.options
   ├── builds ChoreRuntime (status, next_due)
   └── schedules a point-in-time timer at next_due
         │
@@ -70,22 +71,23 @@ ChoresCoordinator.async_initialize()
 ChoresCoordinator.async_set_updated_data(snapshot)
         │
         ▼
-ChoreSensor.native_value + 4 diagnostic sensors (pushed by CoordinatorEntity)
+ChoreSensor.native_value + 5 diagnostic sensors (pushed by CoordinatorEntity)
 ```
 
 Options updates (from config flow edits) are handled in-place via `async_update_config` — no `async_reload`, no entity teardown.
 
 ### Key types
 
-| Type                           | File             | Purpose                                                              |
-| ------------------------------ | ---------------- | -------------------------------------------------------------------- |
-| `ChoreConfig`                  | `models.py`      | Immutable config: name, interval_days, default_snooze_days           |
-| `ChoreRuntime`                 | `coordinator.py` | Mutable runtime state: status, next_due, timer cancel fns            |
-| `ChoresCoordinator`            | `coordinator.py` | Owns one chore, pushes updates to the sensor                         |
-| `ChoreSensor`                  | `sensor.py`      | Primary `CoordinatorEntity` — reads status from coordinator snapshot |
-| `_ChoreDateSensor`             | `sensor.py`      | Base class for the 3 diagnostic date sensors                         |
-| `ChoreDefaultSnoozeDaysSensor` | `sensor.py`      | Diagnostic sensor for default_snooze_days                            |
-| `Chore*Button`                 | `button.py`      | Complete / Snooze / Unsnooze button entities                         |
+| Type                            | File             | Purpose                                                                          |
+| ------------------------------- | ---------------- | -------------------------------------------------------------------------------- |
+| `ChoreConfig`                   | `models.py`      | Immutable config: name, interval_days, default_snooze_value, default_snooze_unit |
+| `ChoreRuntime`                  | `coordinator.py` | Mutable runtime state: status, next_due, timer cancel fns                        |
+| `ChoresCoordinator`             | `coordinator.py` | Owns one chore, pushes updates to the sensor                                     |
+| `ChoreSensor`                   | `sensor.py`      | Primary `CoordinatorEntity` — reads status from coordinator snapshot             |
+| `_ChoreDateSensor`              | `sensor.py`      | Base class for the 3 diagnostic date sensors                                     |
+| `ChoreDefaultSnoozeValueSensor` | `sensor.py`      | Diagnostic sensor for default_snooze_value                                       |
+| `ChoreDefaultSnoozeUnitSensor`  | `sensor.py`      | Diagnostic sensor for default_snooze_unit                                        |
+| `Chore*Button`                  | `button.py`      | Complete / Snooze / Unsnooze button entities                                     |
 
 ### Status transitions
 
@@ -201,5 +203,4 @@ ______________________________________________________________________
 - Python `>=3.14.2` (matches Home Assistant's own requirement). This enables PEP 758 — `except TypeError, ValueError:` without parentheses is **valid syntax** at this version. Ruff enforces the parenthesis-free form; do not flag it as a bug.
 - `integration_type: device` in `manifest.json` — chores appear in the Devices & Services panel, not the Helpers panel.
 - Interval is stored as `interval_days` (int, days only). The UI previously offered a weeks selector; it no longer does.
-- `default_snooze_days` (default: 1) controls how far ahead the Snooze button defers the chore.
-- The Snooze button uses `default_snooze_days`; the `chores.snooze` service accepts `value` (int) + `unit` (minutes/hours/days/weeks) for arbitrary durations.
+- `default_snooze_value` (default: 1) + `default_snooze_unit` (default: `"days"`) control how far ahead the Snooze button defers the chore. Both the Snooze button and the `chores.snooze` service share the same unit set: `minutes`, `hours`, `days`, `weeks`.
