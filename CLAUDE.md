@@ -137,20 +137,20 @@ Add the key to `coordinator.py:_snapshot()`. To surface it as a diagnostic entit
 Services are entity services — HA handles all target resolution (entity, area, device, label) and fan-out automatically.
 
 1. Add the service name constant and schema dict to `services.py`.
-1. Add a handler function `_handle_<name>(entity: ChoreSensor, call: ServiceCall)` in `sensor.py` and register it in `async_setup_entry` via `platform.async_register_entity_service`.
-1. Add the service structure (target, fields, selectors) to `services.yaml` — but **not** `name`/`description`. Service and field display strings live under the `services` key in both `strings.json` and `translations/en.json` (kept in sync, per HA's 2023.8+ convention). No unregister step needed — entity services are torn down automatically when the platform unloads.
+2. Add a handler function `_handle_<name>(entity: ChoreSensor, call: ServiceCall)` in `sensor.py` and register it in `async_setup_entry` via `platform.async_register_entity_service`.
+3. Add the service structure (target, fields, selectors) to `services.yaml` — but **not** `name`/`description`. Service and field display strings live under the `services` key in both `strings.json` and `translations/en.json` (kept in sync, per HA's 2023.8+ convention). No unregister step needed — entity services are torn down automatically when the platform unloads.
 
 ### 3. New platform (e.g. `button`, `select`)
 
 1. Add `Platform.BUTTON` (etc.) to `PLATFORMS` in `__init__.py`.
-1. Create `custom_components/chores/<platform>.py` implementing `async_setup_entry` and the entity class.
-1. The entity should be a `CoordinatorEntity` and read state from `coordinator.data` (flat dict).
+2. Create `custom_components/chores/<platform>.py` implementing `async_setup_entry` and the entity class.
+3. The entity should be a `CoordinatorEntity` and read state from `coordinator.data` (flat dict).
 
 ### 4. New config option
 
 1. Add the field to `ChoreConfig` in `models.py` (update `from_dict`).
-1. Add the form field to `config_flow.py:_chore_schema()` (used by both user and options flow).
-1. Add the label to both `strings.json` and `translations/en.json` under both `config.step.user.data` and `options.step.init.data`.
+2. Add the form field to `config_flow.py:_chore_schema()` (used by both user and options flow).
+3. Add the label to both `strings.json` and `translations/en.json` under both `config.step.user.data` and `options.step.init.data`.
 
 ### 5. Strings / translations
 

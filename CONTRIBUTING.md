@@ -22,8 +22,8 @@ While the project is at `0.x`, **breaking changes bump the minor version** (not 
 Releases are managed by [release-please](https://github.com/googleapis/release-please):
 
 1. As PRs are merged to `main`, release-please accumulates their conventional-commit subjects and maintains a single open "release PR" with a proposed version bump and `CHANGELOG.md` entry.
-1. When the maintainer is ready to cut a release, they merge that release PR.
-1. Merging the release PR automatically:
+2. When the maintainer is ready to cut a release, they merge that release PR.
+3. Merging the release PR automatically:
    - bumps the `version` field in `manifest.json`
    - creates a `vX.Y.Z` git tag
    - publishes a GitHub Release
@@ -84,11 +84,11 @@ Append `!` after the scope for a breaking change: `feat(issue-X)!: remove weeks 
 ### Contributor flow
 
 1. Open or pick up a GitHub Issue.
-1. Create a branch from `main` named `<type>/<number>-<slug>` (e.g. `feat/42-snooze-button`).
-1. Implement, commit with conventional-commit messages, open a PR targeting `main`.
-1. **Set the PR title to a conventional-commit message** — this is the version-bump signal under squash-merge.
-1. The maintainer reviews and merges (squash). Release-please updates its release PR accordingly.
-1. The maintainer cuts the release when ready by merging the release PR.
+2. Create a branch from `main` named `<type>/<number>-<slug>` (e.g. `feat/42-snooze-button`).
+3. Implement, commit with conventional-commit messages, open a PR targeting `main`.
+4. **Set the PR title to a conventional-commit message** — this is the version-bump signal under squash-merge.
+5. The maintainer reviews and merges (squash). Release-please updates its release PR accordingly.
+6. The maintainer cuts the release when ready by merging the release PR.
 
 ### Cutting the first 1.0.0
 

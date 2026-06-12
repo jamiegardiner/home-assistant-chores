@@ -1,4 +1,5 @@
 wrap = "no"
+number = true
 extensions = ["gfm", "frontmatter"]
 exclude = [
   ".venv/**",

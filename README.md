@@ -15,11 +15,11 @@ ______________________________________________________________________
 ### Option B — manual HACS setup
 
 1. In Home Assistant go to **Settings → HACS**
-1. Click the three-dot menu (⋮) in the top-right corner and choose **Custom repositories**
-1. Paste `https://github.com/jamiegardiner/home-assistant-chores` and set the category to **Integration**, then click **Add**
-1. Search for **Chore Tracker** in the HACS store and click **Download**
-1. Restart Home Assistant
-1. Go to **Settings → Devices & Services → Add Integration**, search for **Chore Tracker**, and follow the setup wizard
+2. Click the three-dot menu (⋮) in the top-right corner and choose **Custom repositories**
+3. Paste `https://github.com/jamiegardiner/home-assistant-chores` and set the category to **Integration**, then click **Add**
+4. Search for **Chore Tracker** in the HACS store and click **Download**
+5. Restart Home Assistant
+6. Go to **Settings → Devices & Services → Add Integration**, search for **Chore Tracker**, and follow the setup wizard
 
 ______________________________________________________________________
 
@@ -63,19 +63,19 @@ All configuration is done through the Home Assistant UI — there is no YAML.
 **To add a chore:**
 
 1. Go to **Settings → Devices & Services**
-1. Click **Add Integration** and search for **Chore Tracker**
-1. Enter a name, recurrence interval (days), default snooze duration, and last-completed date
+2. Click **Add Integration** and search for **Chore Tracker**
+3. Enter a name, recurrence interval (days), default snooze duration, and last-completed date
 
 **To edit a chore:**
 
 1. Go to **Settings → Devices & Services**
-1. Find **Chore Tracker**, open the integration, and click the chore device
-1. Click **Configure** to update the name, interval, snooze duration, or last-completed date
+2. Find **Chore Tracker**, open the integration, and click the chore device
+3. Click **Configure** to update the name, interval, snooze duration, or last-completed date
 
 **To remove a chore:**
 
 1. Go to **Settings → Devices & Services**
-1. Find **Chore Tracker**, open the integration, click the three-dot menu (⋮) next to the chore entry, and choose **Delete**
+2. Find **Chore Tracker**, open the integration, click the three-dot menu (⋮) next to the chore entry, and choose **Delete**
 
 Removing a config entry removes just that chore — all other chores are unaffected.
 
