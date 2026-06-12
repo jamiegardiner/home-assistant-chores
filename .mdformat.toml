@@ -1,4 +1,4 @@
-wrap = 80
+wrap = 120
 extensions = ["gfm", "frontmatter"]
 exclude = [
   ".venv/**",
