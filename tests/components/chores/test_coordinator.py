@@ -685,10 +685,10 @@ async def test_ha_starts_after_notification_time_is_overdue(hass: Any) -> None:
     assert coord.data["status"] == "overdue"
 
 
-async def test_snooze_timer_fires_at_notification_time_on_snooze_date(
+async def test_snooze_timer_fires_at_snooze_until_regardless_of_notification_time(
     hass: Any,
 ) -> None:
-    """The snooze-expiry timer is scheduled at notification_time on the snooze date."""
+    """The snooze-expiry timer fires at snooze_until, not at notification_time."""
     timer_points: list[datetime] = []
 
     def _fake_track(hass_, cb, point_in_time):
@@ -705,17 +705,13 @@ async def test_snooze_timer_fires_at_notification_time_on_snooze_date(
         coord = ChoresCoordinator(hass, entry)
         await coord.async_initialize()
 
-        snooze_dt = dt_util.now() + timedelta(days=3)
+        snooze_dt = dt_util.now() + timedelta(minutes=30)
         await coord.async_snooze(snooze_dt)
 
-    snooze_date = dt_util.as_local(snooze_dt).date()
-    snooze_timer = timer_points[-1]
-    assert snooze_timer.date() == snooze_date
-    assert snooze_timer.hour == 8
-    assert snooze_timer.minute == 0
+    assert timer_points[-1] == snooze_dt
 
 
-async def test_snooze_expiry_fires_overdue_at_notification_time(hass: Any) -> None:
+async def test_snooze_expiry_transitions_to_overdue(hass: Any) -> None:
     """When the snooze-expiry timer fires, status transitions to overdue."""
     captured: dict[str, Any] = {}
 

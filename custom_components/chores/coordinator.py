@@ -97,10 +97,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         now = dt_util.now()
 
         if rt.snooze_until is not None:
-            effective_expiry = self._time_on_local_date(
-                dt_util.as_local(rt.snooze_until).date(), rt.config.notification_time
-            )
-            if now < effective_expiry:
+            if now < rt.snooze_until:
                 rt.status = STATUS_SNOOZED
                 return
             rt.snooze_until = None
@@ -142,7 +139,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
     def _schedule_snooze(self, rt: ChoreRuntime) -> None:
-        """Schedule a snooze-expiry timer at notification_time on the snooze date."""
+        """Schedule a snooze-expiry timer at snooze_until."""
         if rt._cancel_snooze_timer is not None:
             rt._cancel_snooze_timer()
             rt._cancel_snooze_timer = None
@@ -150,11 +147,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if rt.snooze_until is None:
             return
 
-        effective_expiry = self._time_on_local_date(
-            dt_util.as_local(rt.snooze_until).date(), rt.config.notification_time
-        )
-
-        if effective_expiry <= dt_util.now():
+        if rt.snooze_until <= dt_util.now():
             return
 
         @callback
@@ -168,7 +161,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.async_set_updated_data(self._snapshot())
 
         rt._cancel_snooze_timer = async_track_point_in_time(
-            self.hass, _snooze_expiry_callback, effective_expiry
+            self.hass, _snooze_expiry_callback, rt.snooze_until
         )
 
     @callback
