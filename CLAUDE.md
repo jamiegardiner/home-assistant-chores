@@ -211,6 +211,6 @@ ______________________________________________________________________
 - `integration_type: device` in `manifest.json` — chores appear in the Devices & Services panel, not the Helpers panel.
 - Interval is stored as `interval_days` (int, days only).
 - `default_snooze_value` (default: `1`) + `default_snooze_unit` (default: `"days"`) control the snooze duration. Both the Snooze button and the `chores.snooze` service share the same unit set, defined in `const.py`.
-- `last_completed` is `null` on creation and becomes a tz-aware ISO 8601 datetime string only when `chores.complete` is called. Old date-only strings are silently dropped on load (no migration). When `last_completed` is `null`: status is `overdue`, `next_due` is `null`, no overdue timer is scheduled. `next_due` is computed as `notification_time` on the local due date once `last_completed` is set.
+- `last_completed` is `null` on creation; set to a tz-aware ISO 8601 datetime string only when `chores.complete` is called.
 - `notification_time` is stored as an `"HH:MM"` string in `entry.options` and controls when the `done → overdue` transition fires each day.
 - The `chores.complete` service accepts an optional `completed_at` datetime (must not be in the future). Omit it to default to now.
