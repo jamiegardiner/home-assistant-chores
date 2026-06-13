@@ -31,9 +31,9 @@ class ChoreRuntime:
     """Runtime state for the single chore managed by this coordinator."""
 
     config: ChoreConfig
-    last_completed: datetime
+    last_completed: datetime | None
     status: str = STATUS_DONE
-    next_due: datetime = field(default_factory=dt_util.now)
+    next_due: datetime | None = None
     snooze_until: datetime | None = None
     _cancel_timer: Callable[[], None] | None = field(default=None, repr=False)
     _cancel_snooze_timer: Callable[[], None] | None = field(default=None, repr=False)
@@ -78,9 +78,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def _build_runtime(self, opts: dict[str, Any]) -> ChoreRuntime:
         """Construct a ChoreRuntime from an options dict."""
         config = ChoreConfig.from_dict(opts)
-        last_completed = (
-            _parse_completed_at(opts.get("last_completed")) or dt_util.now()
-        )
+        last_completed = _parse_completed_at(opts.get("last_completed"))
         snooze_until = _parse_snooze(opts.get("snooze_until"))
         rt = ChoreRuntime(
             config=config, last_completed=last_completed, snooze_until=snooze_until
@@ -90,6 +88,15 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     def _recompute(self, rt: ChoreRuntime) -> None:
         """Recompute status and next_due."""
+        if rt.last_completed is None:
+            rt.next_due = None
+            if rt.snooze_until is not None and dt_util.now() < rt.snooze_until:
+                rt.status = STATUS_SNOOZED
+                return
+            rt.snooze_until = None
+            rt.status = STATUS_OVERDUE
+            return
+
         due_date = dt_util.as_local(rt.last_completed).date() + timedelta(
             days=rt.config.interval_days
         )
@@ -124,7 +131,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             rt._cancel_timer()
             rt._cancel_timer = None
 
-        if rt.next_due <= dt_util.now():
+        if rt.next_due is None or rt.next_due <= dt_util.now():
             return
 
         @callback

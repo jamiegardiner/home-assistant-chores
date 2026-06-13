@@ -293,6 +293,11 @@ class TestChoreNextDueSensor:
         sensor = _make_next_due_sensor()
         assert sensor.translation_key == "next_due"
 
+    def test_native_value_none_when_missing(self):
+        coordinator = FakeCoordinator({**CHORE_STATE, "next_due": None})
+        sensor = _make_next_due_sensor(coordinator=coordinator)
+        assert sensor.native_value is None
+
 
 _SNOOZE_DT = datetime(2026, 6, 15, 12, 0, tzinfo=UTC)
 

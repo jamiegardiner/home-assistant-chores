@@ -39,10 +39,7 @@
   "config": {
     "error": {
       "name_required": "Name cannot be empty.",
-      "invalid_interval": "Interval must be a positive number.",
-      "invalid_snooze_unit": "Snooze unit must be one of: minutes, hours, days, or weeks.",
-      "invalid_date": "Date must be in YYYY-MM-DD format.",
-      "future_completed_at": "Completion date and time cannot be in the future."
+      "invalid_interval": "Interval must be a positive number."
     },
     "step": {
       "user": {
@@ -50,39 +47,13 @@
         "description": "Create a new chore. Each chore becomes a device that transitions between done and overdue on the configured interval.",
         "data": {
           "name": "Name",
-          "interval_days": "Interval (days)",
-          "last_completed": "Last completed"
+          "interval_days": "Interval (days)"
         },
         "data_description": {
           "name": "A short label for this chore, e.g. Bins or Vacuuming.",
-          "interval_days": "How many days between completions.",
-          "last_completed": "The date and time this chore was last done."
+          "interval_days": "How many days between completions."
         }
       }
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "title": "Edit chore",
-        "data": {
-          "name": "Name",
-          "interval_days": "Interval (days)",
-          "last_completed": "Last completed"
-        },
-        "data_description": {
-          "name": "A short label for this chore, e.g. Bins or Vacuuming.",
-          "interval_days": "How many days between completions.",
-          "last_completed": "The date and time this chore was last done."
-        }
-      }
-    },
-    "error": {
-      "name_required": "Name cannot be empty.",
-      "invalid_interval": "Interval must be a positive number.",
-      "invalid_snooze_unit": "Snooze unit must be one of: minutes, hours, days, or weeks.",
-      "invalid_date": "Date must be in YYYY-MM-DD format.",
-      "future_completed_at": "Completion date and time cannot be in the future."
     }
   },
   "services": {
