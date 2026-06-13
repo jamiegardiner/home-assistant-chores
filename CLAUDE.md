@@ -1,6 +1,6 @@
 # Chore Tracker — Home Assistant Custom Integration
 
-A HACS-compatible custom integration that tracks recurring household chores and surfaces their status as HA devices. Each chore becomes a device with 11 entities — a primary status sensor, 3 diagnostic sensors, 3 action buttons, 2 CONFIG number entities, 1 CONFIG select entity, and 1 CONFIG time entity — automatically transitioning between `done` and `overdue` at the configured interval with no polling.
+A HACS-compatible custom integration that tracks recurring household chores and surfaces their status as HA devices. Each chore becomes a device that transitions automatically between `done` and `overdue` at the configured interval.
 
 ______________________________________________________________________
 
@@ -25,22 +25,7 @@ custom_components/chores/
     en.json            # runtime translations loaded by HA (mirrors strings.json)
   manifest.json        # HACS/HA integration metadata
 
-tests/
-  components/chores/
-    conftest.py        # shared fixtures
-    test_config_flow.py
-    test_coordinator.py
-    test_models.py
-    test_number.py
-    test_select.py
-    test_sensor.py
-    test_services.py
-    test_time.py
-
-docker-compose.yml     # runs ghcr.io/home-assistant/home-assistant:stable on :8123; bind-mounts ./custom_components/chores into /config/custom_components/chores
-pyproject.toml         # project metadata + mypy config
-requirements_test.txt  # pinned dev/test dependencies
-Makefile               # all common dev tasks (see below)
+tests/components/chores/   # mirrors source layout; one test file per module
 ```
 
 ______________________________________________________________________
@@ -80,7 +65,7 @@ ChoresCoordinator.async_initialize()
 ChoresCoordinator.async_set_updated_data(snapshot)
         │
         ▼
-ChoreSensor.native_value + 3 diagnostic sensors + 2 number + 1 select + 1 time (pushed by CoordinatorEntity)
+ChoreSensor.native_value + diagnostic sensors + number/select/time entities (pushed by CoordinatorEntity)
 ```
 
 Options updates (from config flow edits) are handled in-place via `async_update_config` — no `async_reload`, no entity teardown.
@@ -93,7 +78,7 @@ Options updates (from config flow edits) are handled in-place via `async_update_
 | `ChoreRuntime`                  | `coordinator.py` | Mutable runtime state: last_completed (datetime \| None), status, next_due, timer fns               |
 | `ChoresCoordinator`             | `coordinator.py` | Owns one chore, pushes updates to all entities                                                      |
 | `ChoreSensor`                   | `sensor.py`      | Primary `CoordinatorEntity` — reads status from coordinator snapshot                                |
-| `_ChoreDateSensor`              | `sensor.py`      | Base class for the 3 diagnostic date sensors                                                        |
+| `_ChoreDateSensor`              | `sensor.py`      | Base class for diagnostic date sensors                                                              |
 | `ChoreIntervalNumber`           | `number.py`      | CONFIG number entity for interval_days (writable)                                                   |
 | `ChoreDefaultSnoozeValueNumber` | `number.py`      | CONFIG number entity for default_snooze_value (writable)                                            |
 | `ChoreDefaultSnoozeUnitSelect`  | `select.py`      | CONFIG select entity for default_snooze_unit (writable)                                             |
@@ -136,7 +121,7 @@ Activate the venv for interactive use: `source .venv/bin/activate`
 
 ### Markdown formatting
 
-Every committed `.md` file in the repository — including `CLAUDE.md`, `README.md`, `CONTRIBUTING.md`, `docs/**/*.md`, and `.claude/commands/*.md` — must pass `mdformat`. Run `make format` to auto-fix, `make check` to verify (read-only). Files are excluded from formatting **only** via `.mdformat.toml` at the repo root (`.venv/**` and `.pytest_cache/**` are excluded by default). Do not add per-file exceptions elsewhere.
+Every `.md` file must pass `mdformat` — run `make format` to auto-fix, `make check` to verify.
 
 ______________________________________________________________________
 
@@ -215,14 +200,7 @@ ______________________________________________________________________
 
 ## Issue → PR workflow
 
-All feature and fix work goes through GitHub Issues:
-
-```
-/new-issue <rough description>   → guided issue creation (user story + BDD ACs)
-/implement <issue-number>        → plan mode → approval → code → PR
-```
-
-**Branch naming:** `<type>/<number>-<slug>` (e.g. `feat/42-snooze-button`, `fix/13-dst-timer`) **Commit style:** `feat(issue-<number>): <description>` or `fix(issue-<number>): <description>` **PRs must contain** `Closes #<number>` so the issue auto-closes on merge.
+**Branch naming:** `<type>/<number>-<slug>` (e.g. `feat/42-snooze-button`, `fix/13-dst-timer`). **Commit style:** `feat(issue-<number>): <description>` or `fix(issue-<number>): <description>`. **PRs must contain** `Closes #<number>` so the issue auto-closes on merge.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full versioning model, release strategy, squash-merge conventions, and PR title rules.
 
@@ -230,13 +208,13 @@ ______________________________________________________________________
 
 ## Constraints
 
-- Each chore is a separate config entry — multiple entries are allowed. **Adding a chore** = "Add Integration → Chores". **Removing a chore** = delete that config entry.
+- Each chore is a separate config entry — multiple entries are allowed.
 - No YAML configuration — all setup is through the UI.
 - All chore state (`last_completed`, `snooze_until`) lives in `entry.options`. The update listener calls `coordinator.async_update_config` (never `async_reload`) so edits are applied in-place without entity teardown.
 - Python `>=3.14.2` (matches Home Assistant's own requirement). This enables PEP 758 — `except TypeError, ValueError:` without parentheses is **valid syntax** at this version. Ruff enforces the parenthesis-free form; do not flag it as a bug.
 - `integration_type: device` in `manifest.json` — chores appear in the Devices & Services panel, not the Helpers panel.
-- Interval is stored as `interval_days` (int, days only). The UI previously offered a weeks selector; it no longer does.
-- `default_snooze_value` (default: 1) + `default_snooze_unit` (default: `"days"`) control how far ahead the Snooze button defers the chore. Both the Snooze button and the `chores.snooze` service share the same unit set: `minutes`, `hours`, `days`, `weeks`. These are managed via the CONFIG number/select entities on the device page, not the config/options flow.
+- Interval is stored as `interval_days` (int, days only).
+- `default_snooze_value` (default: `1`) + `default_snooze_unit` (default: `"days"`) control the snooze duration. Both the Snooze button and the `chores.snooze` service share the same unit set, defined in `const.py`.
 - `last_completed` is `null` on creation and becomes a tz-aware ISO 8601 datetime string only when `chores.complete` is called. Old date-only strings are silently dropped on load (no migration). When `last_completed` is `null`: status is `overdue`, `next_due` is `null`, no overdue timer is scheduled. `next_due` is computed as `notification_time` on the local due date once `last_completed` is set.
-- `notification_time` is stored as an `"HH:MM"` string in `entry.options` and controls when the `done → overdue` transition fires each day. Managed via the CONFIG time entity on the device page.
+- `notification_time` is stored as an `"HH:MM"` string in `entry.options` and controls when the `done → overdue` transition fires each day.
 - The `chores.complete` service accepts an optional `completed_at` datetime (must not be in the future). Omit it to default to now.
