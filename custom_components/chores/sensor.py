@@ -17,13 +17,16 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 from homeassistant.util import slugify
 
-from .const import STATUS_OPTIONS, ChoreSensorEntityFeature
-from .coordinator import ChoresCoordinator, _ChoreDeviceMixin
-from .services import (
-    COMPLETE_SCHEMA,
+from .const import (
     SERVICE_COMPLETE,
     SERVICE_SNOOZE,
     SERVICE_UNSNOOZE,
+    STATUS_OPTIONS,
+    ChoreSensorEntityFeature,
+)
+from .coordinator import ChoresCoordinator, _ChoreDeviceMixin
+from .services import (
+    COMPLETE_SCHEMA,
     SNOOZE_SCHEMA,
     UNSNOOZE_SCHEMA,
     _parse_snooze_datetime,

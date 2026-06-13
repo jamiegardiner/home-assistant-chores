@@ -5,12 +5,13 @@ from unittest.mock import AsyncMock, MagicMock
 
 from homeassistant.util import dt as dt_util
 
+from custom_components.chores.const import SNOOZE_UNITS
 from custom_components.chores.sensor import (
     _handle_complete,
     _handle_snooze,
     _handle_unsnooze,
 )
-from custom_components.chores.services import SNOOZE_UNITS, _parse_snooze_datetime
+from custom_components.chores.services import _parse_snooze_datetime
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -11,7 +11,12 @@ from homeassistant.helpers.selector import (
     NumberSelectorMode,
 )
 
-from .const import DOMAIN
+from .const import (
+    DEFAULT_NOTIFICATION_TIME,
+    DEFAULT_SNOOZE_UNIT,
+    DEFAULT_SNOOZE_VALUE,
+    DOMAIN,
+)
 
 
 def _chore_schema() -> vol.Schema:
@@ -53,8 +58,9 @@ class ChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     options={
                         "name": name,
                         "interval_days": interval_days,
-                        "default_snooze_value": 1,
-                        "default_snooze_unit": "days",
+                        "default_snooze_value": DEFAULT_SNOOZE_VALUE,
+                        "default_snooze_unit": DEFAULT_SNOOZE_UNIT,
+                        "notification_time": DEFAULT_NOTIFICATION_TIME,
                         "last_completed": None,
                         "snooze_until": None,
                     },
