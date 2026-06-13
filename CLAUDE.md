@@ -181,7 +181,20 @@ ______________________________________________________________________
 
 ## Code style
 
+Ruff and mypy own: import order, modern typing/union syntax, f-strings over `.format()`, `is None`/`is not None`, no mutable default args, no unused imports. Do not restate these.
+
 - **All imports must be at the top of the file.** Inline imports (`import x` or `__import__("x")` inside functions, methods, or class bodies) are not allowed anywhere in the codebase — production code or tests. If a module is needed, add it to the top-level import block.
+- **`from __future__ import annotations`** at the top of every module. Not enforced by tooling — easy to omit on new files.
+- **Complete type hints** on every function/method (params + return). mypy is not in strict mode so omissions are not caught automatically.
+- **PEP 695 `type` aliases** for parametrised types: `type ChoresConfigEntry = ConfigEntry[ChoresCoordinator]`.
+- **Validation in `from_dict` / `_parse_*` helpers**: raise `ValueError` with an f-string that includes the offending value via `!r`. For `int` fields, reject `bool` explicitly: `isinstance(x, int) and not isinstance(x, bool)`.
+- **All constants in `const.py`** — never inline string or number literals.
+
+### Home Assistant patterns
+
+- **`entry.runtime_data`** holds the coordinator (typed via the `ConfigEntry[...]` alias). Never use `hass.data[DOMAIN]`.
+- **`entry.async_on_unload(...)`** must wrap every teardown — update listeners, timer cancel callbacks. Missing this causes leaks.
+- **All datetime via `dt_util`** (`now`, `start_of_local_day`, `as_local`) — never `datetime.now()`. Datetimes are always tz-aware; persist as ISO strings; call `as_local` before deriving a calendar date.
 
 ______________________________________________________________________
 
