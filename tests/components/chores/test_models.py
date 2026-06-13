@@ -1,7 +1,5 @@
 """Tests for ChoreConfig model."""
 
-from __future__ import annotations
-
 import pytest
 
 from custom_components.chores.const import DOMAIN

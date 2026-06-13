@@ -16,7 +16,6 @@ Scrutinise every changed file against all of the following categories. Flag anyt
 
 ### Python correctness & style
 
-- [ ] `from __future__ import annotations` present in every module (not tooling-enforced)
 - [ ] No magic numbers or strings — use named constants from `const.py`
 - [ ] No deeply nested blocks (more than 3 levels is a smell)
 - [ ] No commented-out code or stray TODOs without a linked issue

@@ -1,7 +1,5 @@
 """Unit tests for custom_components/chores/time.py."""
 
-from __future__ import annotations
-
 from datetime import time
 from unittest.mock import MagicMock
 

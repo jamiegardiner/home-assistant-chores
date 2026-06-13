@@ -3,8 +3,6 @@
 Four sensor entities per config entry: primary status sensor plus three diagnostics.
 """
 
-from __future__ import annotations
-
 from datetime import date, datetime
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity

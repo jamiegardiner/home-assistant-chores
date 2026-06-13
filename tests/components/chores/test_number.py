@@ -1,7 +1,5 @@
 """Unit tests for custom_components/chores/number.py."""
 
-from __future__ import annotations
-
 from unittest.mock import MagicMock
 
 import pytest

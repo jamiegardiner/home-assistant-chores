@@ -4,8 +4,6 @@ Manages the runtime state for a single chore, derives status/next_due,
 schedules overdue-transition timers, and persists state to entry.options.
 """
 
-from __future__ import annotations
-
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field

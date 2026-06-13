@@ -1,7 +1,5 @@
 """Assert that strings.json and translations/en.json share identical key paths."""
 
-from __future__ import annotations
-
 import json
 import sys
 from pathlib import Path
