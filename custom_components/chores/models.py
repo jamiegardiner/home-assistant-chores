@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from .const import SNOOZE_UNITS
+from .const import DEFAULT_NOTIFICATION_TIME, DEFAULT_SNOOZE_UNIT, SNOOZE_UNITS
 
 
 @dataclass(frozen=True, slots=True)
@@ -10,8 +10,8 @@ class ChoreConfig:
     name: str
     interval_days: int
     default_snooze_value: int = 1
-    default_snooze_unit: str = "days"
-    notification_time: str = "08:00"
+    default_snooze_unit: str = DEFAULT_SNOOZE_UNIT
+    notification_time: str = DEFAULT_NOTIFICATION_TIME
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> ChoreConfig:

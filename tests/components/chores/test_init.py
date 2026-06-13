@@ -20,8 +20,10 @@ def _make_entry(entry_id: str = "test_entry_id") -> MockConfigEntry:
         options={
             "name": "Bins",
             "interval_days": 7,
-            "default_snooze_days": 1,
-            "last_completed": "2026-06-01",
+            "default_snooze_value": 1,
+            "default_snooze_unit": "days",
+            "notification_time": "08:00",
+            "last_completed": None,
             "snooze_until": None,
         },
     )

@@ -17,7 +17,8 @@ CHORE_STATE = {
     "last_completed": date(2026, 6, 1),
     "next_due": date(2026, 6, 8),
     "snooze_until": None,
-    "default_snooze_days": 1,
+    "default_snooze_value": 1,
+    "default_snooze_unit": "days",
 }
 
 

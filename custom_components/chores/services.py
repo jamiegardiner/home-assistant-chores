@@ -9,10 +9,6 @@ from homeassistant.util import dt as dt_util
 
 from .const import SNOOZE_UNITS
 
-SERVICE_COMPLETE = "complete"
-SERVICE_SNOOZE = "snooze"
-SERVICE_UNSNOOZE = "unsnooze"
-
 # Schemas are plain dicts so HA can wrap them with make_entity_service_schema,
 # which adds the entity/area/device/label target fields automatically.
 COMPLETE_SCHEMA: dict[Any, Any] = {
