@@ -3,8 +3,6 @@
 One CONFIG select entity per config entry: Default Snooze Unit.
 """
 
-from __future__ import annotations
-
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory

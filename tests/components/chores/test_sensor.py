@@ -1,7 +1,5 @@
 """Unit tests for custom_components/chores/sensor.py."""
 
-from __future__ import annotations
-
 from datetime import UTC, date, datetime
 from unittest.mock import MagicMock, patch
 

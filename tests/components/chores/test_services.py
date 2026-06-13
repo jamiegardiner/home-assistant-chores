@@ -1,7 +1,5 @@
 """Tests for the Chores service helpers and entity service handlers."""
 
-from __future__ import annotations
-
 from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock
 

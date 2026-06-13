@@ -1,7 +1,5 @@
 """Tests for the Chores config flow."""
 
-from __future__ import annotations
-
 import pytest
 from homeassistant.data_entry_flow import FlowResultType, InvalidData
 

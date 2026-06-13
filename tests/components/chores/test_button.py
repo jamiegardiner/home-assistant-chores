@@ -1,10 +1,14 @@
 """Unit tests for custom_components/chores/button.py."""
 
-from __future__ import annotations
-
 from datetime import date
 from unittest.mock import AsyncMock, MagicMock
 
+from custom_components.chores.button import (
+    ChoreCompleteButton,
+    ChoreSnoozeButton,
+    ChoreUnsnoozeButton,
+    async_setup_entry,
+)
 from custom_components.chores.const import DOMAIN
 
 CHORE_STATE = {
@@ -38,8 +42,6 @@ def _make_entry(entry_id: str = "test_entry_id") -> MagicMock:
 
 
 def _make_complete_button(coordinator=None, entry=None):
-    from custom_components.chores.button import ChoreCompleteButton
-
     if coordinator is None:
         coordinator = FakeCoordinator()
     if entry is None:
@@ -48,8 +50,6 @@ def _make_complete_button(coordinator=None, entry=None):
 
 
 def _make_snooze_button(coordinator=None, entry=None):
-    from custom_components.chores.button import ChoreSnoozeButton
-
     if coordinator is None:
         coordinator = FakeCoordinator()
     if entry is None:
@@ -58,8 +58,6 @@ def _make_snooze_button(coordinator=None, entry=None):
 
 
 def _make_unsnooze_button(coordinator=None, entry=None):
-    from custom_components.chores.button import ChoreUnsnoozeButton
-
     if coordinator is None:
         coordinator = FakeCoordinator()
     if entry is None:
@@ -69,8 +67,6 @@ def _make_unsnooze_button(coordinator=None, entry=None):
 
 class TestAsyncSetupEntry:
     async def test_creates_three_buttons(self):
-        from custom_components.chores.button import async_setup_entry
-
         coordinator = FakeCoordinator()
         entry = _make_entry()
         entry.runtime_data = coordinator
@@ -83,13 +79,6 @@ class TestAsyncSetupEntry:
         assert len(added) == 3
 
     async def test_buttons_are_distinct_types(self):
-        from custom_components.chores.button import (
-            ChoreCompleteButton,
-            ChoreSnoozeButton,
-            ChoreUnsnoozeButton,
-            async_setup_entry,
-        )
-
         coordinator = FakeCoordinator()
         entry = _make_entry()
         entry.runtime_data = coordinator

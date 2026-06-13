@@ -3,7 +3,7 @@
 VENV := .venv
 UV   := uv
 
-.PHONY: help venv venv-destroy install test typecheck lint format check up down stop start logs
+.PHONY: help venv venv-destroy install test typecheck lint format translations check up down stop start logs
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
@@ -31,22 +31,26 @@ install: ## Sync dependencies into the existing venv
 test: ## Run the test suite
 	$(UV) run pytest
 
-typecheck: ## Run mypy type checking
-	$(UV) run mypy custom_components/chores
+typecheck: ## Run mypy type checking (first-party source only — tests aren't strictly typed)
+	$(UV) run mypy custom_components scripts
 
 lint: ## Check code with ruff (linter — catches bugs and style issues)
-	$(UV) run ruff check custom_components tests
+	$(UV) run ruff check .
 
 format: ## Auto-fix formatting (ruff format, ruff check --fix, mdformat) and lint issues where possible
-	$(UV) run ruff format custom_components tests
-	$(UV) run ruff check --fix custom_components tests
+	$(UV) run ruff format .
+	$(UV) run ruff check --fix .
 	$(UV) run mdformat .
 
-check: ## Check code (read-only): lint, format, typecheck, markdown, tests — mirrors CI
-	$(UV) run ruff check custom_components tests
-	$(UV) run ruff format --check custom_components tests
-	$(UV) run mypy custom_components/chores
+translations: ## Check that strings.json and translations/en.json have identical key paths
+	$(UV) run python scripts/check_translations.py
+
+check: ## Check code (read-only): lint, format, typecheck, markdown, translations, tests — mirrors CI
+	$(UV) run ruff check .
+	$(UV) run ruff format --check .
+	$(UV) run mypy custom_components scripts
 	$(UV) run mdformat --check .
+	$(UV) run python scripts/check_translations.py
 	$(UV) run pytest
 
 # ── Docker ─────────────────────────────────────────────────────────────────────

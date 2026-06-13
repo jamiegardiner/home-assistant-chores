@@ -1,7 +1,5 @@
 """Tests for the Chores integration entry lifecycle."""
 
-from __future__ import annotations
-
 from unittest.mock import AsyncMock, patch
 
 import pytest

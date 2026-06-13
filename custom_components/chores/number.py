@@ -3,8 +3,6 @@
 Two CONFIG number entities per config entry: Interval and Default Snooze Value.
 """
 
-from __future__ import annotations
-
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory

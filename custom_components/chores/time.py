@@ -3,8 +3,6 @@
 One CONFIG time entity per config entry: Notification Time.
 """
 
-from __future__ import annotations
-
 from datetime import time
 
 from homeassistant.components.time import TimeEntity
