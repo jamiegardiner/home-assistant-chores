@@ -55,7 +55,10 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Load chore from entry.options and schedule timers."""
         assert self.config_entry is not None
         opts = dict(self.config_entry.options)
+        had_snooze = _parse_aware_datetime(opts.get("snooze_until")) is not None
         self._runtime = self._build_runtime(opts)
+        if had_snooze and self._runtime.snooze_until is None:
+            self._persist({"snooze_until": None})
         self._schedule_timers()
         self.async_set_updated_data(self._snapshot())
 
@@ -231,11 +234,9 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Snooze by default_snooze_value + default_snooze_unit from now."""
         assert self._runtime is not None
         cfg = self._runtime.config
-        delta_kwargs: dict[str, int] = {
-            cfg.default_snooze_unit: cfg.default_snooze_value
-        }
-        snooze_until = dt_util.now() + timedelta(**delta_kwargs)
-        await self.async_snooze(snooze_until)
+        await self.async_snooze(
+            _snooze_target(cfg.default_snooze_value, cfg.default_snooze_unit)
+        )
 
     async def async_snooze(self, snooze_until: datetime) -> None:
         """Snooze the chore until snooze_until."""
@@ -319,6 +320,11 @@ def _parse_aware_datetime(value: str | None) -> datetime | None:
     if candidate.tzinfo is None:
         raise ValueError(f"Expected a tz-aware datetime string, got naive: {value!r}")
     return candidate
+
+
+def _snooze_target(value: int, unit: str) -> datetime:
+    """Return the snooze expiry datetime: now + value units."""
+    return dt_util.now() + timedelta(**{unit: value})
 
 
 type ChoresConfigEntry = ConfigEntry[ChoresCoordinator]

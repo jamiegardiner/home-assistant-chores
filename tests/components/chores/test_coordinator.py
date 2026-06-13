@@ -420,7 +420,7 @@ async def test_complete_clears_snooze(hass: Any) -> None:
 
 
 async def test_expired_snooze_not_restored_on_restart(hass: Any) -> None:
-    """An expired snooze_until is discarded on restart."""
+    """An expired snooze_until is discarded on restart and cleared from entry.options."""
     expired_dt = (dt_util.now() - timedelta(hours=1)).isoformat()
     entry = _make_entry(days_ago=30, interval_days=7, snooze_until=expired_dt)
     entry.add_to_hass(hass)
@@ -431,6 +431,7 @@ async def test_expired_snooze_not_restored_on_restart(hass: Any) -> None:
 
     assert coord.data["status"] == "overdue"
     assert coord.data["snooze_until"] is None
+    assert entry.options["snooze_until"] is None
 
 
 async def test_naive_snooze_raises_on_load(hass: Any) -> None:

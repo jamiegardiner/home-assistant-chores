@@ -57,7 +57,7 @@ class ChoreCompleteButton(_ChoreButtonBase):
 
 
 class ChoreSnoozeButton(_ChoreButtonBase):
-    """Button that snoozes a chore by default_snooze_days."""
+    """Button that snoozes a chore by default_snooze_value + default_snooze_unit."""
 
     _attr_translation_key = "snooze"
 
