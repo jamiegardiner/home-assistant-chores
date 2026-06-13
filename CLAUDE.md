@@ -156,7 +156,7 @@ Every user-visible string must exist in **both** files:
 - `strings.json` — used by HA tooling and validation
 - `translations/en.json` — loaded at runtime by HA
 
-They must be kept in sync. If you add to one, add to the other.
+They must be kept in sync. If you add to one, add to the other. Enforced by `make translations` (`scripts/check_translations.py`), which is part of `make check`.
 
 ______________________________________________________________________
 
@@ -165,8 +165,8 @@ ______________________________________________________________________
 Ruff and mypy own: import order, modern typing/union syntax, f-strings over `.format()`, `is None`/`is not None`, no mutable default args, no unused imports. Do not restate these.
 
 - **Never suppress tooling without confirmation.** Do not add `# noqa`, `# type: ignore`, per-file ruff exclusions, or mdformat exclusions to work around a failing check — fix the root cause instead. If suppression is genuinely necessary, ask first.
-- **All imports must be at the top of the file.** Inline imports (`import x` or `__import__("x")` inside functions, methods, or class bodies) are not allowed anywhere in the codebase — production code or tests. If a module is needed, add it to the top-level import block.
-- **`from __future__ import annotations`** at the top of every module. Not enforced by tooling — easy to omit on new files.
+- **All imports must be at the top of the file.** Inline imports (`import x` or `__import__("x")` inside functions, methods, or class bodies) are not allowed anywhere in the codebase — production code or tests. If a module is needed, add it to the top-level import block. Enforced by ruff rule `PLC0415`.
+- **`from __future__ import annotations`** at the top of every module. Enforced by ruff rules `FA100`/`FA102` for any file that uses type annotations.
 - **Complete type hints** on every function/method (params + return). mypy runs in strict mode, so omissions are caught in CI.
 - **PEP 695 `type` aliases** for parametrised types: `type ChoresConfigEntry = ConfigEntry[ChoresCoordinator]`.
 - **Validation in `from_dict` / `_parse_*` helpers**: raise `ValueError` with an f-string that includes the offending value via `!r`. For `int` fields, reject `bool` explicitly: `isinstance(x, int) and not isinstance(x, bool)`.
