@@ -107,7 +107,8 @@ make test           # pytest
 make lint           # ruff check — flags bugs and style issues
 make format         # auto-fix formatting: Python (ruff format + ruff check --fix) and all markdown (mdformat)
 make typecheck      # mypy
-make check          # lint + format-check + typecheck + markdown + test in one go (mirrors CI, read-only)
+make translations   # assert strings.json and translations/en.json have identical key paths
+make check          # lint + format-check + typecheck + markdown + translations + test in one go (mirrors CI, read-only)
 
 # Docker (local HA instance at http://localhost:8123)
 make up             # start Home Assistant
@@ -156,7 +157,7 @@ Every user-visible string must exist in **both** files:
 - `strings.json` — used by HA tooling and validation
 - `translations/en.json` — loaded at runtime by HA
 
-They must be kept in sync. If you add to one, add to the other.
+They must be kept in sync. If you add to one, add to the other. Enforced by `make translations` (`scripts/check_translations.py`), which is part of `make check`.
 
 ______________________________________________________________________
 
@@ -165,8 +166,6 @@ ______________________________________________________________________
 Ruff and mypy own: import order, modern typing/union syntax, f-strings over `.format()`, `is None`/`is not None`, no mutable default args, no unused imports. Do not restate these.
 
 - **Never suppress tooling without confirmation.** Do not add `# noqa`, `# type: ignore`, per-file ruff exclusions, or mdformat exclusions to work around a failing check — fix the root cause instead. If suppression is genuinely necessary, ask first.
-- **All imports must be at the top of the file.** Inline imports (`import x` or `__import__("x")` inside functions, methods, or class bodies) are not allowed anywhere in the codebase — production code or tests. If a module is needed, add it to the top-level import block.
-- **`from __future__ import annotations`** at the top of every module. Not enforced by tooling — easy to omit on new files.
 - **Complete type hints** on every function/method (params + return). mypy runs in strict mode, so omissions are caught in CI.
 - **PEP 695 `type` aliases** for parametrised types: `type ChoresConfigEntry = ConfigEntry[ChoresCoordinator]`.
 - **Validation in `from_dict` / `_parse_*` helpers**: raise `ValueError` with an f-string that includes the offending value via `!r`. For `int` fields, reject `bool` explicitly: `isinstance(x, int) and not isinstance(x, bool)`.
