@@ -4,7 +4,7 @@ A [HACS](https://hacs.xyz)-compatible custom integration for [Home Assistant](ht
 
 Each chore becomes a device in Settings → Devices & Services, grouping its status sensor, diagnostic sensors, action buttons, and configuration controls. It transitions automatically between `done` and `overdue` at the configured interval with no polling.
 
-Scheduling is **rolling**: `next_due` is computed from `last_completed + interval_days`, so each completion rolls the due date forward from that moment. Completing a chore late shifts its next due date forward — it does not catch up to a fixed calendar date. For fixed-day reminders (e.g. "every Tuesday"), use Home Assistant's calendar or schedule helpers instead of this integration.
+Scheduling is **rolling**: the next due date is calculated by adding the configured interval to the last completion time, so each completion rolls the schedule forward from that moment. Completing a chore late shifts its next due date forward — it does not catch up to a fixed calendar date. For fixed-day reminders (e.g. "every Tuesday"), use Home Assistant's calendar or schedule helpers instead of this integration.
 
 ______________________________________________________________________
 
