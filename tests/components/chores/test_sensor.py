@@ -48,6 +48,8 @@ CHORE_STATE_B = {
 class FakeCoordinator:
     """Minimal coordinator stub duck-typed against the new single-chore API."""
 
+    last_update_success = True
+
     def __init__(self, state: dict | None = None):
         self.data = state if state is not None else dict(CHORE_STATE)
 
@@ -270,6 +272,15 @@ class TestChoreLastCompletedSensor:
         sensor = _make_last_completed_sensor(coordinator=coordinator)
         assert sensor.native_value is None
 
+    def test_available_false_when_last_completed_is_none(self):
+        coordinator = FakeCoordinator({**CHORE_STATE, "last_completed": None})
+        sensor = _make_last_completed_sensor(coordinator=coordinator)
+        assert sensor.available is False
+
+    def test_available_true_when_last_completed_is_set(self):
+        sensor = _make_last_completed_sensor()
+        assert sensor.available is True
+
 
 class TestChoreNextDueSensor:
     def test_native_value(self):
@@ -297,6 +308,15 @@ class TestChoreNextDueSensor:
         coordinator = FakeCoordinator({**CHORE_STATE, "next_due": None})
         sensor = _make_next_due_sensor(coordinator=coordinator)
         assert sensor.native_value is None
+
+    def test_available_false_when_next_due_is_none(self):
+        coordinator = FakeCoordinator({**CHORE_STATE, "next_due": None})
+        sensor = _make_next_due_sensor(coordinator=coordinator)
+        assert sensor.available is False
+
+    def test_available_true_when_next_due_is_set(self):
+        sensor = _make_next_due_sensor()
+        assert sensor.available is True
 
 
 _SNOOZE_DT = datetime(2026, 6, 15, 12, 0, tzinfo=UTC)
@@ -328,6 +348,15 @@ class TestChoreSnoozeUntilSensor:
     def test_translation_key(self):
         sensor = _make_snooze_until_sensor()
         assert sensor.translation_key == "snooze_until"
+
+    def test_available_false_when_not_snoozed(self):
+        sensor = _make_snooze_until_sensor()
+        assert sensor.available is False
+
+    def test_available_true_when_snoozed(self):
+        coordinator = FakeCoordinator({**CHORE_STATE, "snooze_until": _SNOOZE_DT})
+        sensor = _make_snooze_until_sensor(coordinator=coordinator)
+        assert sensor.available is True
 
 
 class TestDiagnosticSensorDeviceInfo:

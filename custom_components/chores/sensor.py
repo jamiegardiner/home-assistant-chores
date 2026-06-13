@@ -137,6 +137,13 @@ class _ChoreDateSensor(
         self._entry_id = entry.entry_id
 
     @property
+    def available(self) -> bool:
+        return (
+            super().available
+            and (self.coordinator.data or {}).get(self._data_key) is not None
+        )
+
+    @property
     def native_value(self) -> date | datetime | None:
         return (self.coordinator.data or {}).get(self._data_key)
 
