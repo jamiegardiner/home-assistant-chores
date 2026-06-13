@@ -28,9 +28,15 @@ def _make_entry(
     days_ago: int = 0,
     snooze_until: str | None = None,
     entry_id: str = "test_entry_id",
+    last_completed: str | None = "auto",
 ) -> MockConfigEntry:
-    """Return a single-chore MockConfigEntry."""
-    last_completed = (dt_util.now() - timedelta(days=days_ago)).isoformat()
+    """Return a single-chore MockConfigEntry.
+
+    Pass last_completed=None for a never-completed chore; omit (default "auto") to
+    derive last_completed from days_ago.
+    """
+    if last_completed == "auto":
+        last_completed = (dt_util.now() - timedelta(days=days_ago)).isoformat()
     opts: dict[str, Any] = {
         "name": name,
         "interval_days": interval_days,
@@ -753,3 +759,96 @@ async def test_notification_time_in_snapshot(hass: Any) -> None:
         await coord.async_initialize()
 
     assert coord.data["notification_time"] == "08:30"
+
+
+# ---------------------------------------------------------------------------
+# Never-completed chore tests
+# ---------------------------------------------------------------------------
+
+
+async def test_never_completed_is_overdue(hass: Any) -> None:
+    """A chore with no last_completed starts overdue."""
+    entry = _make_entry(last_completed=None)
+    entry.add_to_hass(hass)
+
+    with patch("custom_components.chores.coordinator.async_track_point_in_time"):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+
+    assert coord.data["status"] == "overdue"
+
+
+async def test_never_completed_next_due_is_none(hass: Any) -> None:
+    """A chore with no last_completed has next_due=None."""
+    entry = _make_entry(last_completed=None)
+    entry.add_to_hass(hass)
+
+    with patch("custom_components.chores.coordinator.async_track_point_in_time"):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+
+    assert coord.data["next_due"] is None
+
+
+async def test_never_completed_last_completed_is_none_in_snapshot(hass: Any) -> None:
+    """Snapshot carries last_completed=None for a never-completed chore."""
+    entry = _make_entry(last_completed=None)
+    entry.add_to_hass(hass)
+
+    with patch("custom_components.chores.coordinator.async_track_point_in_time"):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+
+    assert coord.data["last_completed"] is None
+
+
+async def test_completing_never_completed_chore_starts_cycle(hass: Any) -> None:
+    """Completing a never-completed chore sets last_completed, next_due, and status done."""
+    entry = _make_entry(last_completed=None, interval_days=7)
+    entry.add_to_hass(hass)
+
+    with patch("custom_components.chores.coordinator.async_track_point_in_time"):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+
+        assert coord.data["status"] == "overdue"
+        await coord.async_complete()
+
+    assert coord.data["status"] == "done"
+    assert coord.data["last_completed"] is not None
+    assert coord.data["last_completed"].date() == dt_util.now().date()
+    expected_next_due = dt_util.now().date() + timedelta(days=7)
+    assert coord.data["next_due"].date() == expected_next_due
+
+
+async def test_snooze_on_never_completed_chore(hass: Any) -> None:
+    """Snoozing a never-completed chore transitions to snoozed; expiry returns to overdue."""
+    captured: dict[str, Any] = {}
+
+    def _fake_track(hass_, cb, point_in_time):
+        captured["cb"] = cb
+        return MagicMock()
+
+    entry = _make_entry(last_completed=None)
+    entry.add_to_hass(hass)
+
+    with patch(
+        "custom_components.chores.coordinator.async_track_point_in_time",
+        side_effect=_fake_track,
+    ):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+
+        assert coord.data["status"] == "overdue"
+
+        snooze_dt = dt_util.now() + timedelta(days=3)
+        await coord.async_snooze(snooze_dt)
+
+    assert coord.data["status"] == "snoozed"
+
+    future = datetime.now(tz=UTC) + timedelta(days=4)
+    with patch("custom_components.chores.coordinator.dt_util.now", return_value=future):
+        captured["cb"](future)
+
+    assert coord.data["status"] == "overdue"
+    assert coord.data["last_completed"] is None
