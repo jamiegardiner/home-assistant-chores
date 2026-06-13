@@ -1,4 +1,6 @@
-# Chore Tracker
+# 🏠 Chore Tracker
+
+_Your household chores don't follow a calendar. Now your reminders don't have to either._
 
 A [HACS](https://hacs.xyz)-compatible custom integration for [Home Assistant](https://www.home-assistant.io) that tracks recurring household chores and surfaces their status as HA devices.
 
@@ -8,7 +10,7 @@ Scheduling is **rolling**: the next due date is calculated by adding the configu
 
 ______________________________________________________________________
 
-## Installation
+## 🔧 Installation
 
 ### Option A — one click (recommended)
 
@@ -25,21 +27,21 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-## Entities
+## 📦 Entities
 
 Each chore appears in **Settings → Devices & Services** as a single device.
 
-### Status
+### 🚦 Status
 
 Each chore has three states:
 
-| State     | Meaning                                                                         |
-| --------- | ------------------------------------------------------------------------------- |
-| `done`    | The chore has been completed and is not yet due again                           |
-| `overdue` | The chore's due date has passed without being marked complete                   |
-| `snoozed` | The chore is snoozed; overdue reminders are suppressed until the snooze expires |
+| State     | Meaning                                                                            |
+| --------- | ---------------------------------------------------------------------------------- |
+| `done`    | ✅ The chore has been completed and is not yet due again                           |
+| `overdue` | ⏰ The chore's due date has passed without being marked complete                   |
+| `snoozed` | 😴 The chore is snoozed; overdue reminders are suppressed until the snooze expires |
 
-### Sensors
+### 📡 Sensors
 
 | Entity         | Description                                                           |
 | -------------- | --------------------------------------------------------------------- |
@@ -47,7 +49,7 @@ Each chore has three states:
 | Next due       | When the chore will next become overdue; unavailable before first use |
 | Snooze expiry  | When an active snooze expires; unavailable when not snoozed           |
 
-### Buttons
+### 🔘 Buttons
 
 | Button   | Action                                                  |
 | -------- | ------------------------------------------------------- |
@@ -55,7 +57,7 @@ Each chore has three states:
 | Snooze   | Defers the chore by the configured snooze duration      |
 | Unsnooze | Cancels an active snooze immediately                    |
 
-### Configuration
+### ⚙️ Configuration
 
 Found in the device's **Configuration** section:
 
@@ -68,7 +70,7 @@ Found in the device's **Configuration** section:
 
 ______________________________________________________________________
 
-## Managing chores
+## 📋 Managing chores
 
 All configuration is done through the Home Assistant UI — there is no YAML.
 
@@ -96,7 +98,7 @@ Deleting a chore only removes that chore — all others are unaffected.
 
 ______________________________________________________________________
 
-## Services
+## ⚡ Services
 
 These services can be used in automations and scripts.
 
@@ -153,6 +155,10 @@ target:
 
 ______________________________________________________________________
 
-## Contributing
+## 🤝 Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the versioning model, release strategy, PR title conventions, and contributor flow.
+
+______________________________________________________________________
+
+_🤖 Designed by a human, built with Claude._
