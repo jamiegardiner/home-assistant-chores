@@ -161,4 +161,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the versioning model, release strateg
 
 ______________________________________________________________________
 
-_🤖 Written by AI, coordinated by a human._
+_🤖 Designed by a human, built with Claude._
