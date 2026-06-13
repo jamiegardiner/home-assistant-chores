@@ -38,8 +38,7 @@
   },
   "config": {
     "error": {
-      "name_required": "Name cannot be empty.",
-      "invalid_interval": "Interval must be a positive number."
+      "name_required": "Name cannot be empty."
     },
     "step": {
       "user": {

@@ -48,8 +48,6 @@ class ChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["name"] = "name_required"
 
             interval_days = int(user_input.get("interval_days", 1))
-            if interval_days < 1:
-                errors["interval_days"] = "invalid_interval"
 
             if not errors:
                 return self.async_create_entry(
