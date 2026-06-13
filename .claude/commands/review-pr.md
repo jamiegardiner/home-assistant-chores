@@ -88,7 +88,7 @@ Get the repo owner/name first:
 gh repo view --json nameWithOwner -q .nameWithOwner
 ```
 
-Build a JSON review file at `/tmp/pr-review.json`. The structure is:
+Construct the review JSON and post it directly via stdin — no temp file needed. The structure is:
 
 ```json
 {
@@ -108,10 +108,18 @@ Build a JSON review file at `/tmp/pr-review.json`. The structure is:
 - `body`: markdown summary with a final verdict (✅ No issues / ⚠️ N issues found)
 - One entry in `comments` per finding
 - `line` must be a line that appears in the PR diff — use the diff output to confirm the line exists on the changed side. If a line is not in the diff (e.g. it is unchanged context), place the comment on the nearest changed line and note the actual line in the comment body
-- If there are no findings, omit the `comments` array and just post the summary via `gh pr comment <number> --body-file`
+- If there are no findings, omit the `comments` array and post the summary:
+  ```
+  gh pr comment <number> --body "$(cat <<'EOF'
+  <summary>
+  EOF
+  )"
+  ```
 
-Post the review:
+Post the review by piping the JSON directly to stdin:
 
 ```
-gh api repos/{owner}/{repo}/pulls/<number>/reviews --input /tmp/pr-review.json
+gh api repos/{owner}/{repo}/pulls/<number>/reviews --input - <<'EOF'
+{...filled-in JSON...}
+EOF
 ```
