@@ -6,23 +6,17 @@ Review the pull request number provided in $ARGUMENTS.
 
 ## Step 1 — Fetch the PR
 
-Run `gh pr view <number> --json title,body,headRefName` to get the PR details. Run `gh pr diff <number>` to get the full diff. Check out the branch locally to read complete file context where needed.
+Run `gh pr view <number> --json title,body,headRefName` to get the PR details. Run `gh pr diff <number>` to get the full diff. The diff plus reading individual files (`gh api repos/{owner}/{repo}/contents/<path>?ref=<headRefName> -q .content | base64 -d`) is usually enough. Check out the branch only if you genuinely need it — e.g. to trace cross-file context the diff doesn't show. Do **not** check it out just to run `ruff`, `mypy`, `mdformat`, or the tests: CI already runs `make check` on every PR, so re-running those locally is wasted work.
 
 ## Step 2 — Review criteria
 
 Scrutinise every changed file against all of the following categories. Flag anything that fails.
 
+**Scope:** Only flag issues that the tooling does **not** already catch. Ruff, mypy (strict mode), and mdformat run in CI and own import order, modern typing/union syntax, f-strings, `is None`/`is not None`, mutable default args, unused imports/variables, bare `except`, comprehension rewrites, complete type annotations, and all markdown formatting. Do not restate or report on those — focus on the judgment calls below that no linter enforces.
+
 ### Python correctness & style
 
-- [ ] `from __future__ import annotations` present in every module
-- [ ] All functions and methods have complete type annotations (arguments and return type)
-- [ ] No bare `except:` — always catch a specific exception type
-- **Note:** `except TypeError, ValueError:` without parentheses is **valid Python 3.14+ syntax** (PEP 758). Ruff enforces the parenthesis-free form. Do not flag it as an error.
-- [ ] `is None` / `is not None` used (not `== None`)
-- [ ] f-strings used over `.format()` or `%` string formatting
-- [ ] No mutable default arguments (e.g. `def f(x=[])`)
-- [ ] List/dict/set comprehensions preferred over manual `for` + `.append()`
-- [ ] No unused imports or variables
+- [ ] `from __future__ import annotations` present in every module (not tooling-enforced)
 - [ ] No magic numbers or strings — use named constants from `const.py`
 - [ ] No deeply nested blocks (more than 3 levels is a smell)
 - [ ] No commented-out code or stray TODOs without a linked issue
@@ -66,7 +60,6 @@ Scrutinise every changed file against all of the following categories. Flag anyt
 - [ ] If the PR adds or changes sensor states or attributes, `README.md` reflects them
 - [ ] If the PR changes configuration options, setup steps, or architecture, `README.md` and/or `CLAUDE.md` are updated
 - [ ] If the PR introduces new developer patterns or conventions, `CLAUDE.md` covers them
-- [ ] Documentation changes are in a separate commit from code changes
 
 ## Step 3 — Compile findings
 
