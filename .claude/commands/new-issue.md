@@ -71,13 +71,13 @@ If any of these apply, propose a split: show the user the suggested sub-issues a
 
 ## Step 4 — Create the issue
 
-Once the user is happy with the content and scope, write the issue body to a temp file and use `--body-file` to avoid shell escaping mangling backticks and code blocks:
+Once the user is happy with the content and scope, use a `'EOF'` heredoc inside `$()` to pass the body — backticks and code blocks are preserved without shell escaping, and no temp file is needed:
 
 ```
-cat > /tmp/issue-body.md << 'EOF'
+gh issue create --title "<title>" --label "<category>" --body "$(cat <<'EOF'
 <body>
 EOF
-gh issue create --title "<title>" --label "<category>" --body-file /tmp/issue-body.md
+)"
 ```
 
 Print the issue URL and number. Do not implement any code.

@@ -88,10 +88,10 @@ Examples:
 
 ### Creating the PR
 
-Write the PR body to a temp file and use `--body-file` to avoid shell escaping mangling backticks and code blocks:
+Use a `'EOF'` heredoc inside `$()` to pass the PR body — backticks and code blocks are preserved without shell escaping, and no temp file is needed:
 
 ```
-cat > /tmp/pr-body.md << 'EOF'
+gh pr create --title "type(issue-<number>): <description>" --body "$(cat <<'EOF'
 Closes #<number>
 
 ## Summary
@@ -100,7 +100,7 @@ Closes #<number>
 ## Test plan
 - [ ] ...
 EOF
-gh pr create --title "type(issue-<number>): <description>" --body-file /tmp/pr-body.md
+)"
 ```
 
 Print the PR URL.
