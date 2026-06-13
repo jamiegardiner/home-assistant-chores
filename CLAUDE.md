@@ -119,10 +119,6 @@ make logs           # tail HA container logs
 
 Activate the venv for interactive use: `source .venv/bin/activate`
 
-### Markdown formatting
-
-Every `.md` file must pass `mdformat` — run `make format` to auto-fix, `make check` to verify.
-
 ______________________________________________________________________
 
 ## Adding a new feature
