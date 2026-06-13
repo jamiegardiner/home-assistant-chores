@@ -1,7 +1,7 @@
 """Tests for the Chores coordinator (single-chore-per-entry model)."""
 
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -10,7 +10,10 @@ from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.chores.const import DOMAIN
-from custom_components.chores.coordinator import ChoresCoordinator
+from custom_components.chores.coordinator import (
+    ChoresCoordinator,
+    _parse_aware_datetime,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -867,3 +870,29 @@ async def test_snooze_on_never_completed_chore(hass: Any) -> None:
 
     assert coord.data["status"] == "overdue"
     assert coord.data["last_completed"] is None
+
+
+async def test_never_completed_snoozed_restores_on_load(hass: Any) -> None:
+    """Coordinator restores to snoozed when last_completed is None but snooze_until is active."""
+    snooze_dt = dt_util.now() + timedelta(days=2)
+    entry = _make_entry(last_completed=None, snooze_until=snooze_dt.isoformat())
+    entry.add_to_hass(hass)
+
+    with patch("custom_components.chores.coordinator.async_track_point_in_time"):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+
+    assert coord.data["status"] == "snoozed"
+    assert coord.data["snooze_until"] == snooze_dt
+    assert coord.data["last_completed"] is None
+
+
+# ---------------------------------------------------------------------------
+# _parse_aware_datetime tests
+# ---------------------------------------------------------------------------
+
+
+def test_parse_aware_datetime_type_error_returns_none() -> None:
+    """A non-string value triggers TypeError in fromisoformat and returns None."""
+    result = _parse_aware_datetime(cast(str, 42))
+    assert result is None

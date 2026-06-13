@@ -1,10 +1,11 @@
 """Unit tests for custom_components/chores/sensor.py."""
 
 from datetime import UTC, date, datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import EntityCategory
+from homeassistant.util import dt as dt_util
 
 from custom_components.chores.const import DOMAIN
 from custom_components.chores.sensor import (
@@ -12,6 +13,7 @@ from custom_components.chores.sensor import (
     ChoreNextDueSensor,
     ChoreSensor,
     ChoreSnoozeUntilSensor,
+    _handle_complete,
     async_setup_entry,
 )
 
@@ -355,6 +357,28 @@ class TestChoreSnoozeUntilSensor:
         coordinator = FakeCoordinator({**CHORE_STATE, "snooze_until": _SNOOZE_DT})
         sensor = _make_snooze_until_sensor(coordinator=coordinator)
         assert sensor.available is True
+
+
+class TestHandleComplete:
+    """Tests for the _handle_complete service handler."""
+
+    async def test_naive_completed_at_becomes_tz_aware(self):
+        """A naive completed_at datetime is localised before reaching async_complete."""
+        naive = datetime(2026, 6, 8, 14, 30)
+        assert naive.tzinfo is None
+
+        mock_coordinator = AsyncMock()
+        mock_entity = MagicMock()
+        mock_entity.coordinator = mock_coordinator
+
+        call = MagicMock()
+        call.data = {"completed_at": naive}
+
+        await _handle_complete(mock_entity, call)
+
+        result = mock_coordinator.async_complete.call_args[0][0]
+        assert result.tzinfo is not None
+        assert result == dt_util.as_local(naive)
 
 
 class TestDiagnosticSensorDeviceInfo:
