@@ -59,7 +59,6 @@ These writable entities (in the device's **Configuration** section) edit the cho
 
 | Entity               | Type   | Description                                                                 |
 | -------------------- | ------ | --------------------------------------------------------------------------- |
-| Name                 | Text   | The display name of the chore                                               |
 | Interval             | Number | Days between completions before the chore becomes `overdue`                 |
 | Default snooze value | Number | The count used when the Snooze button is pressed                            |
 | Default snooze unit  | Select | The time unit for the default snooze (minutes/hours/days/weeks)             |

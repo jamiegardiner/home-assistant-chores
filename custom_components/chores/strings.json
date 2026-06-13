@@ -20,9 +20,6 @@
         }
       }
     },
-    "text": {
-      "name": { "name": "Name" }
-    },
     "time": {
       "notification_time": { "name": "Notification Time" }
     },

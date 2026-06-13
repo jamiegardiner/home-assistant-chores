@@ -1,6 +1,6 @@
 # Chore Tracker — Home Assistant Custom Integration
 
-A HACS-compatible custom integration that tracks recurring household chores and surfaces their status as HA devices. Each chore becomes a device with 12 entities — a primary status sensor, 3 diagnostic sensors, 3 action buttons, 2 CONFIG number entities, 1 CONFIG select entity, 1 CONFIG text entity, and 1 CONFIG time entity — automatically transitioning between `done` and `overdue` at the configured interval with no polling.
+A HACS-compatible custom integration that tracks recurring household chores and surfaces their status as HA devices. Each chore becomes a device with 11 entities — a primary status sensor, 3 diagnostic sensors, 3 action buttons, 2 CONFIG number entities, 1 CONFIG select entity, and 1 CONFIG time entity — automatically transitioning between `done` and `overdue` at the configured interval with no polling.
 
 ______________________________________________________________________
 
@@ -15,7 +15,6 @@ custom_components/chores/
   button.py            # Complete, Snooze, Unsnooze button entities
   number.py            # Interval and Default Snooze Value CONFIG number entities
   select.py            # Default Snooze Unit CONFIG select entity
-  text.py              # Name CONFIG text entity
   time.py              # Notification Time CONFIG time entity
   sensor.py            # ChoreSensor + 3 diagnostic sensor entities (one set per config entry)
   config_flow.py       # UI config flow (create chore — name + interval only; no options flow)
@@ -36,7 +35,6 @@ tests/
     test_select.py
     test_sensor.py
     test_services.py
-    test_text.py
     test_time.py
 
 docker-compose.yml     # runs ghcr.io/home-assistant/home-assistant:stable on :8123; bind-mounts ./custom_components/chores into /config/custom_components/chores
@@ -82,7 +80,7 @@ ChoresCoordinator.async_initialize()
 ChoresCoordinator.async_set_updated_data(snapshot)
         │
         ▼
-ChoreSensor.native_value + 3 diagnostic sensors + 2 number + 1 select + 1 text + 1 time (pushed by CoordinatorEntity)
+ChoreSensor.native_value + 3 diagnostic sensors + 2 number + 1 select + 1 time (pushed by CoordinatorEntity)
 ```
 
 Options updates (from config flow edits) are handled in-place via `async_update_config` — no `async_reload`, no entity teardown.
@@ -99,7 +97,6 @@ Options updates (from config flow edits) are handled in-place via `async_update_
 | `ChoreIntervalNumber`           | `number.py`      | CONFIG number entity for interval_days (writable)                                                   |
 | `ChoreDefaultSnoozeValueNumber` | `number.py`      | CONFIG number entity for default_snooze_value (writable)                                            |
 | `ChoreDefaultSnoozeUnitSelect`  | `select.py`      | CONFIG select entity for default_snooze_unit (writable)                                             |
-| `ChoreNameTextEntity`           | `text.py`        | CONFIG text entity for name (writable)                                                              |
 | `ChoreNotificationTimeEntity`   | `time.py`        | CONFIG time entity for notification_time (writable)                                                 |
 | `Chore*Button`                  | `button.py`      | Complete / Snooze / Unsnooze button entities                                                        |
 
@@ -169,7 +166,7 @@ Config options can be surfaced in two ways:
 
 **Via creation form only** (name, interval_days): Add the form field to `config_flow.py:_chore_schema()` and add the label to both `strings.json` and `translations/en.json` under `config.step.user.data`. There is no options flow — all post-creation editing goes through CONFIG entities.
 
-**Via CONFIG entity** (name, interval_days, default_snooze_value, default_snooze_unit, notification_time): Add the key to `coordinator.py:_snapshot()`. Create a number, select, text, or time entity in `number.py`, `select.py`, `text.py`, or `time.py` whose setter calls `coordinator._persist({"key": value})` — this triggers the update listener which calls `async_update_config` for in-place recomputation. Add entity strings under `entity.number`, `entity.select`, `entity.text`, or `entity.time` in both `strings.json` and `translations/en.json`.
+**Via CONFIG entity** (interval_days, default_snooze_value, default_snooze_unit, notification_time): Add the key to `coordinator.py:_snapshot()`. Create a number, select, or time entity in `number.py`, `select.py`, or `time.py` whose setter calls `coordinator._persist({"key": value})` — this triggers the update listener which calls `async_update_config` for in-place recomputation. Add entity strings under `entity.number`, `entity.select`, or `entity.time` in both `strings.json` and `translations/en.json`.
 
 ### 5. Strings / translations
 
