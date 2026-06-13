@@ -28,7 +28,6 @@ Work through every dimension below. For each, scrutinise the relevant code and f
 - Untrusted input — config-flow fields, service-call payloads, persisted `entry.options` — is validated and parsed safely before use.
 - No injection or unsafe evaluation paths (`eval`, `exec`, shell-outs, dynamic imports, string-built queries).
 - No secrets, tokens, or sensitive data logged, persisted in plain options, or exposed in entity attributes/state.
-- Persisted data loaded back from `entry.options` is treated as potentially malformed and fails safe (this matches the documented "old date-only strings silently dropped" behaviour).
 - Assume HA itself is trusted; only flag issues introduced by *this integration's* code.
 
 ### Memory & resource management
