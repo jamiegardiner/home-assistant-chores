@@ -141,6 +141,7 @@ Services are entity services — HA handles all target resolution (entity, area,
 1. Add `Platform.BUTTON` (etc.) to `PLATFORMS` in `__init__.py`.
 2. Create `custom_components/chores/<platform>.py` implementing `async_setup_entry` and the entity class.
 3. The entity should be a `CoordinatorEntity` and read state from `coordinator.data` (flat dict).
+4. Declare `PARALLEL_UPDATES = 0` at module level (after imports) — required by the Silver quality-scale `parallel-updates` rule.
 
 ### 4. New config option
 

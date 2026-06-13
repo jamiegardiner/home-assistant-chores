@@ -14,6 +14,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import SNOOZE_UNITS
 from .coordinator import ChoresCoordinator, _ChoreDeviceMixin
 
+PARALLEL_UPDATES = 0
+
 _SNOOZE_UNIT_OPTIONS: list[str] = list(SNOOZE_UNITS)
 
 

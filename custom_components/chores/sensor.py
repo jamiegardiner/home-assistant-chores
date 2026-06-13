@@ -32,6 +32,8 @@ from .services import (
     _parse_snooze_datetime,
 )
 
+PARALLEL_UPDATES = 0
+
 
 async def _handle_complete(entity: ChoreSensor, call: ServiceCall) -> None:
     raw: datetime | None = call.data.get("completed_at")
