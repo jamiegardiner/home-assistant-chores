@@ -50,6 +50,8 @@ Each chore is a separate config entry (`integration_type: device`). All state li
 
 `last_completed` is `null` on creation; the chore starts overdue. It is set to a tz-aware ISO 8601 datetime string only when `chores.complete` is called.
 
+The integration is the only writer of `entry.options`, so `last_completed` and `snooze_until` are always either `null` or a tz-aware ISO 8601 string. `_parse_aware_datetime` in `coordinator.py` returns `None` for empty/absent values and raises `ValueError` for parseable-but-naive strings — this is intentional: a naive datetime in storage means something has gone wrong externally (e.g. manual editing), and a hard failure is the correct signal.
+
 ### Data flow
 
 ```
