@@ -265,6 +265,23 @@ async def test_update_config_preserves_snooze(hass: Any) -> None:
     assert coord.data["snooze_until"] == snooze_dt
 
 
+async def test_update_config_noop_when_options_match_runtime(hass: Any) -> None:
+    """async_update_config early-returns when options already match runtime state."""
+    entry = _make_entry(days_ago=0, interval_days=7)
+    entry.add_to_hass(hass)
+
+    with patch(
+        "custom_components.chores.coordinator.async_track_point_in_time"
+    ) as mock_track:
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+        call_count_after_init = mock_track.call_count
+
+        await coord.async_update_config(dict(entry.options))
+
+    assert mock_track.call_count == call_count_after_init
+
+
 # ---------------------------------------------------------------------------
 # Snooze tests
 # ---------------------------------------------------------------------------
@@ -413,17 +430,17 @@ async def test_expired_snooze_not_restored_on_restart(hass: Any) -> None:
     assert coord.data["snooze_until"] is None
 
 
-async def test_naive_snooze_not_restored_on_restart(hass: Any) -> None:
-    """A date-only (naive) snooze_until string is dropped on load — breaking change."""
+async def test_naive_snooze_raises_on_load(hass: Any) -> None:
+    """A naive snooze_until string raises ValueError on load (indicates a storage bug)."""
     entry = _make_entry(days_ago=30, interval_days=7, snooze_until="2099-12-31")
     entry.add_to_hass(hass)
 
-    with patch("custom_components.chores.coordinator.async_track_point_in_time"):
+    with (
+        patch("custom_components.chores.coordinator.async_track_point_in_time"),
+        pytest.raises(ValueError, match="got naive"),
+    ):
         coord = ChoresCoordinator(hass, entry)
         await coord.async_initialize()
-
-    assert coord.data["snooze_until"] is None
-    assert coord.data["status"] != "snoozed"
 
 
 async def test_unsnooze_clears_snooze_and_recalculates(hass: Any) -> None:

@@ -63,12 +63,24 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Reconcile runtime state from new options. Called by the update listener."""
         assert self._runtime is not None
         rt = self._runtime
-        self._cancel_timers(rt)
-        rt.config = ChoreConfig.from_dict(new_options)
-        rt.last_completed = (
-            _parse_completed_at(new_options.get("last_completed")) or rt.last_completed
+        new_config = ChoreConfig.from_dict(new_options)
+        new_last_completed = (
+            _parse_aware_datetime(new_options.get("last_completed"))
+            or rt.last_completed
         )
-        rt.snooze_until = _parse_snooze(new_options.get("snooze_until"))
+        new_snooze_until = _parse_aware_datetime(new_options.get("snooze_until"))
+
+        if (
+            rt.config == new_config
+            and rt.last_completed == new_last_completed
+            and rt.snooze_until == new_snooze_until
+        ):
+            return
+
+        self._cancel_timers(rt)
+        rt.config = new_config
+        rt.last_completed = new_last_completed
+        rt.snooze_until = new_snooze_until
         self._recompute(rt)
         self._schedule_timers()
         self.async_set_updated_data(self._snapshot())
@@ -76,8 +88,8 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def _build_runtime(self, opts: dict[str, Any]) -> ChoreRuntime:
         """Construct a ChoreRuntime from an options dict."""
         config = ChoreConfig.from_dict(opts)
-        last_completed = _parse_completed_at(opts.get("last_completed"))
-        snooze_until = _parse_snooze(opts.get("snooze_until"))
+        last_completed = _parse_aware_datetime(opts.get("last_completed"))
+        snooze_until = _parse_aware_datetime(opts.get("snooze_until"))
         rt = ChoreRuntime(
             config=config, last_completed=last_completed, snooze_until=snooze_until
         )
@@ -296,12 +308,8 @@ class _ChoreDeviceMixin:
         return DeviceInfo(identifiers={(DOMAIN, self._entry_id)}, name=name)
 
 
-def _parse_completed_at(value: str | None) -> datetime | None:
-    """Parse a last_completed ISO datetime string; drop naive datetimes.
-
-    Naive datetimes (including old date-only strings) are dropped — breaking
-    change per issue #72; no migration of pre-datetime last_completed values.
-    """
+def _parse_aware_datetime(value: str | None) -> datetime | None:
+    """Parse an ISO datetime string; return None if absent or malformed; raise on naive."""
     if not value:
         return None
     try:
@@ -309,25 +317,7 @@ def _parse_completed_at(value: str | None) -> datetime | None:
     except TypeError, ValueError:
         return None
     if candidate.tzinfo is None:
-        return None
-    return candidate
-
-
-def _parse_snooze(value: str | None) -> datetime | None:
-    """Parse a snooze_until ISO datetime string; discard if naive or malformed.
-
-    Naive datetimes (including old date-only strings) are dropped — breaking
-    change per issue #70; no migration of pre-datetime snooze values.
-    Expiry checking is deferred to _recompute which has access to notification_time.
-    """
-    if not value:
-        return None
-    try:
-        candidate = datetime.fromisoformat(value)
-    except TypeError, ValueError:
-        return None
-    if candidate.tzinfo is None:
-        return None
+        raise ValueError(f"Expected a tz-aware datetime string, got naive: {value!r}")
     return candidate
 
 
