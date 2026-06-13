@@ -82,7 +82,8 @@ The new chore starts overdue immediately. Use the **Complete** button or `chores
 
 1. Go to **Settings → Devices & Services**
 2. Find **Chore Tracker**, open the integration, and click the chore device
-3. Use the **Configuration** entities on the device page to update the name, interval, snooze defaults, and notification time
+3. Use the **Configuration** entities on the device page to update the interval, snooze defaults, and notification time
+4. To rename the chore, use Home Assistant's built-in device rename (three-dot menu → **Rename** on the device page)
 
 **To remove a chore:**
 
