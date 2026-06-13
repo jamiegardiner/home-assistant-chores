@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.chores.const import DOMAIN
@@ -23,7 +24,7 @@ def _make_entry(entry_id: str = "test_entry_id") -> MockConfigEntry:
             "default_snooze_value": 1,
             "default_snooze_unit": "days",
             "notification_time": "08:00",
-            "last_completed": None,
+            "last_completed": dt_util.now().isoformat(),
             "snooze_until": None,
         },
     )
