@@ -171,6 +171,7 @@ Ruff and mypy own: import order, modern typing/union syntax, f-strings over `.fo
 - **PEP 695 `type` aliases** for parametrised types: `type ChoresConfigEntry = ConfigEntry[ChoresCoordinator]`.
 - **Validation in `from_dict` / `_parse_*` helpers**: raise `ValueError` with an f-string that includes the offending value via `!r`. For `int` fields, reject `bool` explicitly: `isinstance(x, int) and not isinstance(x, bool)`.
 - **All constants in `const.py`** — never inline string or number literals.
+- **No nested ternaries.** If you need two conditions, use a guard clause + single flat ternary, or a plain `if`/`elif`/`else` block. Flat single ternaries remain acceptable.
 
 ### Home Assistant patterns
 

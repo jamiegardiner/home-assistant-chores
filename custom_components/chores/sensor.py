@@ -37,11 +37,9 @@ PARALLEL_UPDATES = 0
 
 async def _handle_complete(entity: ChoreSensor, call: ServiceCall) -> None:
     raw: datetime | None = call.data.get("completed_at")
-    completed_at = (
-        (raw if raw.tzinfo is not None else dt_util.as_local(raw))
-        if raw is not None
-        else None
-    )
+    completed_at: datetime | None = None
+    if raw is not None:
+        completed_at = raw if raw.tzinfo is not None else dt_util.as_local(raw)
     await entity.coordinator.async_complete(completed_at)
 
 
