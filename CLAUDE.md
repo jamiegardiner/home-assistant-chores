@@ -167,7 +167,7 @@ Ruff and mypy own: import order, modern typing/union syntax, f-strings over `.fo
 - **Never suppress tooling without confirmation.** Do not add `# noqa`, `# type: ignore`, per-file ruff exclusions, or mdformat exclusions to work around a failing check — fix the root cause instead. If suppression is genuinely necessary, ask first.
 - **All imports must be at the top of the file.** Inline imports (`import x` or `__import__("x")` inside functions, methods, or class bodies) are not allowed anywhere in the codebase — production code or tests. If a module is needed, add it to the top-level import block.
 - **`from __future__ import annotations`** at the top of every module. Not enforced by tooling — easy to omit on new files.
-- **Complete type hints** on every function/method (params + return). mypy is not in strict mode so omissions are not caught automatically.
+- **Complete type hints** on every function/method (params + return). mypy runs in strict mode, so omissions are caught in CI.
 - **PEP 695 `type` aliases** for parametrised types: `type ChoresConfigEntry = ConfigEntry[ChoresCoordinator]`.
 - **Validation in `from_dict` / `_parse_*` helpers**: raise `ValueError` with an f-string that includes the offending value via `!r`. For `int` fields, reject `bool` explicitly: `isinstance(x, int) and not isinstance(x, bool)`.
 - **All constants in `const.py`** — never inline string or number literals.
