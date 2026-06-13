@@ -5,11 +5,3 @@ requires-python = ">=3.14.2"  # mirrors homeassistant's own Requires-Python
 
 [tool.mypy]
 strict = true
-exclude = ['(^|/)\.venv/']
-
-# Tests are scanned (so the config stays repo-wide, .venv aside) but not held
-# to strict typing — annotating every test function and fixture is churn that
-# checks little, since mypy skips untyped bodies anyway.
-[[tool.mypy.overrides]]
-module = "tests.*"
-ignore_errors = true

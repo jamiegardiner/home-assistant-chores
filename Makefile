@@ -31,8 +31,8 @@ install: ## Sync dependencies into the existing venv
 test: ## Run the test suite
 	$(UV) run pytest
 
-typecheck: ## Run mypy type checking
-	$(UV) run mypy .
+typecheck: ## Run mypy type checking (first-party source only — tests aren't strictly typed)
+	$(UV) run mypy custom_components scripts
 
 lint: ## Check code with ruff (linter — catches bugs and style issues)
 	$(UV) run ruff check .
@@ -48,7 +48,7 @@ translations: ## Check that strings.json and translations/en.json have identical
 check: ## Check code (read-only): lint, format, typecheck, markdown, translations, tests — mirrors CI
 	$(UV) run ruff check .
 	$(UV) run ruff format --check .
-	$(UV) run mypy .
+	$(UV) run mypy custom_components scripts
 	$(UV) run mdformat --check .
 	$(UV) run python scripts/check_translations.py
 	$(UV) run pytest
