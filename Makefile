@@ -3,7 +3,7 @@
 VENV := .venv
 UV   := uv
 
-.PHONY: help venv venv-destroy install test typecheck lint format check up down stop start logs
+.PHONY: help venv venv-destroy install test typecheck lint format check translations up down stop start logs
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
@@ -42,11 +42,15 @@ format: ## Auto-fix formatting (ruff format, ruff check --fix, mdformat) and lin
 	$(UV) run ruff check --fix custom_components tests
 	$(UV) run mdformat .
 
-check: ## Check code (read-only): lint, format, typecheck, markdown, tests — mirrors CI
+translations: ## Assert strings.json and translations/en.json have identical key structure
+	$(UV) run python scripts/check_translations.py
+
+check: ## Check code (read-only): lint, format, typecheck, markdown, translations, tests — mirrors CI
 	$(UV) run ruff check custom_components tests
 	$(UV) run ruff format --check custom_components tests
 	$(UV) run mypy custom_components/chores
 	$(UV) run mdformat --check .
+	$(UV) run python scripts/check_translations.py
 	$(UV) run pytest
 
 # ── Docker ─────────────────────────────────────────────────────────────────────
