@@ -132,3 +132,9 @@ class TestChoreNotificationTimeEntity:
         entity = _make_time_entity(coordinator=coordinator)
         await entity.async_set_value(time(23, 59))
         assert coordinator._persist_calls == [{"notification_time": "23:59"}]
+
+    def test_native_value_malformed_string_returns_none(self):
+        entity = _make_time_entity(
+            coordinator=FakeCoordinator({**CHORE_STATE, "notification_time": "nope"})
+        )
+        assert entity.native_value is None
