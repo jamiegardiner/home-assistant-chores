@@ -30,7 +30,7 @@ Releases are managed by [release-please](https://github.com/googleapis/release-p
 
 HACS installs and updates from GitHub Releases, so no release tag means no HACS update.
 
-The release-please workflow (`.github/workflows/release-please.yaml`) runs on every push to `main` and maintains a single open release PR. PR title lint (the `Lint PR title` job in `.github/workflows/ci.yaml`) blocks PRs whose titles are not valid conventional commits. The repository is configured for squash-merge only.
+The release-please workflow (`.github/workflows/release-please.yaml`) runs on every push to `main` and maintains a single open release PR. PR title lint (`.github/workflows/pr-title-lint.yaml`) blocks PRs whose titles are not valid conventional commits — it triggers on open, edit, sync, and reopen so a fixed title self-clears the check. The repository is configured for squash-merge only.
 
 ### Manifest ↔ tag sync
 
