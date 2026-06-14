@@ -271,16 +271,23 @@ async def test_update_config_preserves_snooze(hass: Any) -> None:
 async def test_update_config_expired_snooze_cleared_from_entry_options(
     hass: Any,
 ) -> None:
-    """An expired snooze_until is cleared from entry.options during async_update_config."""
-    expired_dt = dt_util.now() - timedelta(hours=1)
-    entry = _make_entry(
-        days_ago=30, interval_days=7, snooze_until=expired_dt.isoformat()
-    )
+    """An expired snooze_until is cleared from entry.options during async_update_config.
+
+    The expired snooze is injected after async_initialize so that async_initialize's
+    own issue-114 guard does not pre-clear it before async_update_config runs.
+    """
+    entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
 
     with patch("custom_components.chores.coordinator.async_track_point_in_time"):
         coord = ChoresCoordinator(hass, entry)
         await coord.async_initialize()
+
+        expired_dt = dt_util.now() - timedelta(hours=1)
+        hass.config_entries.async_update_entry(
+            entry,
+            options={**dict(entry.options), "snooze_until": expired_dt.isoformat()},
+        )
 
         new_opts = {**dict(entry.options), "name": "Renamed Chore"}
         await coord.async_update_config(new_opts)
