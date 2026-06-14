@@ -1,6 +1,6 @@
 # Chore Tracker — Service Reference
 
-These services can be used in Home Assistant automations and scripts. All three are entity services — target them at the chore's sensor entity (e.g. `sensor.chore_vacuum_living_room`).
+These services can be used in Home Assistant automations and scripts. All three support HA's standard service targeting — you can target an individual entity, the chore's device, an area, or a label, and HA will fan out to all matching chores automatically.
 
 ______________________________________________________________________
 
@@ -36,10 +36,10 @@ ______________________________________________________________________
 
 Snooze a chore for a given duration. Provide a `value` (positive integer) and a `unit` (`minutes`, `hours`, `days`, or `weeks`).
 
-| Field   | Required | Description                                        |
-| ------- | -------- | -------------------------------------------------- |
-| `value` | Yes      | Positive integer — how many units to snooze for    |
-| `unit`  | Yes      | One of `minutes`, `hours`, `days`, or `weeks`      |
+| Field   | Required | Description                                     |
+| ------- | -------- | ----------------------------------------------- |
+| `value` | Yes      | Positive integer — how many units to snooze for |
+| `unit`  | Yes      | One of `minutes`, `hours`, `days`, or `weeks`   |
 
 ```yaml
 action: chores.snooze
