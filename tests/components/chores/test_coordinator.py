@@ -268,6 +268,27 @@ async def test_update_config_preserves_snooze(hass: Any) -> None:
     assert coord.data["snooze_until"] == snooze_dt
 
 
+async def test_update_config_expired_snooze_cleared_from_entry_options(
+    hass: Any,
+) -> None:
+    """An expired snooze_until is cleared from entry.options during async_update_config."""
+    expired_dt = dt_util.now() - timedelta(hours=1)
+    entry = _make_entry(
+        days_ago=30, interval_days=7, snooze_until=expired_dt.isoformat()
+    )
+    entry.add_to_hass(hass)
+
+    with patch("custom_components.chores.coordinator.async_track_point_in_time"):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+
+        new_opts = {**dict(entry.options), "name": "Renamed Chore"}
+        await coord.async_update_config(new_opts)
+
+    assert coord.data["snooze_until"] is None
+    assert entry.options["snooze_until"] is None
+
+
 async def test_update_config_noop_when_options_match_runtime(hass: Any) -> None:
     """async_update_config early-returns when options already match runtime state."""
     entry = _make_entry(days_ago=0, interval_days=7)

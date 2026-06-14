@@ -85,6 +85,8 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         rt.last_completed = new_last_completed
         rt.snooze_until = new_snooze_until
         self._recompute(rt)
+        if new_snooze_until is not None and rt.snooze_until is None:
+            self._persist({"snooze_until": None})
         self._schedule_timers()
         self.async_set_updated_data(self._snapshot())
 
