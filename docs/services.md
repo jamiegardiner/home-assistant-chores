@@ -1,6 +1,6 @@
 # Chore Tracker — Service Reference
 
-These services can be used in Home Assistant automations and scripts. All three support HA's standard service targeting — you can target an individual entity, the chore's device, an area, or a label, and HA will fan out to all matching chores automatically.
+These services can be used in Home Assistant automations and scripts. You can target an individual chore, its device, an area, or a label — the service runs on every matching chore.
 
 ______________________________________________________________________
 
