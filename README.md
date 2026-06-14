@@ -1,12 +1,50 @@
 # 🏠 Chore Tracker
 
+[![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration) [![Version](https://img.shields.io/github/v/release/jamiegardiner/home-assistant-chores)](https://github.com/jamiegardiner/home-assistant-chores/releases) [![CI](https://github.com/jamiegardiner/home-assistant-chores/actions/workflows/ci.yaml/badge.svg)](https://github.com/jamiegardiner/home-assistant-chores/actions/workflows/ci.yaml)
+
 _Your household chores don't follow a calendar. Now your reminders don't have to either._
 
-A [HACS](https://hacs.xyz)-compatible custom integration for [Home Assistant](https://www.home-assistant.io) that tracks recurring household chores and surfaces their status as HA devices.
+A [HACS](https://hacs.xyz)-compatible custom integration for [Home Assistant](https://www.home-assistant.io) that tracks recurring household chores and surfaces their status as HA devices. Everything runs locally inside Home Assistant — no cloud account, no external service, no data leaving your home.
 
-Each chore appears as a device in Settings → Devices & Services with its own status, history, controls, and settings. It transitions automatically between `done` and `overdue` at the configured interval.
+Each chore appears as a device in **Settings → Devices & Services** with its own status, history, controls, and settings. It transitions automatically between `done` and `overdue` at the configured interval.
 
 Scheduling is **rolling**: the next due date is calculated by adding the configured interval to the last completion time, so each completion rolls the schedule forward from that moment. Completing a chore late shifts its next due date forward — it does not catch up to a fixed calendar date. For fixed-day reminders (e.g. "every Tuesday"), use Home Assistant's calendar or schedule helpers instead of this integration.
+
+______________________________________________________________________
+
+## ✨ Key Features
+
+- 📱 **Per-chore devices** — each chore lives in Settings → Devices & Services with its own controls and history
+- 🔄 **Automatic transitions** — chores flip between `done` and `overdue` at the configured interval, with no manual intervention needed
+- 📅 **Rolling schedule** — the next due date rolls forward from each completion, so late completions don't pile up
+- 😴 **Snooze / unsnooze** — defer any chore with a configurable default duration (minutes, hours, days, or weeks)
+- 🕗 **Per-chore notification time** — choose the time of day each chore transitions from `done` to `overdue`
+- 📡 **Diagnostic sensors** — last completed, next due, and snooze expiry dates available as entities for dashboards and automations
+- 🖱️ **Full UI configuration** — add, edit, and remove chores entirely through the Home Assistant interface; no YAML required
+- ⚡ **Automation-friendly services** — `chores.complete`, `chores.snooze`, and `chores.unsnooze` for use in scripts and automations
+
+______________________________________________________________________
+
+## 🚀 Getting Started
+
+Install via HACS in one click (see [Installation](#-installation) below), then restart Home Assistant.
+
+From there, adding your first chore takes under a minute:
+
+1. Go to **Settings → Devices & Services → Add Integration** and search for **Chore Tracker**
+2. Enter a name (e.g. "Vacuum living room") and an interval in days (e.g. `7`)
+3. Hit **Submit** — your chore is live
+
+The new chore starts overdue. Press its **Complete** button to record the first completion and start the regular cycle. That's it.
+
+______________________________________________________________________
+
+## 🚫 What it doesn't do (and why)
+
+- **No fixed-calendar scheduling** — intervals are intentionally rolling from last completion, not anchored to a day of the week. For "every Tuesday" reminders, Home Assistant's built-in [calendar](https://www.home-assistant.io/integrations/calendar/) or [schedule](https://www.home-assistant.io/integrations/schedule/) helpers are the right tool.
+- **No gamification, points, or per-person assignment** — Chore Tracker deliberately stays a focused, single-purpose tracker. Keeping scope narrow means fewer bugs and easier maintenance.
+- **No cloud sync or external accounts** — all state lives in your Home Assistant config entry. Nothing leaves your local network.
+- **No YAML configuration** — setup and editing are UI-only by design, consistent with modern HA integration conventions.
 
 ______________________________________________________________________
 
@@ -100,58 +138,7 @@ ______________________________________________________________________
 
 ## ⚡ Services
 
-These services can be used in automations and scripts.
-
-### `chores.complete`
-
-Marks a chore as done and schedules the next due date.
-
-| Field          | Required | Description                                                       |
-| -------------- | -------- | ----------------------------------------------------------------- |
-| `completed_at` | No       | Date and time of completion, if not now. Cannot be in the future. |
-
-```yaml
-action: chores.complete
-target:
-  entity_id: sensor.chore_vacuum_living_room
-```
-
-**Record a specific past completion time:**
-
-```yaml
-action: chores.complete
-target:
-  entity_id: sensor.chore_vacuum_living_room
-data:
-  completed_at: "2026-06-08 14:30:00"
-```
-
-______________________________________________________________________
-
-### `chores.snooze`
-
-Snooze a chore for a given duration. Provide a `value` (positive integer) and a `unit` (`minutes`, `hours`, `days`, or `weeks`).
-
-```yaml
-action: chores.snooze
-target:
-  entity_id: sensor.chore_vacuum_living_room
-data:
-  value: 3
-  unit: days
-```
-
-______________________________________________________________________
-
-### `chores.unsnooze`
-
-Cancel an active snooze and return the chore to its normal state immediately.
-
-```yaml
-action: chores.unsnooze
-target:
-  entity_id: sensor.chore_vacuum_living_room
-```
+Three automation-ready services — `chores.complete`, `chores.snooze`, and `chores.unsnooze` — let you control chores from scripts, automations, and dashboards. See [docs/services.md](docs/services.md) for the full field reference and YAML examples.
 
 ______________________________________________________________________
 
