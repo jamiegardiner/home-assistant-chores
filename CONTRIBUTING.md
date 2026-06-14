@@ -89,7 +89,3 @@ Append `!` after the scope for a breaking change: `feat(issue-X)!: remove weeks 
 4. **Set the PR title to a conventional-commit message** — this is the version-bump signal under squash-merge.
 5. The maintainer reviews and merges (squash). Release-please updates its release PR accordingly.
 6. The maintainer cuts the release when ready by merging the release PR.
-
-### Cutting the first 1.0.0
-
-The `release-please-config.json` contains `"release-as": "1.0.0"`, which causes the first release PR to propose version `1.0.0` regardless of the bump type. Once `1.0.0` has been released, remove that field from the config so subsequent versions are computed automatically from conventional commits.
