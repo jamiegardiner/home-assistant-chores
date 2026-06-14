@@ -39,7 +39,7 @@ The new chore starts overdue. Press its **Complete** button to record the first 
 
 ______________________________________________________________________
 
-## 🚫 What it doesn't do (and why)
+## 🎯 Focused by design
 
 - **No fixed-calendar scheduling** — intervals are intentionally rolling from last completion, not anchored to a day of the week. For "every Tuesday" reminders, Home Assistant's built-in [calendar](https://www.home-assistant.io/integrations/calendar/) or [schedule](https://www.home-assistant.io/integrations/schedule/) helpers are the right tool.
 - **No gamification, points, or per-person assignment** — Chore Tracker deliberately stays a focused, single-purpose tracker.
