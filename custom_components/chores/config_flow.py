@@ -25,7 +25,9 @@ def _chore_schema() -> vol.Schema:
         {
             vol.Required("name"): str,
             vol.Required("interval_days"): NumberSelector(
-                NumberSelectorConfig(min=1, step=1, mode=NumberSelectorMode.BOX)
+                NumberSelectorConfig(
+                    min=1, max=365, step=1, mode=NumberSelectorMode.BOX
+                )
             ),
         }
     )
