@@ -1,7 +1,9 @@
 {
   "domain": "chores",
   "name": "Chore Tracker",
-  "codeowners": ["@jamiegardiner"],
+  "codeowners": [
+    "@jamiegardiner"
+  ],
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/jamiegardiner/home-assistant-chores",
@@ -9,5 +11,5 @@
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/jamiegardiner/home-assistant-chores/issues",
   "requirements": [],
-  "version": "0.1.0"
+  "version": "1.0.0"
 }
