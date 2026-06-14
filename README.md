@@ -1,5 +1,7 @@
 # 🏠 Chore Tracker
 
+![Chore Tracker](assets/GithubReadmeBanner.png)
+
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration) [![Version](https://img.shields.io/github/v/release/jamiegardiner/home-assistant-chores)](https://github.com/jamiegardiner/home-assistant-chores/releases) [![CI](https://github.com/jamiegardiner/home-assistant-chores/actions/workflows/ci.yaml/badge.svg)](https://github.com/jamiegardiner/home-assistant-chores/actions/workflows/ci.yaml)
 
 _Because "when did we last clean the gutters?" shouldn't need to be a mystery._
