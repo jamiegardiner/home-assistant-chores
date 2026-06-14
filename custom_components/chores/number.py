@@ -11,7 +11,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import MAX_INTERVAL_DAYS
+from .const import MAX_NUMBER_VALUE
 from .coordinator import ChoresCoordinator, _ChoreDeviceMixin
 
 PARALLEL_UPDATES = 0
@@ -41,7 +41,7 @@ class _ChoreNumberBase(
     _attr_entity_category = EntityCategory.CONFIG
     _attr_mode = NumberMode.BOX
     _attr_native_min_value = 1.0
-    _attr_native_max_value = MAX_INTERVAL_DAYS
+    _attr_native_max_value = MAX_NUMBER_VALUE
     _attr_native_step = 1.0
 
     def __init__(self, coordinator: ChoresCoordinator, entry: ConfigEntry) -> None:
