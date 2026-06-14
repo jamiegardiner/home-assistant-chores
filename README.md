@@ -6,7 +6,7 @@ _Because "when did we last clean the gutters?" shouldn't need to be a mystery._
 
 A [HACS](https://hacs.xyz)-compatible custom integration for [Home Assistant](https://www.home-assistant.io) that tracks recurring household chores and surfaces their status as HA devices. Everything runs locally inside Home Assistant — no cloud account, no external service, no data leaving your home.
 
-Each chore appears as a device in **Settings → Devices & Services** with its own status, history, controls, and settings. It transitions automatically between `done` and `overdue` at the configured interval.
+Each chore appears as a device in **Settings → Devices & Services** with its own status, history, controls, and settings. It transitions automatically between `done` and `overdue` at the configured interval — all you need to do is remember to mark it as done.
 
 Scheduling is **rolling**: the next due date is calculated by adding the configured interval to the last completion time, so each completion rolls the schedule forward from that moment. Completing a chore late shifts its next due date forward — it does not catch up to a fixed calendar date. For fixed-day reminders (e.g. "every Tuesday"), use Home Assistant's calendar or schedule helpers instead of this integration.
 
@@ -35,7 +35,7 @@ From there, adding your first chore takes under a minute:
 2. Enter a name (e.g. "Vacuum living room") and an interval in days (e.g. `7`)
 3. Hit **Submit** — your chore is live
 
-The new chore starts overdue. Press its **Complete** button to record the first completion and start the regular cycle. After that, all you need to do is remember to mark it as done — Chore Tracker handles the rest.
+The new chore starts overdue. Press its **Complete** button to record the first completion and start the regular cycle. That's it.
 
 ______________________________________________________________________
 
