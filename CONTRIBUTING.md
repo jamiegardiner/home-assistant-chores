@@ -30,7 +30,7 @@ Releases are managed by [release-please](https://github.com/googleapis/release-p
 
 HACS installs and updates from GitHub Releases, so no release tag means no HACS update.
 
-> **Note:** The release-please workflow, PR-title-lint check, and repo squash-only setting are not yet configured. Implementation is deferred to [#66](../../issues/66).
+The release-please workflow (`.github/workflows/release-please.yaml`) runs on every push to `main` and maintains a single open release PR. PR title lint (the `Lint PR title` job in `.github/workflows/ci.yaml`) blocks PRs whose titles are not valid conventional commits. The repository is configured for squash-merge only.
 
 ### Manifest ↔ tag sync
 
@@ -56,7 +56,7 @@ Therefore:
   - A PR that adds a feature plus some cleanup → title starts with `feat:` (not `chore:`)
   - A `chore:`-titled PR produces no release even if its branch contained `feat()` commits
 - A `BREAKING CHANGE:` footer in the squash-merge body is still honoured for a major bump.
-- PR-title-lint (enforced by CI — see [#66](../../issues/66)) is the authoritative gate; individual commit messages on the branch are not linted.
+- PR-title-lint (the `Lint PR title` CI check) is the authoritative gate; individual commit messages on the branch are not linted.
 
 ### PR title format
 
@@ -92,4 +92,4 @@ Append `!` after the scope for a breaking change: `feat(issue-X)!: remove weeks 
 
 ### Cutting the first 1.0.0
 
-When initial development is complete and the project is considered stable, the maintainer adds a `Release-As: 1.0.0` footer to a commit or PR body. Release-please will propose `1.0.0` as the next version regardless of the bump type of that commit.
+The `release-please-config.json` contains `"release-as": "1.0.0"`, which causes the first release PR to propose version `1.0.0` regardless of the bump type. Once `1.0.0` has been released, remove that field from the config so subsequent versions are computed automatically from conventional commits.
