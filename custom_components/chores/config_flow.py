@@ -16,6 +16,7 @@ from .const import (
     DEFAULT_SNOOZE_UNIT,
     DEFAULT_SNOOZE_VALUE,
     DOMAIN,
+    MAX_INTERVAL_DAYS,
 )
 
 
@@ -26,7 +27,7 @@ def _chore_schema() -> vol.Schema:
             vol.Required("name"): str,
             vol.Required("interval_days"): NumberSelector(
                 NumberSelectorConfig(
-                    min=1, max=365, step=1, mode=NumberSelectorMode.BOX
+                    min=1, max=MAX_INTERVAL_DAYS, step=1, mode=NumberSelectorMode.BOX
                 )
             ),
         }
