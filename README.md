@@ -35,7 +35,7 @@ From there, adding your first chore takes under a minute:
 2. Enter a name (e.g. "Vacuum living room") and an interval in days (e.g. `7`)
 3. Hit **Submit** — your chore is live
 
-The new chore starts overdue. Press its **Complete** button to record the first completion and start the regular cycle. That's it.
+The new chore starts overdue. Press its **Complete** button to record the first completion and start the regular cycle. After that, all you need to do is remember to mark it as done — Chore Tracker handles the rest.
 
 ______________________________________________________________________
 
