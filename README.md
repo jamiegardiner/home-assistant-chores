@@ -2,7 +2,7 @@
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration) [![Version](https://img.shields.io/github/v/release/jamiegardiner/home-assistant-chores)](https://github.com/jamiegardiner/home-assistant-chores/releases) [![CI](https://github.com/jamiegardiner/home-assistant-chores/actions/workflows/ci.yaml/badge.svg)](https://github.com/jamiegardiner/home-assistant-chores/actions/workflows/ci.yaml)
 
-_Your household chores don't follow a calendar. Now your reminders don't have to either._
+_Because "when did we last clean the gutters?" shouldn't need to be a mystery._
 
 A [HACS](https://hacs.xyz)-compatible custom integration for [Home Assistant](https://www.home-assistant.io) that tracks recurring household chores and surfaces their status as HA devices. Everything runs locally inside Home Assistant — no cloud account, no external service, no data leaving your home.
 
@@ -42,7 +42,9 @@ ______________________________________________________________________
 ## 🚫 What it doesn't do (and why)
 
 - **No fixed-calendar scheduling** — intervals are intentionally rolling from last completion, not anchored to a day of the week. For "every Tuesday" reminders, Home Assistant's built-in [calendar](https://www.home-assistant.io/integrations/calendar/) or [schedule](https://www.home-assistant.io/integrations/schedule/) helpers are the right tool.
-- **No gamification, points, or per-person assignment** — Chore Tracker deliberately stays a focused, single-purpose tracker. Keeping scope narrow means fewer bugs and easier maintenance.
+- **No gamification, points, or per-person assignment** — Chore Tracker deliberately stays a focused, single-purpose tracker.
+- **No automatic notifications** — the integration tracks status and exposes it as entities; how and when you're notified is up to you. Wire up an automation to push a mobile alert, flash a light, or post to a chat — whatever fits your setup.
+- **No built-in dashboard cards** — chore status is available as standard HA entities, so you can surface it using any existing card (entity card, glance card, custom cards, etc.) exactly how you want it.
 - **No cloud sync or external accounts** — all state lives in your Home Assistant config entry. Nothing leaves your local network.
 - **No YAML configuration** — setup and editing are UI-only by design, consistent with modern HA integration conventions.
 
