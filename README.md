@@ -14,20 +14,20 @@ Chores use a **rolling schedule**. When you complete a task, its next due date i
 
 Looking for fixed schedules like "every Tuesday" or "the first day of every month"? Home Assistant's calendar and schedule helpers are a better fit.
 
----
+______________________________________________________________________
 
 ## ✨ What it can do
 
-* 📱 **Every chore gets its own Home Assistant device** with history, controls, and configuration
-* 🔄 **Set it and forget it** — chores automatically become overdue when they're due again
-* 📅 **Rolling schedules** that adapt to when chores are actually completed
-* 😴 **Snooze and unsnooze** chores with configurable defaults (minutes, hours, days, or weeks)
-* 🕗 **Choose when chores become overdue** with a configurable notification time
-* 📡 **Diagnostic sensors** for last completed, next due, and snooze expiry dates
-* 🖱️ **Full UI configuration** — create and manage chores without touching YAML
-* ⚡ **Automation-friendly services** for completing, snoozing, and unsnoozing chores
+- 📱 **Every chore gets its own Home Assistant device** with history, controls, and configuration
+- 🔄 **Set it and forget it** — chores automatically become overdue when they're due again
+- 📅 **Rolling schedules** that adapt to when chores are actually completed
+- 😴 **Snooze and unsnooze** chores with configurable defaults (minutes, hours, days, or weeks)
+- 🕗 **Choose when chores become overdue** with a configurable notification time
+- 📡 **Diagnostic sensors** for last completed, next due, and snooze expiry dates
+- 🖱️ **Full UI configuration** — create and manage chores without touching YAML
+- ⚡ **Automation-friendly services** for completing, snoozing, and unsnoozing chores
 
----
+______________________________________________________________________
 
 ## 🚀 Getting Started
 
@@ -45,7 +45,7 @@ That's it.
 
 New chores start in an overdue state so you can record the first completion and begin the regular cycle. Press **Complete** once, and Chore Tracker will start tracking it from there.
 
----
+______________________________________________________________________
 
 ## 🎯 Designed to do one thing well
 
@@ -57,14 +57,14 @@ Rather than trying to become a full household management platform, it concentrat
 
 A few things are deliberately out of scope:
 
-* **Fixed calendar scheduling** — chores are based on rolling intervals from the last completion date. If you need "every Tuesday" reminders, Home Assistant's built-in calendar and schedule helpers are a better choice.
-* **Gamification, points, and assignments** — no scores, leaderboards, or assigning chores to individual people.
-* **Built-in notifications** — Chore Tracker tracks status and exposes entities. How you're notified is entirely up to you.
-* **Custom dashboard cards** — chore data is available through standard Home Assistant entities, so it works with the cards and dashboards you already use.
-* **Cloud services and external accounts** — everything stays local to Home Assistant.
-* **YAML configuration** — setup and management happen entirely through the UI.
+- **Fixed calendar scheduling** — chores are based on rolling intervals from the last completion date. If you need "every Tuesday" reminders, Home Assistant's built-in calendar and schedule helpers are a better choice.
+- **Gamification, points, and assignments** — no scores, leaderboards, or assigning chores to individual people.
+- **Built-in notifications** — Chore Tracker tracks status and exposes entities. How you're notified is entirely up to you.
+- **Custom dashboard cards** — chore data is available through standard Home Assistant entities, so it works with the cards and dashboards you already use.
+- **Cloud services and external accounts** — everything stays local to Home Assistant.
+- **YAML configuration** — setup and management happen entirely through the UI.
 
----
+______________________________________________________________________
 
 ## 🔧 Installation
 
@@ -84,7 +84,7 @@ A few things are deliberately out of scope:
 8. Go to **Settings → Devices & Services → Add Integration**
 9. Search for **Chore Tracker** and complete the setup wizard
 
----
+______________________________________________________________________
 
 ## 📦 Entities
 
@@ -94,11 +94,11 @@ Each chore appears in Home Assistant as a dedicated device.
 
 Each chore has one of three states:
 
-| State     | Meaning                                                 |
-| --------- | ------------------------------------------------------- |
+| State     | Meaning                                                  |
+| --------- | -------------------------------------------------------- |
 | `done`    | ✅ The chore has been completed and is not yet due again |
 | `overdue` | ⏰ The chore is due and waiting to be completed          |
-| `snoozed` | 😴 The chore has been temporarily deferred              |
+| `snoozed` | 😴 The chore has been temporarily deferred               |
 
 ### 📡 Sensors
 
@@ -127,7 +127,7 @@ Available from the device's **Configuration** section:
 | Default snooze unit  | Minutes, hours, days, or weeks                              |
 | Notification time    | Time of day when the chore becomes overdue (default: 08:00) |
 
----
+______________________________________________________________________
 
 ## 📋 Managing chores
 
@@ -160,7 +160,7 @@ To rename a chore, use Home Assistant's built-in device rename option from the d
 
 Removing a chore only affects that chore. All other chores remain unchanged.
 
----
+______________________________________________________________________
 
 ## ⚡ Services
 
@@ -168,15 +168,15 @@ Want chores to be part of your automations?
 
 Chore Tracker provides three services:
 
-* `chores.complete`
-* `chores.snooze`
-* `chores.unsnooze`
+- `chores.complete`
+- `chores.snooze`
+- `chores.unsnooze`
 
 Use them from automations, scripts, dashboards, voice assistants, or anything else that can call Home Assistant services.
 
 See [docs/services.md](docs/services.md) for full documentation and examples.
 
----
+______________________________________________________________________
 
 ## 🤝 Contributing
 
@@ -184,6 +184,6 @@ Contributions, bug reports, feature suggestions, and pull requests are welcome.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for details on versioning, releases, and contributor guidelines.
 
----
+______________________________________________________________________
 
 _🤖 Designed by a human, built with Claude._
