@@ -120,6 +120,8 @@ make logs           # tail HA container logs
 
 Activate the venv for interactive use: `source .venv/bin/activate`
 
+To exclude a file from markdown formatting, add a glob to the `exclude` list in `.mdformat.toml`. mdformat only honours `exclude` when invoked with a directory or glob (e.g. `mdformat .`), **not** when passed an explicit file list — the Makefile uses `mdformat .` for exactly this reason. `CHANGELOG.md` is excluded because it is release-managed by release-please and must not be reformatted.
+
 ______________________________________________________________________
 
 ## Adding a new feature
