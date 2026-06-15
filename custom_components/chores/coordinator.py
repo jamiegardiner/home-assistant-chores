@@ -179,6 +179,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._runtime.snooze_until = None
             self._runtime._cancel_snooze_timer = None
             self._recompute(self._runtime)
+            self._persist({"snooze_until": None})
             self._schedule(self._runtime)
             self.async_set_updated_data(self._snapshot())
 
