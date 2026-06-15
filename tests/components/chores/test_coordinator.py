@@ -384,6 +384,7 @@ async def test_snooze_expiry_transitions_to_overdue(
 
     assert coord.data["status"] == "overdue"
     assert coord.data["snooze_until"] is None
+    assert entry.options["snooze_until"] is None
 
 
 @pytest.mark.parametrize(
