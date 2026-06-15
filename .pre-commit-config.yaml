@@ -1,0 +1,26 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check
+        language: system
+        types: [python]
+
+      - id: ruff-format-check
+        name: ruff format --check
+        entry: uv run ruff format --check
+        language: system
+        types: [python]
+
+      - id: mypy
+        name: mypy
+        entry: uv run mypy custom_components scripts
+        language: system
+        pass_filenames: false
+
+      - id: translations
+        name: translations
+        entry: uv run python scripts/check_translations.py
+        language: system
+        pass_filenames: false
