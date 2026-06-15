@@ -1,155 +1,189 @@
-# 🏠 Chore Tracker
-
-![Chore Tracker](assets/GithubReadmeBanner.png)
+![Chore Tracker](assets/banner.png)
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration) [![Version](https://img.shields.io/github/v/release/jamiegardiner/home-assistant-chores)](https://github.com/jamiegardiner/home-assistant-chores/releases) [![CI](https://github.com/jamiegardiner/home-assistant-chores/actions/workflows/ci.yaml/badge.svg)](https://github.com/jamiegardiner/home-assistant-chores/actions/workflows/ci.yaml)
 
-_Because "when did we last clean the gutters?" shouldn't need to be a mystery._
+*Because "when did we last clean the gutters?" shouldn't need to be a mystery.*
 
-A [HACS](https://hacs.xyz)-compatible custom integration for [Home Assistant](https://www.home-assistant.io) that tracks recurring household chores and surfaces their status as HA devices. Everything runs locally inside Home Assistant — no cloud account, no external service, no data leaving your home.
+Chore Tracker helps you keep on top of recurring household jobs inside Home Assistant. Whether it's cleaning the gutters, descaling the kettle, replacing smoke alarm batteries, or changing air filters, you'll always know what's due and what can wait.
 
-Each chore appears as a device in **Settings → Devices & Services** with its own status, history, controls, and settings. It transitions automatically between `done` and `overdue` at the configured interval — all you need to do is remember to mark it as done.
+Everything runs locally inside Home Assistant — no accounts, no cloud services, and no data leaving your home.
 
-Scheduling is **rolling**: the next due date is calculated by adding the configured interval to the last completion time, so each completion rolls the schedule forward from that moment. Completing a chore late shifts its next due date forward — it does not catch up to a fixed calendar date. For fixed-day reminders (e.g. "every Tuesday"), use Home Assistant's calendar or schedule helpers instead of this integration.
+Each chore appears as its own device in **Settings → Devices & Services**, complete with status, history, controls, and configuration. Once you've set up a chore, Home Assistant keeps track of when it's due again — all you need to do is mark it as complete.
 
-______________________________________________________________________
+Chores use a **rolling schedule**. When you complete a task, its next due date is calculated from that completion time. If a monthly chore is finished a week late, the next reminder moves forward by a week too.
 
-## ✨ Key Features
+Looking for fixed schedules like "every Tuesday" or "the first day of every month"? Home Assistant's calendar and schedule helpers are a better fit.
 
-- 📱 **Per-chore devices** — each chore lives in Settings → Devices & Services with its own controls and history
-- 🔄 **Automatic transitions** — chores flip between `done` and `overdue` at the configured interval, with no manual intervention needed
-- 📅 **Rolling schedule** — the next due date rolls forward from each completion, so late completions don't pile up
-- 😴 **Snooze / unsnooze** — defer any chore with a configurable default duration (minutes, hours, days, or weeks)
-- 🕗 **Per-chore notification time** — choose the time of day each chore transitions from `done` to `overdue`
-- 📡 **Diagnostic sensors** — last completed, next due, and snooze expiry dates available as entities for dashboards and automations
-- 🖱️ **Full UI configuration** — add, edit, and remove chores entirely through the Home Assistant interface; no YAML required
-- ⚡ **Automation-friendly services** — `chores.complete`, `chores.snooze`, and `chores.unsnooze` for use in scripts and automations
+---
 
-______________________________________________________________________
+## ✨ What it can do
+
+* 📱 **Every chore gets its own Home Assistant device** with history, controls, and configuration
+* 🔄 **Set it and forget it** — chores automatically become overdue when they're due again
+* 📅 **Rolling schedules** that adapt to when chores are actually completed
+* 😴 **Snooze and unsnooze** chores with configurable defaults (minutes, hours, days, or weeks)
+* 🕗 **Choose when chores become overdue** with a configurable notification time
+* 📡 **Diagnostic sensors** for last completed, next due, and snooze expiry dates
+* 🖱️ **Full UI configuration** — create and manage chores without touching YAML
+* ⚡ **Automation-friendly services** for completing, snoozing, and unsnoozing chores
+
+---
 
 ## 🚀 Getting Started
 
 Install via HACS in one click (see [Installation](#-installation) below), then restart Home Assistant.
 
-From there, adding your first chore takes under a minute:
+Adding your first chore takes less than a minute:
 
-1. Go to **Settings → Devices & Services → Add Integration** and search for **Chore Tracker**
-2. Enter a name (e.g. "Vacuum living room") and an interval in days (e.g. `7`)
-3. Hit **Submit** — your chore is live
+1. Go to **Settings → Devices & Services → Add Integration**
+2. Search for **Chore Tracker**
+3. Enter a name (for example, "Vacuum living room")
+4. Enter an interval in days (for example, `7`)
+5. Click **Submit**
 
-The new chore starts overdue. Press its **Complete** button to record the first completion and start the regular cycle.
+That's it.
 
-______________________________________________________________________
+New chores start in an overdue state so you can record the first completion and begin the regular cycle. Press **Complete** once, and Chore Tracker will start tracking it from there.
 
-## 🎯 Focused by design
+---
 
-- **No fixed-calendar scheduling** — intervals are intentionally rolling from last completion, not anchored to a day of the week. For "every Tuesday" reminders, Home Assistant's built-in [calendar](https://www.home-assistant.io/integrations/calendar/) or [schedule](https://www.home-assistant.io/integrations/schedule/) helpers are the right tool.
-- **No gamification, points, or per-person assignment** — Chore Tracker deliberately stays a focused, single-purpose tracker.
-- **No automatic notifications** — the integration tracks status and exposes it as entities; how and when you're notified is up to you. Wire up an automation to push a mobile alert, flash a light, or post to a chat — whatever fits your setup.
-- **No built-in dashboard cards** — chore status is available as standard HA entities, so you can surface it using any existing card (entity card, glance card, custom cards, etc.) exactly how you want it.
-- **No cloud sync or external accounts** — all state lives in your Home Assistant config entry. Nothing leaves your local network.
-- **No YAML configuration** — setup and editing are UI-only by design, consistent with modern HA integration conventions.
+## 🎯 Designed to do one thing well
 
-______________________________________________________________________
+Chore Tracker intentionally stays focused on tracking recurring chores.
+
+Rather than trying to become a full household management platform, it concentrates on answering a simple question:
+
+> Has this job been done, and when is it due again?
+
+A few things are deliberately out of scope:
+
+* **Fixed calendar scheduling** — chores are based on rolling intervals from the last completion date. If you need "every Tuesday" reminders, Home Assistant's built-in calendar and schedule helpers are a better choice.
+* **Gamification, points, and assignments** — no scores, leaderboards, or assigning chores to individual people.
+* **Built-in notifications** — Chore Tracker tracks status and exposes entities. How you're notified is entirely up to you.
+* **Custom dashboard cards** — chore data is available through standard Home Assistant entities, so it works with the cards and dashboards you already use.
+* **Cloud services and external accounts** — everything stays local to Home Assistant.
+* **YAML configuration** — setup and management happen entirely through the UI.
+
+---
 
 ## 🔧 Installation
 
-### Option A — one click (recommended)
+### Option A — One-click install (recommended)
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=jamiegardiner&repository=home-assistant-chores&category=integration)
 
-### Option B — manual HACS setup
+### Option B — Manual HACS setup
 
-1. In Home Assistant go to **Settings → HACS**
-2. Click the three-dot menu (⋮) in the top-right corner and choose **Custom repositories**
-3. Paste `https://github.com/jamiegardiner/home-assistant-chores` and set the category to **Integration**, then click **Add**
-4. Search for **Chore Tracker** in the HACS store and click **Download**
-5. Restart Home Assistant
-6. Go to **Settings → Devices & Services → Add Integration**, search for **Chore Tracker**, and follow the setup wizard
+1. Open **Settings → HACS**
+2. Click the three-dot menu (⋮) in the top-right corner and select **Custom repositories**
+3. Add `https://github.com/jamiegardiner/home-assistant-chores`
+4. Select **Integration** as the category
+5. Click **Add**
+6. Search for **Chore Tracker** in HACS and click **Download**
+7. Restart Home Assistant
+8. Go to **Settings → Devices & Services → Add Integration**
+9. Search for **Chore Tracker** and complete the setup wizard
 
-______________________________________________________________________
+---
 
 ## 📦 Entities
 
-Each chore appears in **Settings → Devices & Services** as a single device.
+Each chore appears in Home Assistant as a dedicated device.
 
 ### 🚦 Status
 
-Each chore has three states:
+Each chore has one of three states:
 
-| State     | Meaning                                                                            |
-| --------- | ---------------------------------------------------------------------------------- |
-| `done`    | ✅ The chore has been completed and is not yet due again                           |
-| `overdue` | ⏰ The chore's due date has passed without being marked complete                   |
-| `snoozed` | 😴 The chore is snoozed; overdue reminders are suppressed until the snooze expires |
+| State     | Meaning                                                 |
+| --------- | ------------------------------------------------------- |
+| `done`    | ✅ The chore has been completed and is not yet due again |
+| `overdue` | ⏰ The chore is due and waiting to be completed          |
+| `snoozed` | 😴 The chore has been temporarily deferred              |
 
 ### 📡 Sensors
 
-| Entity         | Description                                                           |
-| -------------- | --------------------------------------------------------------------- |
-| Last completed | When the chore was last marked complete; unavailable before first use |
-| Next due       | When the chore will next become overdue; unavailable before first use |
-| Snooze expiry  | When an active snooze expires; unavailable when not snoozed           |
+| Entity         | Description                             |
+| -------------- | --------------------------------------- |
+| Last completed | When the chore was last marked complete |
+| Next due       | When the chore will next become overdue |
+| Snooze expiry  | When the current snooze period ends     |
 
 ### 🔘 Buttons
 
-| Button   | Action                                                  |
-| -------- | ------------------------------------------------------- |
-| Complete | Marks the chore as done and schedules the next due date |
-| Snooze   | Defers the chore by the configured snooze duration      |
-| Unsnooze | Cancels an active snooze immediately                    |
+| Button   | Action                                                      |
+| -------- | ----------------------------------------------------------- |
+| Complete | Marks the chore as complete and schedules the next due date |
+| Snooze   | Defers the chore using the configured snooze duration       |
+| Unsnooze | Ends an active snooze immediately                           |
 
 ### ⚙️ Configuration
 
-Found in the device's **Configuration** section:
+Available from the device's **Configuration** section:
 
-| Entity               | Description                                                                    |
-| -------------------- | ------------------------------------------------------------------------------ |
-| Interval             | Days between completions before the chore becomes overdue                      |
-| Default snooze value | How many units to snooze when the Snooze button is pressed                     |
-| Default snooze unit  | Time unit for the default snooze (minutes / hours / days / weeks)              |
-| Notification time    | Time of day when the chore transitions from done to overdue. Defaults to 08:00 |
+| Entity               | Description                                                 |
+| -------------------- | ----------------------------------------------------------- |
+| Interval             | Number of days before the chore becomes overdue again       |
+| Default snooze value | Amount of time to snooze when the Snooze button is pressed  |
+| Default snooze unit  | Minutes, hours, days, or weeks                              |
+| Notification time    | Time of day when the chore becomes overdue (default: 08:00) |
 
-______________________________________________________________________
+---
 
 ## 📋 Managing chores
 
-All configuration is done through the Home Assistant UI — there is no YAML.
+Everything is configured through the Home Assistant UI.
 
-**To add a chore:**
-
-1. Go to **Settings → Devices & Services**
-2. Click **Add Integration** and search for **Chore Tracker**
-3. Enter a name and a recurrence interval (days)
-
-The new chore starts overdue immediately. Press **Complete** to record the first completion and start the regular cycle.
-
-**To edit a chore:**
+### Adding a chore
 
 1. Go to **Settings → Devices & Services**
-2. Find **Chore Tracker**, open the integration, and click the chore device
-3. Use the **Configuration** entities on the device page to update the interval, snooze defaults, and notification time
-4. To rename the chore, use Home Assistant's built-in device rename (three-dot menu → **Rename** on the device page)
+2. Click **Add Integration**
+3. Search for **Chore Tracker**
+4. Enter a name and recurrence interval
 
-**To remove a chore:**
+The chore will appear immediately and can be completed to start its regular schedule.
+
+### Editing a chore
 
 1. Go to **Settings → Devices & Services**
-2. Find **Chore Tracker**, open the integration, click the three-dot menu (⋮) next to the chore entry, and choose **Delete**
+2. Open **Chore Tracker**
+3. Select the chore device
+4. Use the **Configuration** entities to update intervals, snooze defaults, and notification times
 
-Deleting a chore only removes that chore — all others are unaffected.
+To rename a chore, use Home Assistant's built-in device rename option from the device page.
 
-______________________________________________________________________
+### Removing a chore
+
+1. Go to **Settings → Devices & Services**
+2. Open **Chore Tracker**
+3. Click the three-dot menu (⋮) beside the chore
+4. Select **Delete**
+
+Removing a chore only affects that chore. All other chores remain unchanged.
+
+---
 
 ## ⚡ Services
 
-Three automation-ready services — `chores.complete`, `chores.snooze`, and `chores.unsnooze` — let you control chores from scripts, automations, and dashboards. See [docs/services.md](docs/services.md) for the full field reference and YAML examples.
+Want chores to be part of your automations?
 
-______________________________________________________________________
+Chore Tracker provides three services:
+
+* `chores.complete`
+* `chores.snooze`
+* `chores.unsnooze`
+
+Use them from automations, scripts, dashboards, voice assistants, or anything else that can call Home Assistant services.
+
+See [docs/services.md](docs/services.md) for full documentation and examples.
+
+---
 
 ## 🤝 Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the versioning model, release strategy, PR title conventions, and contributor flow.
+Contributions, bug reports, feature suggestions, and pull requests are welcome.
 
-______________________________________________________________________
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details on versioning, releases, and contributor guidelines.
+
+---
 
 _🤖 Designed by a human, built with Claude._
