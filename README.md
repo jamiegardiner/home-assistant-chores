@@ -174,7 +174,7 @@ Chore Tracker provides three services:
 
 Use them from automations, scripts, dashboards, voice assistants, or anything else that can call Home Assistant services.
 
-See [docs/services.md](docs/services.md) for full documentation and examples.
+See [docs/services.md](docs/services.md) for full service documentation and [docs/automations.md](docs/automations.md) for worked automation examples.
 
 ______________________________________________________________________
 
