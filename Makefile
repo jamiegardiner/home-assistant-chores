@@ -28,7 +28,7 @@ install: ## Sync dependencies into the existing venv
 	$(UV) pip install -r requirements_test.txt
 
 install-hooks: ## Install pre-commit hook into .git/hooks (run once after make venv)
-	$(UV) run --frozen pre-commit install
+	$(UV) run pre-commit install
 
 clean: ## Remove all caches (__pycache__, .pytest_cache, .mypy_cache, .ruff_cache, .coverage)
 	find . -type d -name '__pycache__' -exec rm -rf {} +
@@ -37,24 +37,24 @@ clean: ## Remove all caches (__pycache__, .pytest_cache, .mypy_cache, .ruff_cach
 # ── Code quality ───────────────────────────────────────────────────────────────
 
 test: ## Run the test suite
-	$(UV) run --frozen pytest
+	$(UV) run pytest
 
 test-coverage: ## Run tests with line-level coverage report (term-missing); fails below $(COV_MIN)%
-	$(UV) run --frozen pytest --cov=custom_components/chores --cov-report=term-missing --cov-fail-under=$(COV_MIN)
+	$(UV) run pytest --cov=custom_components/chores --cov-report=term-missing --cov-fail-under=$(COV_MIN)
 
 typecheck: ## Run mypy type checking (first-party source only — tests aren't strictly typed)
-	$(UV) run --frozen mypy custom_components scripts
+	$(UV) run mypy custom_components scripts
 
 lint: ## Check code with ruff (linter — catches bugs and style issues)
-	$(UV) run --frozen ruff check .
+	$(UV) run ruff check .
 
 format: ## Auto-fix formatting (ruff format, ruff check --fix, mdformat) and lint issues where possible
-	$(UV) run --frozen ruff format .
-	$(UV) run --frozen ruff check --fix .
-	$(UV) run --frozen mdformat .
+	$(UV) run ruff format .
+	$(UV) run ruff check --fix .
+	$(UV) run mdformat .
 
 translations: ## Check that strings.json and translations/en.json have identical key paths
-	$(UV) run --frozen python scripts/check_translations.py
+	$(UV) run python scripts/check_translations.py
 
 check: ## Check code (read-only): lint, format, typecheck, markdown, translations, tests — mirrors CI
 	$(UV) run --frozen ruff check .
