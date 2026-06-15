@@ -101,6 +101,7 @@ ______________________________________________________________________
 make venv           # create .venv and install all deps (run once)
 make install        # sync updated deps into existing .venv
 make venv-destroy   # delete .venv entirely
+make clean          # remove all caches (__pycache__, .pytest_cache, .mypy_cache, .ruff_cache)
 
 # Code quality (run before every commit)
 make test           # pytest
