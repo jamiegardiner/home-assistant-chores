@@ -10,32 +10,32 @@ repos:
 
       - id: ruff-check
         name: ruff check
-        entry: uv run --frozen ruff check
+        entry: uv run ruff check
         language: system
         types: [python]
 
       - id: ruff-format-check
         name: ruff format --check
-        entry: uv run --frozen ruff format --check
+        entry: uv run ruff format --check
         language: system
         types: [python]
 
       - id: mdformat
         name: mdformat --check
-        entry: uv run --frozen mdformat --check
+        entry: uv run mdformat --check
         language: system
         types: [markdown]
 
       - id: mypy
         name: mypy
-        entry: uv run --frozen mypy custom_components scripts
+        entry: uv run mypy custom_components scripts
         language: system
         pass_filenames: false
         files: \.py$
 
       - id: translations
         name: translations
-        entry: uv run --frozen python scripts/check_translations.py
+        entry: uv run python scripts/check_translations.py
         language: system
         pass_filenames: false
         files: (strings\.json|translations/en\.json)$
