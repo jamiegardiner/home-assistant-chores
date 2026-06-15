@@ -57,12 +57,12 @@ translations: ## Check that strings.json and translations/en.json have identical
 	$(UV) run python scripts/check_translations.py
 
 check: ## Check code (read-only): lint, format, typecheck, markdown, translations, tests — mirrors CI
-	$(UV) run ruff check .
-	$(UV) run ruff format --check .
-	$(UV) run mypy custom_components scripts
-	$(UV) run mdformat --check .
-	$(UV) run python scripts/check_translations.py
-	$(UV) run pytest --cov=custom_components/chores --cov-report=term --cov-fail-under=$(COV_MIN)
+	$(UV) run --frozen ruff check .
+	$(UV) run --frozen ruff format --check .
+	$(UV) run --frozen mypy custom_components scripts
+	$(UV) run --frozen mdformat --check .
+	$(UV) run --frozen python scripts/check_translations.py
+	$(UV) run --frozen pytest --cov=custom_components/chores --cov-report=term --cov-fail-under=$(COV_MIN)
 
 # ── Docker ─────────────────────────────────────────────────────────────────────
 
