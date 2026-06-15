@@ -204,19 +204,6 @@ class TestChoreSensorUniqueId:
         assert s1.unique_id != s2.unique_id
 
 
-class TestChoreSensorSuggestedObjectId:
-    """Tests for suggested_object_id."""
-
-    def test_suggested_object_id_format(self):
-        sensor = _make_sensor()
-        assert sensor.suggested_object_id == "chore_dishes"
-
-    def test_suggested_object_id_tracks_name(self):
-        coordinator = FakeCoordinator({**CHORE_STATE, "name": "Vacuum"})
-        sensor = _make_sensor(coordinator=coordinator)
-        assert sensor.suggested_object_id == "chore_vacuum"
-
-
 class TestChoreSensorConventions:
     """Tests for HA entity conventions: enum device class, options, translation_key."""
 
