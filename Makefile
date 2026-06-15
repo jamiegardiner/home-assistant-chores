@@ -2,7 +2,6 @@
 
 VENV     := .venv
 UV       := uv
-MD_FILES := $(shell git ls-files "*.md" | grep -v "^CHANGELOG.md$$")
 
 .PHONY: help venv venv-destroy install test typecheck lint format translations check up down stop start logs
 
@@ -41,7 +40,7 @@ lint: ## Check code with ruff (linter — catches bugs and style issues)
 format: ## Auto-fix formatting (ruff format, ruff check --fix, mdformat) and lint issues where possible
 	$(UV) run ruff format .
 	$(UV) run ruff check --fix .
-	$(UV) run mdformat $(MD_FILES)
+	$(UV) run mdformat .
 
 translations: ## Check that strings.json and translations/en.json have identical key paths
 	$(UV) run python scripts/check_translations.py
@@ -50,7 +49,7 @@ check: ## Check code (read-only): lint, format, typecheck, markdown, translation
 	$(UV) run ruff check .
 	$(UV) run ruff format --check .
 	$(UV) run mypy custom_components scripts
-	$(UV) run mdformat --check $(MD_FILES)
+	$(UV) run mdformat --check .
 	$(UV) run python scripts/check_translations.py
 	$(UV) run pytest
 
