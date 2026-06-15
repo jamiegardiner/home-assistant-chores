@@ -773,14 +773,14 @@ def test_parse_aware_datetime_type_error_returns_none() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Timer-reschedule branch tests (coordinator.py lines 146-147, 155, 256-257)
+# Timer-reschedule branch tests
 # ---------------------------------------------------------------------------
 
 
 async def test_complete_while_timer_live_cancels_prior_timer(
     hass: Any, patch_track: MagicMock
 ) -> None:
-    """Completing a done chore cancels the existing overdue timer (lines 146-147)."""
+    """Completing a done chore cancels the existing overdue timer before scheduling a new one."""
     cancel_mocks: list[MagicMock] = []
 
     def _side_effect(hass_: Any, cb: Any, point_in_time: Any) -> MagicMock:
@@ -804,7 +804,7 @@ async def test_complete_while_timer_live_cancels_prior_timer(
 async def test_snooze_while_timer_live_cancels_overdue_timer(
     hass: Any, patch_track: MagicMock
 ) -> None:
-    """Snoozing a done chore cancels the live overdue timer (lines 256-257)."""
+    """Snoozing a done chore cancels the live overdue timer before scheduling the snooze timer."""
     cancel_mocks: list[MagicMock] = []
 
     def _side_effect(hass_: Any, cb: Any, point_in_time: Any) -> MagicMock:
@@ -827,7 +827,7 @@ async def test_snooze_while_timer_live_cancels_overdue_timer(
 async def test_overdue_callback_noop_after_shutdown(
     hass: Any, fake_track: dict[str, Any]
 ) -> None:
-    """Timer callback is a no-op when coordinator runtime is torn down (line 155)."""
+    """Timer callback is a no-op when coordinator runtime is torn down."""
     entry = _make_entry(days_ago=0, interval_days=7)
     entry.add_to_hass(hass)
     coord = await _setup_coord(hass, entry)
@@ -838,14 +838,14 @@ async def test_overdue_callback_noop_after_shutdown(
 
 
 # ---------------------------------------------------------------------------
-# Snooze-reschedule branch tests (coordinator.py lines 166-167, 170, 173, 178)
+# Snooze-reschedule branch tests
 # ---------------------------------------------------------------------------
 
 
 async def test_snooze_reschedule_cancels_prior_snooze_timer(
     hass: Any, patch_track: MagicMock
 ) -> None:
-    """Snoozing twice cancels the first snooze timer (lines 166-167)."""
+    """Snoozing twice cancels the first snooze timer before scheduling the replacement."""
     cancel_mocks: list[MagicMock] = []
 
     def _side_effect(hass_: Any, cb: Any, point_in_time: Any) -> MagicMock:
@@ -870,7 +870,7 @@ async def test_snooze_reschedule_cancels_prior_snooze_timer(
 async def test_snooze_expiry_callback_noop_after_shutdown(
     hass: Any, fake_track: dict[str, Any]
 ) -> None:
-    """Snooze expiry callback is a no-op when runtime is torn down (line 178)."""
+    """Snooze expiry callback is a no-op when coordinator runtime is torn down."""
     entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
     coord = await _setup_coord(hass, entry)
@@ -885,7 +885,7 @@ async def test_snooze_expiry_callback_noop_after_shutdown(
 async def test_schedule_snooze_returns_early_when_snooze_until_is_none(
     hass: Any,
 ) -> None:
-    """_schedule_snooze is a no-op when snooze_until is None (line 170)."""
+    """_schedule_snooze is a no-op when snooze_until is None."""
     entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
     coord = await _setup_coord(hass, entry)
@@ -899,7 +899,7 @@ async def test_schedule_snooze_returns_early_when_snooze_until_is_none(
 async def test_schedule_snooze_returns_early_when_snooze_until_in_past(
     hass: Any,
 ) -> None:
-    """_schedule_snooze is a no-op when snooze_until is already in the past (line 173)."""
+    """_schedule_snooze is a no-op when snooze_until is already in the past."""
     entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
     coord = await _setup_coord(hass, entry)
