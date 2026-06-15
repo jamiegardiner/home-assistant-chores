@@ -17,7 +17,7 @@ Marks a chore as done and schedules the next due date.
 ```yaml
 action: chores.complete
 target:
-  entity_id: sensor.chore_vacuum_living_room
+  entity_id: sensor.vacuum_living_room
 ```
 
 **Record a specific past completion time:**
@@ -25,7 +25,7 @@ target:
 ```yaml
 action: chores.complete
 target:
-  entity_id: sensor.chore_vacuum_living_room
+  entity_id: sensor.vacuum_living_room
 data:
   completed_at: "2026-06-08 14:30:00"
 ```
@@ -44,7 +44,7 @@ Snooze a chore for a given duration. Provide a `value` (positive integer) and a 
 ```yaml
 action: chores.snooze
 target:
-  entity_id: sensor.chore_vacuum_living_room
+  entity_id: sensor.vacuum_living_room
 data:
   value: 3
   unit: days
@@ -59,5 +59,5 @@ Cancel an active snooze and return the chore to its normal state immediately.
 ```yaml
 action: chores.unsnooze
 target:
-  entity_id: sensor.chore_vacuum_living_room
+  entity_id: sensor.vacuum_living_room
 ```

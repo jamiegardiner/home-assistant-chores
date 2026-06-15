@@ -15,7 +15,6 @@ from homeassistant.helpers.entity_platform import (
 )
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
-from homeassistant.util import slugify
 
 from .const import (
     SERVICE_COMPLETE,
@@ -104,11 +103,6 @@ class ChoreSensor(
         super().__init__(coordinator)
         self._attr_unique_id = entry.entry_id
         self._entry_id = entry.entry_id
-
-    @property
-    def suggested_object_id(self) -> str:
-        name = (self.coordinator.data or {}).get("name", "Chore")
-        return f"chore_{slugify(name)}"
 
     @property
     def native_value(self) -> str | None:
