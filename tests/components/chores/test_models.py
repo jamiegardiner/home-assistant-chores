@@ -84,6 +84,23 @@ def test_from_dict_bool_interval_raises() -> None:
         ChoreConfig.from_dict({"name": "Bins", "interval_days": True})
 
 
+def test_from_dict_non_str_name_raises() -> None:
+    with pytest.raises(ValueError, match="Invalid name"):
+        ChoreConfig.from_dict({"name": 123, "interval_days": 7})
+
+
+@pytest.mark.parametrize(
+    "bad_name",
+    [
+        pytest.param("", id="empty"),
+        pytest.param("   ", id="whitespace_only"),
+    ],
+)
+def test_from_dict_blank_name_raises(bad_name: str) -> None:
+    with pytest.raises(ValueError, match="Invalid name"):
+        ChoreConfig.from_dict({"name": bad_name, "interval_days": 7})
+
+
 def test_from_dict_zero_snooze_value_raises() -> None:
     with pytest.raises(ValueError, match="Invalid default_snooze_value"):
         ChoreConfig.from_dict(
