@@ -100,6 +100,7 @@ ______________________________________________________________________
 # Setup
 make venv           # create .venv and install all deps (run once)
 make install        # sync updated deps into existing .venv
+make install-hooks  # install pre-commit hook into .git/hooks (run once after make venv)
 make venv-destroy   # delete .venv entirely
 make clean          # remove all caches (__pycache__, .pytest_cache, .mypy_cache, .ruff_cache)
 
