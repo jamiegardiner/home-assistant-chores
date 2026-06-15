@@ -3,7 +3,7 @@
 VENV     := .venv
 UV       := uv
 
-.PHONY: help venv venv-destroy install clean test typecheck lint format translations check up down stop start logs
+.PHONY: help venv venv-destroy install clean test test-coverage typecheck lint format translations check up down stop start logs
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
@@ -35,6 +35,9 @@ clean: ## Remove all caches (__pycache__, .pytest_cache, .mypy_cache, .ruff_cach
 test: ## Run the test suite
 	$(UV) run pytest
 
+test-coverage: ## Run tests with line-level coverage report (term-missing); fails below 95%
+	$(UV) run pytest --cov=custom_components/chores --cov-report=term-missing --cov-fail-under=95
+
 typecheck: ## Run mypy type checking (first-party source only — tests aren't strictly typed)
 	$(UV) run mypy custom_components scripts
 
@@ -55,7 +58,7 @@ check: ## Check code (read-only): lint, format, typecheck, markdown, translation
 	$(UV) run mypy custom_components scripts
 	$(UV) run mdformat --check .
 	$(UV) run python scripts/check_translations.py
-	$(UV) run pytest
+	$(UV) run pytest --cov=custom_components/chores --cov-report=term --cov-fail-under=95
 
 # ── Docker ─────────────────────────────────────────────────────────────────────
 
