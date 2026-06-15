@@ -25,7 +25,7 @@ custom_components/chores/
     en.json            # runtime translations loaded by HA (mirrors strings.json)
   manifest.json        # HACS/HA integration metadata
 
-tests/components/chores/   # mirrors source layout; one test file per module
+tests/components/chores/   # one test file per source module; coordinator tests are split across four focused files
 ```
 
 ______________________________________________________________________
@@ -198,6 +198,31 @@ ______________________________________________________________________
   ```
 - Use `MockConfigEntry` from `pytest_homeassistant_custom_component.common` to set up config entries in tests without going through the UI flow.
 - Coordinator tests must call `entry.add_to_hass(hass)` so that `hass.config_entries.async_update_entry` works (state lives in `entry.options`).
+
+### Coordinator test layout
+
+Coordinator tests are split across four focused modules:
+
+| File                           | Coverage                                                  |
+| ------------------------------ | --------------------------------------------------------- |
+| `test_coordinator_init.py`     | Initialization, status computation, `async_update_config` |
+| `test_coordinator_snooze.py`   | Snooze, unsnooze, never-completed chore behaviour         |
+| `test_coordinator_complete.py` | `async_complete`, `completed_at`, notification time       |
+| `test_coordinator_coverage.py` | Timer-reschedule guard branches, `_parse_aware_datetime`  |
+
+`conftest.py` provides two fixtures auto-discovered by pytest — no import needed:
+
+- `patch_track` (`autouse=True`) — patches `async_track_point_in_time` for every coordinator test automatically.
+- `fake_track` — overrides `patch_track` to capture the scheduled callback for timer-firing tests.
+
+`helpers.py` provides shared functions — import explicitly in each test file:
+
+```python
+from tests.components.chores.helpers import make_entry, setup_coord
+```
+
+- `make_entry(...)` — builds a `MockConfigEntry` for a single chore.
+- `setup_coord(hass, entry)` — constructs and initialises a `ChoresCoordinator`.
 
 ______________________________________________________________________
 
