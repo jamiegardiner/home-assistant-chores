@@ -84,6 +84,11 @@ def test_from_dict_bool_interval_raises() -> None:
         ChoreConfig.from_dict({"name": "Bins", "interval_days": True})
 
 
+def test_from_dict_name_is_stripped() -> None:
+    config = ChoreConfig.from_dict({"name": "  Bins  ", "interval_days": 7})
+    assert config.name == "Bins"
+
+
 def test_from_dict_non_str_name_raises() -> None:
     with pytest.raises(ValueError, match="Invalid name"):
         ChoreConfig.from_dict({"name": 123, "interval_days": 7})
