@@ -104,12 +104,13 @@ make venv-destroy   # delete .venv entirely
 make clean          # remove all caches (__pycache__, .pytest_cache, .mypy_cache, .ruff_cache)
 
 # Code quality (run before every commit)
-make test           # pytest
+make test           # pytest (no coverage overhead — fast day-to-day runs)
+make test-coverage  # pytest with term-missing coverage report; fails below 95%
 make lint           # ruff check — flags bugs and style issues
 make format         # auto-fix formatting: Python (ruff format + ruff check --fix) and all markdown (mdformat)
 make typecheck      # mypy
 make translations   # assert strings.json and translations/en.json have identical key paths
-make check          # lint + format-check + typecheck + markdown + translations + test in one go (mirrors CI, read-only)
+make check          # lint + format-check + typecheck + markdown + translations + test (with 95% coverage gate) in one go (mirrors CI, read-only)
 
 # Docker (local HA instance at http://localhost:8123)
 make up             # start Home Assistant

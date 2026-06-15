@@ -2,6 +2,7 @@
 
 VENV     := .venv
 UV       := uv
+COV_MIN  := 95
 
 .PHONY: help venv venv-destroy install clean test test-coverage typecheck lint format translations check up down stop start logs
 
@@ -26,17 +27,17 @@ venv-destroy: ## Delete the .venv directory
 install: ## Sync dependencies into the existing venv
 	$(UV) pip install -r requirements_test.txt
 
-clean: ## Remove all caches (__pycache__, .pytest_cache, .mypy_cache, .ruff_cache)
+clean: ## Remove all caches (__pycache__, .pytest_cache, .mypy_cache, .ruff_cache, .coverage)
 	find . -type d -name '__pycache__' -exec rm -rf {} +
-	rm -rf .pytest_cache .mypy_cache .ruff_cache
+	rm -rf .pytest_cache .mypy_cache .ruff_cache .coverage
 
 # ── Code quality ───────────────────────────────────────────────────────────────
 
 test: ## Run the test suite
 	$(UV) run pytest
 
-test-coverage: ## Run tests with line-level coverage report (term-missing); fails below 95%
-	$(UV) run pytest --cov=custom_components/chores --cov-report=term-missing --cov-fail-under=95
+test-coverage: ## Run tests with line-level coverage report (term-missing); fails below $(COV_MIN)%
+	$(UV) run pytest --cov=custom_components/chores --cov-report=term-missing --cov-fail-under=$(COV_MIN)
 
 typecheck: ## Run mypy type checking (first-party source only — tests aren't strictly typed)
 	$(UV) run mypy custom_components scripts
@@ -58,7 +59,7 @@ check: ## Check code (read-only): lint, format, typecheck, markdown, translation
 	$(UV) run mypy custom_components scripts
 	$(UV) run mdformat --check .
 	$(UV) run python scripts/check_translations.py
-	$(UV) run pytest --cov=custom_components/chores --cov-report=term --cov-fail-under=95
+	$(UV) run pytest --cov=custom_components/chores --cov-report=term --cov-fail-under=$(COV_MIN)
 
 # ── Docker ─────────────────────────────────────────────────────────────────────
 
