@@ -59,15 +59,28 @@ async def _setup_coord(hass: Any, entry: MockConfigEntry) -> ChoresCoordinator:
     return coord
 
 
-def _make_fake_track() -> tuple[dict[str, Any], Any]:
-    """Return (captured, side_effect_fn) for callback-capture tests."""
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def patch_track():
+    with patch(_TRACK_PATCH) as mock_track:
+        yield mock_track
+
+
+@pytest.fixture
+def fake_track(patch_track: MagicMock) -> dict[str, Any]:
+    """Override the autouse timer patch to capture the scheduled callback."""
     captured: dict[str, Any] = {}
 
-    def _fake_track(hass_: Any, cb: Any, point_in_time: Any) -> MagicMock:
+    def _side_effect(hass_: Any, cb: Any, point_in_time: Any) -> MagicMock:
         captured["cb"] = cb
         return MagicMock()
 
-    return captured, _fake_track
+    patch_track.side_effect = _side_effect
+    return captured
 
 
 # ---------------------------------------------------------------------------
@@ -79,10 +92,7 @@ async def test_initial_status_overdue(hass: Any) -> None:
     """Chore last completed 30 days ago with 7-day interval is overdue."""
     entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
-
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
-
+    coord = await _setup_coord(hass, entry)
     assert coord.data["status"] == "overdue"
 
 
@@ -90,10 +100,7 @@ async def test_initial_status_done(hass: Any) -> None:
     """Chore last completed today with 7-day interval is done."""
     entry = _make_entry(days_ago=0, interval_days=7)
     entry.add_to_hass(hass)
-
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
-
+    coord = await _setup_coord(hass, entry)
     assert coord.data["status"] == "done"
 
 
@@ -101,29 +108,25 @@ async def test_next_due_computed_correctly(hass: Any) -> None:
     """next_due is last_completed + interval, expressed as start of that local day."""
     entry = _make_entry(days_ago=0, interval_days=7)
     entry.add_to_hass(hass)
-
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
-
+    coord = await _setup_coord(hass, entry)
     expected_date = dt_util.now().date() + timedelta(days=7)
     assert coord.data["next_due"].date() == expected_date
 
 
-async def test_timer_fires_overdue_transition(hass: Any) -> None:
+async def test_timer_fires_overdue_transition(
+    hass: Any, fake_track: dict[str, Any]
+) -> None:
     """When the scheduled timer fires, status transitions to overdue."""
-    captured, fake_track = _make_fake_track()
     entry = _make_entry(days_ago=0, interval_days=7)
     entry.add_to_hass(hass)
-
-    with patch(_TRACK_PATCH, side_effect=fake_track):
-        coord = await _setup_coord(hass, entry)
+    coord = await _setup_coord(hass, entry)
 
     assert coord.data["status"] == "done"
-    assert "cb" in captured
+    assert "cb" in fake_track
 
     future = datetime.now(tz=UTC) + timedelta(days=8)
     with patch("custom_components.chores.coordinator.dt_util.now", return_value=future):
-        captured["cb"](future)
+        fake_track["cb"](future)
 
     assert coord.data["status"] == "overdue"
 
@@ -132,12 +135,10 @@ async def test_complete_resets_to_done(hass: Any) -> None:
     """async_complete sets last_completed to today, status to done."""
     entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
 
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
-
-        assert coord.data["status"] == "overdue"
-        await coord.async_complete()
+    assert coord.data["status"] == "overdue"
+    await coord.async_complete()
 
     assert coord.data["status"] == "done"
     assert coord.data["last_completed"].date() == dt_util.now().date()
@@ -148,10 +149,8 @@ async def test_complete_persists_to_entry_options(hass: Any) -> None:
     """async_complete writes last_completed to entry.options."""
     entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
-
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
-        await coord.async_complete()
+    coord = await _setup_coord(hass, entry)
+    await coord.async_complete()
 
     persisted = entry.options["last_completed"]
     assert datetime.fromisoformat(persisted).tzinfo is not None
@@ -163,19 +162,17 @@ async def test_last_completed_survives_restart(hass: Any) -> None:
     """After completing, a new coordinator reads last_completed from entry.options."""
     entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
+    await coord.async_complete()
+    completion_date = coord.data["last_completed"]
 
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
-        await coord.async_complete()
-        completion_date = coord.data["last_completed"]
-
-        coord2 = await _setup_coord(hass, entry)
+    coord2 = await _setup_coord(hass, entry)
 
     assert coord2.data["last_completed"] == completion_date
     assert coord2.data["status"] == "done"
 
 
-async def test_unload_cancels_timers(hass: Any) -> None:
+async def test_unload_cancels_timers(hass: Any, patch_track: MagicMock) -> None:
     """async_shutdown_timers cancels all scheduled callbacks."""
     cancel_mocks: list[MagicMock] = []
 
@@ -184,11 +181,11 @@ async def test_unload_cancels_timers(hass: Any) -> None:
         cancel_mocks.append(cancel)
         return cancel
 
+    patch_track.side_effect = _fake_track
+
     entry = _make_entry(days_ago=0, interval_days=7)
     entry.add_to_hass(hass)
-
-    with patch(_TRACK_PATCH, side_effect=_fake_track):
-        coord = await _setup_coord(hass, entry)
+    coord = await _setup_coord(hass, entry)
 
     assert len(cancel_mocks) >= 1
     coord.async_shutdown_timers()
@@ -208,17 +205,15 @@ async def test_update_config_recomputes_from_preserved_last_completed(
     last_completed_date = dt_util.now().date() - timedelta(days=7)
     entry = _make_entry(days_ago=7, interval_days=7)
     entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
 
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
+    assert coord.data["status"] == "overdue"
 
-        assert coord.data["status"] == "overdue"
-
-        new_opts = {
-            **dict(entry.options),
-            "interval_days": 14,
-        }
-        await coord.async_update_config(new_opts)
+    new_opts = {
+        **dict(entry.options),
+        "interval_days": 14,
+    }
+    await coord.async_update_config(new_opts)
 
     assert coord.data["last_completed"].date() == last_completed_date
     expected_next_due = last_completed_date + timedelta(days=14)
@@ -230,15 +225,13 @@ async def test_update_config_name_change_no_status_change(hass: Any) -> None:
     """Editing the name does not change status or next_due."""
     entry = _make_entry(name="Bins", days_ago=0, interval_days=7)
     entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
 
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
+    original_status = coord.data["status"]
+    original_next_due = coord.data["next_due"]
 
-        original_status = coord.data["status"]
-        original_next_due = coord.data["next_due"]
-
-        new_opts = {**dict(entry.options), "name": "Wheelie Bins"}
-        await coord.async_update_config(new_opts)
+    new_opts = {**dict(entry.options), "name": "Wheelie Bins"}
+    await coord.async_update_config(new_opts)
 
     assert coord.data["name"] == "Wheelie Bins"
     assert coord.data["status"] == original_status
@@ -252,14 +245,12 @@ async def test_update_config_preserves_snooze(hass: Any) -> None:
         days_ago=30, interval_days=7, snooze_until=snooze_dt.isoformat()
     )
     entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
 
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
+    assert coord.data["status"] == "snoozed"
 
-        assert coord.data["status"] == "snoozed"
-
-        new_opts = {**dict(entry.options), "name": "Renamed Chore"}
-        await coord.async_update_config(new_opts)
+    new_opts = {**dict(entry.options), "name": "Renamed Chore"}
+    await coord.async_update_config(new_opts)
 
     assert coord.data["status"] == "snoozed"
     assert coord.data["snooze_until"] == snooze_dt
@@ -275,35 +266,33 @@ async def test_update_config_expired_snooze_cleared_from_entry_options(
     """
     entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
 
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
+    expired_dt = dt_util.now() - timedelta(hours=1)
+    hass.config_entries.async_update_entry(
+        entry,
+        options={**dict(entry.options), "snooze_until": expired_dt.isoformat()},
+    )
 
-        expired_dt = dt_util.now() - timedelta(hours=1)
-        hass.config_entries.async_update_entry(
-            entry,
-            options={**dict(entry.options), "snooze_until": expired_dt.isoformat()},
-        )
-
-        new_opts = {**dict(entry.options), "name": "Renamed Chore"}
-        await coord.async_update_config(new_opts)
+    new_opts = {**dict(entry.options), "name": "Renamed Chore"}
+    await coord.async_update_config(new_opts)
 
     assert coord.data["snooze_until"] is None
     assert entry.options["snooze_until"] is None
 
 
-async def test_update_config_noop_when_options_match_runtime(hass: Any) -> None:
+async def test_update_config_noop_when_options_match_runtime(
+    hass: Any, patch_track: MagicMock
+) -> None:
     """async_update_config early-returns when options already match runtime state."""
     entry = _make_entry(days_ago=0, interval_days=7)
     entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
+    call_count_after_init = patch_track.call_count
 
-    with patch(_TRACK_PATCH) as mock_track:
-        coord = await _setup_coord(hass, entry)
-        call_count_after_init = mock_track.call_count
+    await coord.async_update_config(dict(entry.options))
 
-        await coord.async_update_config(dict(entry.options))
-
-    assert mock_track.call_count == call_count_after_init
+    assert patch_track.call_count == call_count_after_init
 
 
 # ---------------------------------------------------------------------------
@@ -314,12 +303,10 @@ async def test_update_config_noop_when_options_match_runtime(hass: Any) -> None:
 async def test_snooze_transitions_to_snoozed(hass: Any) -> None:
     entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
 
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
-
-        snooze_dt = dt_util.now() + timedelta(days=3)
-        await coord.async_snooze(snooze_dt)
+    snooze_dt = dt_util.now() + timedelta(days=3)
+    await coord.async_snooze(snooze_dt)
 
     assert coord.data["status"] == "snoozed"
     assert coord.data["snooze_until"] == snooze_dt
@@ -328,12 +315,10 @@ async def test_snooze_transitions_to_snoozed(hass: Any) -> None:
 async def test_snooze_persists_to_entry_options(hass: Any) -> None:
     entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
 
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
-
-        snooze_dt = dt_util.now() + timedelta(days=3)
-        await coord.async_snooze(snooze_dt)
+    snooze_dt = dt_util.now() + timedelta(days=3)
+    await coord.async_snooze(snooze_dt)
 
     assert entry.options["snooze_until"] == snooze_dt.isoformat()
 
@@ -342,14 +327,12 @@ async def test_snooze_survives_restart(hass: Any) -> None:
     """snooze_until in entry.options is restored on a new coordinator."""
     entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
 
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
+    snooze_dt = dt_util.now() + timedelta(days=5)
+    await coord.async_snooze(snooze_dt)
 
-        snooze_dt = dt_util.now() + timedelta(days=5)
-        await coord.async_snooze(snooze_dt)
-
-        coord2 = await _setup_coord(hass, entry)
+    coord2 = await _setup_coord(hass, entry)
 
     assert coord2.data["status"] == "snoozed"
     assert coord2.data["snooze_until"] == snooze_dt
@@ -361,26 +344,23 @@ async def test_snooze_survives_restart(hass: Any) -> None:
     ids=["midnight", "eight_am"],
 )
 async def test_snooze_expiry_transitions_to_overdue(
-    hass: Any, notification_time: str
+    hass: Any, notification_time: str, fake_track: dict[str, Any]
 ) -> None:
     """When the snooze-expiry timer fires, status transitions to overdue."""
-    captured, fake_track = _make_fake_track()
     entry = _make_entry(
         days_ago=30, interval_days=7, notification_time=notification_time
     )
     entry.add_to_hass(hass)
-
-    with patch(_TRACK_PATCH, side_effect=fake_track):
-        coord = await _setup_coord(hass, entry)
-        snooze_dt = dt_util.now() + timedelta(days=3)
-        await coord.async_snooze(snooze_dt)
+    coord = await _setup_coord(hass, entry)
+    snooze_dt = dt_util.now() + timedelta(days=3)
+    await coord.async_snooze(snooze_dt)
 
     assert coord.data["status"] == "snoozed"
-    assert "cb" in captured
+    assert "cb" in fake_track
 
     future = datetime.now(tz=UTC) + timedelta(days=4)
     with patch("custom_components.chores.coordinator.dt_util.now", return_value=future):
-        captured["cb"](future)
+        fake_track["cb"](future)
 
     assert coord.data["status"] == "overdue"
     assert coord.data["snooze_until"] is None
@@ -400,12 +380,9 @@ async def test_snooze_non_future_datetime_raises(hass: Any, bad_dt: datetime) ->
     entry.add_to_hass(hass)
 
     fixed_now = datetime(2026, 6, 12, 12, 0, tzinfo=UTC)
-    with (
-        patch(_TRACK_PATCH),
-        patch(
-            "custom_components.chores.coordinator.dt_util.now",
-            return_value=fixed_now,
-        ),
+    with patch(
+        "custom_components.chores.coordinator.dt_util.now",
+        return_value=fixed_now,
     ):
         coord = await _setup_coord(hass, entry)
 
@@ -420,15 +397,13 @@ async def test_complete_clears_snooze(hass: Any) -> None:
     """Completing a snoozed chore clears the snooze and marks it done."""
     entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
 
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
+    snooze_dt = dt_util.now() + timedelta(days=3)
+    await coord.async_snooze(snooze_dt)
+    assert coord.data["status"] == "snoozed"
 
-        snooze_dt = dt_util.now() + timedelta(days=3)
-        await coord.async_snooze(snooze_dt)
-        assert coord.data["status"] == "snoozed"
-
-        await coord.async_complete()
+    await coord.async_complete()
 
     assert coord.data["status"] == "done"
     assert coord.data["snooze_until"] is None
@@ -439,9 +414,7 @@ async def test_expired_snooze_not_restored_on_restart(hass: Any) -> None:
     expired_dt = (dt_util.now() - timedelta(hours=1)).isoformat()
     entry = _make_entry(days_ago=30, interval_days=7, snooze_until=expired_dt)
     entry.add_to_hass(hass)
-
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
+    coord = await _setup_coord(hass, entry)
 
     assert coord.data["status"] == "overdue"
     assert coord.data["snooze_until"] is None
@@ -453,10 +426,7 @@ async def test_naive_snooze_raises_on_load(hass: Any) -> None:
     entry = _make_entry(days_ago=30, interval_days=7, snooze_until="2099-12-31")
     entry.add_to_hass(hass)
 
-    with (
-        patch(_TRACK_PATCH),
-        pytest.raises(ValueError, match="got naive"),
-    ):
+    with pytest.raises(ValueError, match="got naive"):
         await _setup_coord(hass, entry)
 
 
@@ -467,12 +437,10 @@ async def test_unsnooze_clears_snooze_and_recalculates(hass: Any) -> None:
         days_ago=30, interval_days=7, snooze_until=snooze_dt.isoformat()
     )
     entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
 
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
-
-        assert coord.data["status"] == "snoozed"
-        await coord.async_unsnooze()
+    assert coord.data["status"] == "snoozed"
+    await coord.async_unsnooze()
 
     assert coord.data["snooze_until"] is None
     assert coord.data["status"] == "overdue"
@@ -483,12 +451,10 @@ async def test_unsnooze_done_chore(hass: Any) -> None:
     snooze_dt = dt_util.now() + timedelta(days=3)
     entry = _make_entry(days_ago=1, interval_days=7, snooze_until=snooze_dt.isoformat())
     entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
 
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
-
-        assert coord.data["status"] == "snoozed"
-        await coord.async_unsnooze()
+    assert coord.data["status"] == "snoozed"
+    await coord.async_unsnooze()
 
     assert coord.data["snooze_until"] is None
     assert coord.data["status"] == "done"
@@ -503,12 +469,10 @@ async def test_snooze_default_uses_default_snooze_value_and_unit(hass: Any) -> N
         default_snooze_unit="hours",
     )
     entry.add_to_hass(hass)
-
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
-        before = dt_util.now()
-        await coord.async_snooze_default()
-        after = dt_util.now()
+    coord = await _setup_coord(hass, entry)
+    before = dt_util.now()
+    await coord.async_snooze_default()
+    after = dt_util.now()
 
     snooze_until = coord.data["snooze_until"]
     assert before + timedelta(hours=2) <= snooze_until <= after + timedelta(hours=2)
@@ -524,12 +488,10 @@ async def test_snooze_default_days_unit(hass: Any) -> None:
         default_snooze_unit="days",
     )
     entry.add_to_hass(hass)
-
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
-        before = dt_util.now()
-        await coord.async_snooze_default()
-        after = dt_util.now()
+    coord = await _setup_coord(hass, entry)
+    before = dt_util.now()
+    await coord.async_snooze_default()
+    after = dt_util.now()
 
     snooze_until = coord.data["snooze_until"]
     assert before + timedelta(days=3) <= snooze_until <= after + timedelta(days=3)
@@ -540,13 +502,11 @@ async def test_unsnooze_on_non_snoozed_is_noop(hass: Any) -> None:
     """Calling async_unsnooze on a non-snoozed chore is a no-op."""
     entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
 
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
-
-        status_before = coord.data["status"]
-        initial_options = dict(entry.options)
-        await coord.async_unsnooze()
+    status_before = coord.data["status"]
+    initial_options = dict(entry.options)
+    await coord.async_unsnooze()
 
     assert coord.data["status"] == status_before
     assert coord.data["snooze_until"] is None
@@ -563,12 +523,10 @@ async def test_complete_with_explicit_completed_at(hass: Any) -> None:
     """async_complete with a past datetime stores that datetime."""
     entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
 
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
-
-        past_dt = dt_util.now() - timedelta(hours=3)
-        await coord.async_complete(past_dt)
+    past_dt = dt_util.now() - timedelta(hours=3)
+    await coord.async_complete(past_dt)
 
     assert coord.data["last_completed"] == past_dt
     assert coord.data["status"] == "done"
@@ -578,15 +536,13 @@ async def test_complete_future_completed_at_raises(hass: Any) -> None:
     """async_complete with a future datetime raises HomeAssistantError."""
     entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
 
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
+    original_last = coord.data["last_completed"]
+    future_dt = dt_util.now() + timedelta(hours=1)
 
-        original_last = coord.data["last_completed"]
-        future_dt = dt_util.now() + timedelta(hours=1)
-
-        with pytest.raises(HomeAssistantError):
-            await coord.async_complete(future_dt)
+    with pytest.raises(HomeAssistantError):
+        await coord.async_complete(future_dt)
 
     assert coord.data["last_completed"] == original_last
 
@@ -595,10 +551,7 @@ async def test_last_completed_is_datetime_not_date(hass: Any) -> None:
     """Snapshot last_completed is a datetime, not a date."""
     entry = _make_entry(days_ago=0, interval_days=7)
     entry.add_to_hass(hass)
-
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
-
+    coord = await _setup_coord(hass, entry)
     assert isinstance(coord.data["last_completed"], datetime)
 
 
@@ -606,10 +559,8 @@ async def test_complete_persists_tz_aware_datetime(hass: Any) -> None:
     """async_complete stores a tz-aware ISO datetime string in entry.options."""
     entry = _make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
-
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
-        await coord.async_complete()
+    coord = await _setup_coord(hass, entry)
+    await coord.async_complete()
 
     stored = entry.options["last_completed"]
     parsed = datetime.fromisoformat(stored)
@@ -625,9 +576,7 @@ async def test_next_due_at_notification_time(hass: Any) -> None:
     """next_due is at notification_time on the due date, not midnight."""
     entry = _make_entry(days_ago=0, interval_days=7, notification_time="08:00")
     entry.add_to_hass(hass)
-
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
+    coord = await _setup_coord(hass, entry)
 
     next_due = coord.data["next_due"]
     assert next_due.hour == 8
@@ -640,9 +589,7 @@ async def test_next_due_default_notification_time_is_midnight(hass: Any) -> None
     """notification_time 00:00 gives midnight next_due."""
     entry = _make_entry(days_ago=0, interval_days=7, notification_time="00:00")
     entry.add_to_hass(hass)
-
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
+    coord = await _setup_coord(hass, entry)
 
     next_due = coord.data["next_due"]
     assert next_due.hour == 0
@@ -668,12 +615,9 @@ async def test_ha_starts_before_notification_time_is_done(hass: Any) -> None:
     entry = MockConfigEntry(domain=DOMAIN, options=opts)
     entry.add_to_hass(hass)
 
-    with (
-        patch(_TRACK_PATCH),
-        patch(
-            "custom_components.chores.coordinator.dt_util.now",
-            return_value=before_notification,
-        ),
+    with patch(
+        "custom_components.chores.coordinator.dt_util.now",
+        return_value=before_notification,
     ):
         coord = await _setup_coord(hass, entry)
 
@@ -698,12 +642,9 @@ async def test_ha_starts_after_notification_time_is_overdue(hass: Any) -> None:
     entry = MockConfigEntry(domain=DOMAIN, options=opts)
     entry.add_to_hass(hass)
 
-    with (
-        patch(_TRACK_PATCH),
-        patch(
-            "custom_components.chores.coordinator.dt_util.now",
-            return_value=after_notification,
-        ),
+    with patch(
+        "custom_components.chores.coordinator.dt_util.now",
+        return_value=after_notification,
     ):
         coord = await _setup_coord(hass, entry)
 
@@ -711,7 +652,7 @@ async def test_ha_starts_after_notification_time_is_overdue(hass: Any) -> None:
 
 
 async def test_snooze_timer_fires_at_snooze_until_regardless_of_notification_time(
-    hass: Any,
+    hass: Any, patch_track: MagicMock
 ) -> None:
     """The snooze-expiry timer fires at snooze_until, not at notification_time."""
     timer_points: list[datetime] = []
@@ -720,14 +661,14 @@ async def test_snooze_timer_fires_at_snooze_until_regardless_of_notification_tim
         timer_points.append(point_in_time)
         return MagicMock()
 
+    patch_track.side_effect = _fake_track
+
     entry = _make_entry(days_ago=30, interval_days=7, notification_time="08:00")
     entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
 
-    with patch(_TRACK_PATCH, side_effect=_fake_track):
-        coord = await _setup_coord(hass, entry)
-
-        snooze_dt = dt_util.now() + timedelta(minutes=30)
-        await coord.async_snooze(snooze_dt)
+    snooze_dt = dt_util.now() + timedelta(minutes=30)
+    await coord.async_snooze(snooze_dt)
 
     assert timer_points[-1] == snooze_dt
 
@@ -736,10 +677,7 @@ async def test_notification_time_in_snapshot(hass: Any) -> None:
     """notification_time is included in the coordinator snapshot."""
     entry = _make_entry(days_ago=0, interval_days=7, notification_time="08:30")
     entry.add_to_hass(hass)
-
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
-
+    coord = await _setup_coord(hass, entry)
     assert coord.data["notification_time"] == "08:30"
 
 
@@ -752,10 +690,7 @@ async def test_never_completed_is_overdue(hass: Any) -> None:
     """A chore with no last_completed starts overdue."""
     entry = _make_entry(last_completed=None)
     entry.add_to_hass(hass)
-
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
-
+    coord = await _setup_coord(hass, entry)
     assert coord.data["status"] == "overdue"
 
 
@@ -763,10 +698,7 @@ async def test_never_completed_next_due_is_none(hass: Any) -> None:
     """A chore with no last_completed has next_due=None."""
     entry = _make_entry(last_completed=None)
     entry.add_to_hass(hass)
-
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
-
+    coord = await _setup_coord(hass, entry)
     assert coord.data["next_due"] is None
 
 
@@ -774,10 +706,7 @@ async def test_never_completed_last_completed_is_none_in_snapshot(hass: Any) -> 
     """Snapshot carries last_completed=None for a never-completed chore."""
     entry = _make_entry(last_completed=None)
     entry.add_to_hass(hass)
-
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
-
+    coord = await _setup_coord(hass, entry)
     assert coord.data["last_completed"] is None
 
 
@@ -785,12 +714,10 @@ async def test_completing_never_completed_chore_starts_cycle(hass: Any) -> None:
     """Completing a never-completed chore sets last_completed, next_due, and status done."""
     entry = _make_entry(last_completed=None, interval_days=7)
     entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
 
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
-
-        assert coord.data["status"] == "overdue"
-        await coord.async_complete()
+    assert coord.data["status"] == "overdue"
+    await coord.async_complete()
 
     assert coord.data["status"] == "done"
     assert coord.data["last_completed"] is not None
@@ -799,25 +726,24 @@ async def test_completing_never_completed_chore_starts_cycle(hass: Any) -> None:
     assert coord.data["next_due"].date() == expected_next_due
 
 
-async def test_snooze_on_never_completed_chore(hass: Any) -> None:
+async def test_snooze_on_never_completed_chore(
+    hass: Any, fake_track: dict[str, Any]
+) -> None:
     """Snoozing a never-completed chore transitions to snoozed; expiry returns to overdue."""
-    captured, fake_track = _make_fake_track()
     entry = _make_entry(last_completed=None)
     entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
 
-    with patch(_TRACK_PATCH, side_effect=fake_track):
-        coord = await _setup_coord(hass, entry)
+    assert coord.data["status"] == "overdue"
 
-        assert coord.data["status"] == "overdue"
-
-        snooze_dt = dt_util.now() + timedelta(days=3)
-        await coord.async_snooze(snooze_dt)
+    snooze_dt = dt_util.now() + timedelta(days=3)
+    await coord.async_snooze(snooze_dt)
 
     assert coord.data["status"] == "snoozed"
 
     future = datetime.now(tz=UTC) + timedelta(days=4)
     with patch("custom_components.chores.coordinator.dt_util.now", return_value=future):
-        captured["cb"](future)
+        fake_track["cb"](future)
 
     assert coord.data["status"] == "overdue"
     assert coord.data["last_completed"] is None
@@ -828,9 +754,7 @@ async def test_never_completed_snoozed_restores_on_load(hass: Any) -> None:
     snooze_dt = dt_util.now() + timedelta(days=2)
     entry = _make_entry(last_completed=None, snooze_until=snooze_dt.isoformat())
     entry.add_to_hass(hass)
-
-    with patch(_TRACK_PATCH):
-        coord = await _setup_coord(hass, entry)
+    coord = await _setup_coord(hass, entry)
 
     assert coord.data["status"] == "snoozed"
     assert coord.data["snooze_until"] == snooze_dt
@@ -846,3 +770,141 @@ def test_parse_aware_datetime_type_error_returns_none() -> None:
     """A non-string value triggers TypeError in fromisoformat and returns None."""
     result = _parse_aware_datetime(cast(str, 42))
     assert result is None
+
+
+# ---------------------------------------------------------------------------
+# Timer-reschedule branch tests
+# ---------------------------------------------------------------------------
+
+
+async def test_complete_while_timer_live_cancels_prior_timer(
+    hass: Any, patch_track: MagicMock
+) -> None:
+    """Completing a done chore cancels the existing overdue timer before scheduling a new one."""
+    cancel_mocks: list[MagicMock] = []
+
+    def _side_effect(hass_: Any, cb: Any, point_in_time: Any) -> MagicMock:
+        cancel = MagicMock()
+        cancel_mocks.append(cancel)
+        return cancel
+
+    patch_track.side_effect = _side_effect
+
+    entry = _make_entry(days_ago=0, interval_days=7)
+    entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
+    assert len(cancel_mocks) == 1
+    first_cancel = cancel_mocks[0]
+
+    await coord.async_complete()
+
+    first_cancel.assert_called_once()
+
+
+async def test_snooze_while_timer_live_cancels_overdue_timer(
+    hass: Any, patch_track: MagicMock
+) -> None:
+    """Snoozing a done chore cancels the live overdue timer before scheduling the snooze timer."""
+    cancel_mocks: list[MagicMock] = []
+
+    def _side_effect(hass_: Any, cb: Any, point_in_time: Any) -> MagicMock:
+        cancel = MagicMock()
+        cancel_mocks.append(cancel)
+        return cancel
+
+    patch_track.side_effect = _side_effect
+
+    entry = _make_entry(days_ago=0, interval_days=7)
+    entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
+    first_cancel = cancel_mocks[0]
+
+    await coord.async_snooze(dt_util.now() + timedelta(days=1))
+
+    first_cancel.assert_called_once()
+
+
+async def test_overdue_callback_noop_after_shutdown(
+    hass: Any, fake_track: dict[str, Any]
+) -> None:
+    """Timer callback is a no-op when coordinator runtime is torn down."""
+    entry = _make_entry(days_ago=0, interval_days=7)
+    entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
+    cb = fake_track["cb"]
+
+    coord._runtime = None
+    cb(datetime.now(tz=UTC))  # must not raise
+
+
+# ---------------------------------------------------------------------------
+# Snooze-reschedule branch tests
+# ---------------------------------------------------------------------------
+
+
+async def test_snooze_reschedule_cancels_prior_snooze_timer(
+    hass: Any, patch_track: MagicMock
+) -> None:
+    """Snoozing twice cancels the first snooze timer before scheduling the replacement."""
+    cancel_mocks: list[MagicMock] = []
+
+    def _side_effect(hass_: Any, cb: Any, point_in_time: Any) -> MagicMock:
+        cancel = MagicMock()
+        cancel_mocks.append(cancel)
+        return cancel
+
+    patch_track.side_effect = _side_effect
+
+    entry = _make_entry(days_ago=30, interval_days=7)
+    entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
+
+    await coord.async_snooze(dt_util.now() + timedelta(days=1))
+    first_snooze_cancel = cancel_mocks[-1]
+
+    await coord.async_snooze(dt_util.now() + timedelta(days=2))
+
+    first_snooze_cancel.assert_called_once()
+
+
+async def test_snooze_expiry_callback_noop_after_shutdown(
+    hass: Any, fake_track: dict[str, Any]
+) -> None:
+    """Snooze expiry callback is a no-op when coordinator runtime is torn down."""
+    entry = _make_entry(days_ago=30, interval_days=7)
+    entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
+
+    await coord.async_snooze(dt_util.now() + timedelta(days=1))
+    cb = fake_track["cb"]
+
+    coord._runtime = None
+    cb(datetime.now(tz=UTC))  # must not raise
+
+
+async def test_schedule_snooze_returns_early_when_snooze_until_is_none(
+    hass: Any,
+) -> None:
+    """_schedule_snooze is a no-op when snooze_until is None."""
+    entry = _make_entry(days_ago=30, interval_days=7)
+    entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
+    assert coord._runtime is not None
+    coord._runtime.snooze_until = None
+    coord._schedule_snooze(
+        coord._runtime
+    )  # must not raise and must not schedule a timer
+
+
+async def test_schedule_snooze_returns_early_when_snooze_until_in_past(
+    hass: Any,
+) -> None:
+    """_schedule_snooze is a no-op when snooze_until is already in the past."""
+    entry = _make_entry(days_ago=30, interval_days=7)
+    entry.add_to_hass(hass)
+    coord = await _setup_coord(hass, entry)
+    assert coord._runtime is not None
+    coord._runtime.snooze_until = dt_util.now() - timedelta(hours=1)
+    coord._schedule_snooze(
+        coord._runtime
+    )  # must not raise and must not schedule a timer

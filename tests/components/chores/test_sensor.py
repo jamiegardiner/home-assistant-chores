@@ -80,28 +80,13 @@ def _make_sensor(coordinator=None, entry=None):
     return ChoreSensor(coordinator, entry)
 
 
-def _make_last_completed_sensor(coordinator=None, entry=None):
+def _make_diagnostic_sensor(cls, coordinator=None, entry=None):
+    """Build any diagnostic sensor class without going through async_setup_entry."""
     if coordinator is None:
         coordinator = FakeCoordinator()
     if entry is None:
         entry = _make_entry()
-    return ChoreLastCompletedSensor(coordinator, entry)
-
-
-def _make_next_due_sensor(coordinator=None, entry=None):
-    if coordinator is None:
-        coordinator = FakeCoordinator()
-    if entry is None:
-        entry = _make_entry()
-    return ChoreNextDueSensor(coordinator, entry)
-
-
-def _make_snooze_until_sensor(coordinator=None, entry=None):
-    if coordinator is None:
-        coordinator = FakeCoordinator()
-    if entry is None:
-        entry = _make_entry()
-    return ChoreSnoozeUntilSensor(coordinator, entry)
+    return cls(coordinator, entry)
 
 
 # ---------------------------------------------------------------------------
@@ -234,75 +219,79 @@ class TestChoreSensorConventions:
 
 class TestChoreLastCompletedSensor:
     def test_native_value(self):
-        sensor = _make_last_completed_sensor()
+        sensor = _make_diagnostic_sensor(ChoreLastCompletedSensor)
         assert sensor.native_value == _LC
 
     def test_device_class_timestamp(self):
-        sensor = _make_last_completed_sensor()
+        sensor = _make_diagnostic_sensor(ChoreLastCompletedSensor)
         assert sensor.device_class == SensorDeviceClass.TIMESTAMP
 
     def test_entity_category_diagnostic(self):
-        sensor = _make_last_completed_sensor()
+        sensor = _make_diagnostic_sensor(ChoreLastCompletedSensor)
         assert sensor.entity_category == EntityCategory.DIAGNOSTIC
 
     def test_unique_id_format(self):
         entry = _make_entry(entry_id="abc")
-        sensor = _make_last_completed_sensor(entry=entry)
+        sensor = _make_diagnostic_sensor(ChoreLastCompletedSensor, entry=entry)
         assert sensor.unique_id == "abc_last_completed"
 
     def test_translation_key(self):
-        sensor = _make_last_completed_sensor()
+        sensor = _make_diagnostic_sensor(ChoreLastCompletedSensor)
         assert sensor.translation_key == "last_completed"
 
     def test_native_value_none_when_missing(self):
         coordinator = FakeCoordinator({**CHORE_STATE, "last_completed": None})
-        sensor = _make_last_completed_sensor(coordinator=coordinator)
+        sensor = _make_diagnostic_sensor(
+            ChoreLastCompletedSensor, coordinator=coordinator
+        )
         assert sensor.native_value is None
 
     def test_available_false_when_last_completed_is_none(self):
         coordinator = FakeCoordinator({**CHORE_STATE, "last_completed": None})
-        sensor = _make_last_completed_sensor(coordinator=coordinator)
+        sensor = _make_diagnostic_sensor(
+            ChoreLastCompletedSensor, coordinator=coordinator
+        )
         assert sensor.available is False
 
     def test_available_true_when_last_completed_is_set(self):
-        sensor = _make_last_completed_sensor()
+        sensor = _make_diagnostic_sensor(ChoreLastCompletedSensor)
         assert sensor.available is True
 
 
 class TestChoreNextDueSensor:
     def test_native_value(self):
-        sensor = _make_next_due_sensor()
+        sensor = _make_diagnostic_sensor(ChoreNextDueSensor)
         assert sensor.native_value == date(2026, 6, 8)
 
     def test_device_class_timestamp(self):
-        sensor = _make_next_due_sensor()
+        sensor = _make_diagnostic_sensor(ChoreNextDueSensor)
         assert sensor.device_class == SensorDeviceClass.TIMESTAMP
 
     def test_entity_category_diagnostic(self):
-        sensor = _make_next_due_sensor()
+        sensor = _make_diagnostic_sensor(ChoreNextDueSensor)
         assert sensor.entity_category == EntityCategory.DIAGNOSTIC
 
     def test_unique_id_format(self):
         entry = _make_entry(entry_id="abc")
-        sensor = _make_next_due_sensor(entry=entry)
+        sensor = _make_diagnostic_sensor(ChoreNextDueSensor, entry=entry)
         assert sensor.unique_id == "abc_next_due"
 
     def test_translation_key(self):
-        sensor = _make_next_due_sensor()
+        sensor = _make_diagnostic_sensor(ChoreNextDueSensor)
         assert sensor.translation_key == "next_due"
 
     def test_native_value_none_when_missing(self):
         coordinator = FakeCoordinator({**CHORE_STATE, "next_due": None})
-        sensor = _make_next_due_sensor(coordinator=coordinator)
+        sensor = _make_diagnostic_sensor(ChoreNextDueSensor, coordinator=coordinator)
         assert sensor.native_value is None
 
     def test_available_false_when_next_due_is_none(self):
         coordinator = FakeCoordinator({**CHORE_STATE, "next_due": None})
-        sensor = _make_next_due_sensor(coordinator=coordinator)
+        sensor = _make_diagnostic_sensor(ChoreNextDueSensor, coordinator=coordinator)
         assert sensor.available is False
 
     def test_available_true_when_next_due_is_set(self):
-        sensor = _make_next_due_sensor()
+        sensor = _make_diagnostic_sensor(ChoreNextDueSensor)
         assert sensor.available is True
 
 
@@ -311,38 +300,42 @@ _SNOOZE_DT = datetime(2026, 6, 15, 12, 0, tzinfo=UTC)
 
 class TestChoreSnoozeUntilSensor:
     def test_native_value_none_when_not_snoozed(self):
-        sensor = _make_snooze_until_sensor()
+        sensor = _make_diagnostic_sensor(ChoreSnoozeUntilSensor)
         assert sensor.native_value is None
 
     def test_native_value_when_snoozed(self):
         coordinator = FakeCoordinator({**CHORE_STATE, "snooze_until": _SNOOZE_DT})
-        sensor = _make_snooze_until_sensor(coordinator=coordinator)
+        sensor = _make_diagnostic_sensor(
+            ChoreSnoozeUntilSensor, coordinator=coordinator
+        )
         assert sensor.native_value == _SNOOZE_DT
 
     def test_device_class_timestamp(self):
-        sensor = _make_snooze_until_sensor()
+        sensor = _make_diagnostic_sensor(ChoreSnoozeUntilSensor)
         assert sensor.device_class == SensorDeviceClass.TIMESTAMP
 
     def test_entity_category_diagnostic(self):
-        sensor = _make_snooze_until_sensor()
+        sensor = _make_diagnostic_sensor(ChoreSnoozeUntilSensor)
         assert sensor.entity_category == EntityCategory.DIAGNOSTIC
 
     def test_unique_id_format(self):
         entry = _make_entry(entry_id="abc")
-        sensor = _make_snooze_until_sensor(entry=entry)
+        sensor = _make_diagnostic_sensor(ChoreSnoozeUntilSensor, entry=entry)
         assert sensor.unique_id == "abc_snooze_until"
 
     def test_translation_key(self):
-        sensor = _make_snooze_until_sensor()
+        sensor = _make_diagnostic_sensor(ChoreSnoozeUntilSensor)
         assert sensor.translation_key == "snooze_until"
 
     def test_available_false_when_not_snoozed(self):
-        sensor = _make_snooze_until_sensor()
+        sensor = _make_diagnostic_sensor(ChoreSnoozeUntilSensor)
         assert sensor.available is False
 
     def test_available_true_when_snoozed(self):
         coordinator = FakeCoordinator({**CHORE_STATE, "snooze_until": _SNOOZE_DT})
-        sensor = _make_snooze_until_sensor(coordinator=coordinator)
+        sensor = _make_diagnostic_sensor(
+            ChoreSnoozeUntilSensor, coordinator=coordinator
+        )
         assert sensor.available is True
 
 
@@ -375,5 +368,7 @@ class TestDiagnosticSensorDeviceInfo:
         coordinator = FakeCoordinator()
         entry = _make_entry(entry_id="shared")
         primary = _make_sensor(coordinator=coordinator, entry=entry)
-        diag = _make_last_completed_sensor(coordinator=coordinator, entry=entry)
+        diag = _make_diagnostic_sensor(
+            ChoreLastCompletedSensor, coordinator=coordinator, entry=entry
+        )
         assert primary.device_info["identifiers"] == diag.device_info["identifiers"]
