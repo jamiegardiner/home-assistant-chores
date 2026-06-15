@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1](https://github.com/jamiegardiner/home-assistant-chores/compare/v1.0.0...v1.0.1) (2026-06-15)
+
+
+### Bug Fixes
+
+* **issue-121:** persist cleared snooze_until in async_update_config when snooze has expired ([#126](https://github.com/jamiegardiner/home-assistant-chores/issues/126)) ([f716af5](https://github.com/jamiegardiner/home-assistant-chores/commit/f716af51116f1f50dc5309cb42551ff15140d993))
+* **issue-136:** persist cleared snooze_until to entry.options on natural expiry ([#140](https://github.com/jamiegardiner/home-assistant-chores/issues/140)) ([fdd7b07](https://github.com/jamiegardiner/home-assistant-chores/commit/fdd7b0721014da4277f481347d9e7559598a1303))
+
 ## [1.0.0](https://github.com/jamiegardiner/home-assistant-chores/compare/v0.1.0...v1.0.0) (2026-06-14)
 
 
