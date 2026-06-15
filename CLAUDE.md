@@ -201,7 +201,7 @@ ______________________________________________________________________
 
 ### Coordinator test layout
 
-`test_coordinator.py` has been replaced by four focused modules plus a shared conftest:
+Coordinator tests are split across four focused modules:
 
 | File                           | Coverage                                                  |
 | ------------------------------ | --------------------------------------------------------- |
