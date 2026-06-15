@@ -81,6 +81,17 @@ Use the prefix that reflects the PR's **most significant** change:
 
 Append `!` after the scope for a breaking change: `feat(issue-X)!: remove weeks option`.
 
+### Local development setup
+
+Before your first contribution, run:
+
+```bash
+make venv          # create .venv and install all deps
+make install-hooks # activate the pre-commit hook (one-time)
+```
+
+The hook runs lint, format check, typecheck, and translation sync before every commit — no tests, so it's near-instant. If it fails, run `make format` to auto-fix formatting issues, then re-commit.
+
 ### Contributor flow
 
 1. Open or pick up a GitHub Issue.
