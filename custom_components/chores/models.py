@@ -24,6 +24,9 @@ class ChoreConfig:
         missing = required_keys - data.keys()
         if missing:
             raise ValueError(f"ChoreConfig missing required keys: {missing}")
+        name = data["name"]
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError(f"Invalid name {name!r}; must be a non-empty string")
         interval_days = data["interval_days"]
         if (
             not isinstance(interval_days, int)
@@ -58,7 +61,7 @@ class ChoreConfig:
                 f"Invalid notification_time {notification_time!r}; must be HH:MM (00:00-23:59)"
             ) from None
         return cls(
-            name=data["name"],
+            name=name.strip(),
             interval_days=interval_days,
             default_snooze_value=default_snooze_value,
             default_snooze_unit=default_snooze_unit,
