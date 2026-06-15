@@ -30,11 +30,7 @@ ______________________________________________________________________
 
 ## 2. Mobile actionable notification
 
-Send a notification with action buttons so you can mark the chore complete or snooze it directly from your phone, without opening Home Assistant.
-
-This requires two automations: one to send the notification, and one to handle the button tap.
-
-### Automation A — send the notification
+Send a notification with action buttons so you can mark the chore complete or snooze it directly from your phone, without opening Home Assistant. A single automation sends the notification, waits for the button tap, and handles it inline — no second automation needed.
 
 ```yaml
 alias: Actionable notification when kettle descaling is overdue
@@ -44,44 +40,37 @@ triggers:
     entity_id: sensor.descale_kettle
     to: overdue
 actions:
+  - variables:
+      # Unique action names per notification instance — prevents cross-trigger collisions
+      action_done: "{{ 'DESCALE_KETTLE_DONE_' ~ context.id }}"
+      action_snooze: "{{ 'DESCALE_KETTLE_SNOOZE_' ~ context.id }}"
   - action: notify.mobile_app_your_phone
     data:
       title: Chore overdue
       message: Time to descale the kettle.
       data:
         actions:
-          - action: DESCALE_KETTLE_DONE
+          - action: "{{ action_done }}"
             title: Mark done
-          - action: DESCALE_KETTLE_SNOOZE
+          - action: "{{ action_snooze }}"
             title: Snooze 1 day
-```
-
-### Automation B — handle the button tap
-
-```yaml
-alias: Handle kettle descaling notification actions
-triggers:
-  - trigger: event
-    event_type: mobile_app_notification_action
-    event_data:
-      action: DESCALE_KETTLE_DONE
-  - trigger: event
-    event_type: mobile_app_notification_action
-    event_data:
-      action: DESCALE_KETTLE_SNOOZE
-actions:
+  - wait_for_trigger:
+      - trigger: event
+        event_type: mobile_app_notification_action
+        event_data:
+          action: "{{ action_done }}"
+      - trigger: event
+        event_type: mobile_app_notification_action
+        event_data:
+          action: "{{ action_snooze }}"
   - choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ trigger.event.data.action == 'DESCALE_KETTLE_DONE' }}"
+      - conditions: "{{ wait.trigger.event.data.action == action_done }}"
         sequence:
           - action: chores.complete
             target:
               # Replace with your chore entity ID: sensor.<slug>
               entity_id: sensor.descale_kettle
-      - conditions:
-          - condition: template
-            value_template: "{{ trigger.event.data.action == 'DESCALE_KETTLE_SNOOZE' }}"
+      - conditions: "{{ wait.trigger.event.data.action == action_snooze }}"
         sequence:
           - action: chores.snooze
             target:
