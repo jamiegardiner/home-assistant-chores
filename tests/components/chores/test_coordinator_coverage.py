@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 from homeassistant.util import dt as dt_util
 
 from custom_components.chores.coordinator import _parse_aware_datetime
-from tests.components.chores.conftest import _make_entry, _setup_coord
+from tests.components.chores.helpers import make_entry, setup_coord
 
 # ---------------------------------------------------------------------------
 # _parse_aware_datetime tests
@@ -38,9 +38,9 @@ async def test_complete_while_timer_live_cancels_prior_timer(
 
     patch_track.side_effect = _side_effect
 
-    entry = _make_entry(days_ago=0, interval_days=7)
+    entry = make_entry(days_ago=0, interval_days=7)
     entry.add_to_hass(hass)
-    coord = await _setup_coord(hass, entry)
+    coord = await setup_coord(hass, entry)
     assert len(cancel_mocks) == 1
     first_cancel = cancel_mocks[0]
 
@@ -62,9 +62,9 @@ async def test_snooze_while_timer_live_cancels_overdue_timer(
 
     patch_track.side_effect = _side_effect
 
-    entry = _make_entry(days_ago=0, interval_days=7)
+    entry = make_entry(days_ago=0, interval_days=7)
     entry.add_to_hass(hass)
-    coord = await _setup_coord(hass, entry)
+    coord = await setup_coord(hass, entry)
     first_cancel = cancel_mocks[0]
 
     await coord.async_snooze(dt_util.now() + timedelta(days=1))
@@ -76,9 +76,9 @@ async def test_overdue_callback_noop_after_shutdown(
     hass: Any, fake_track: dict[str, Any]
 ) -> None:
     """Timer callback is a no-op when coordinator runtime is torn down."""
-    entry = _make_entry(days_ago=0, interval_days=7)
+    entry = make_entry(days_ago=0, interval_days=7)
     entry.add_to_hass(hass)
-    coord = await _setup_coord(hass, entry)
+    coord = await setup_coord(hass, entry)
     cb = fake_track["cb"]
 
     coord._runtime = None
@@ -103,9 +103,9 @@ async def test_snooze_reschedule_cancels_prior_snooze_timer(
 
     patch_track.side_effect = _side_effect
 
-    entry = _make_entry(days_ago=30, interval_days=7)
+    entry = make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
-    coord = await _setup_coord(hass, entry)
+    coord = await setup_coord(hass, entry)
 
     await coord.async_snooze(dt_util.now() + timedelta(days=1))
     first_snooze_cancel = cancel_mocks[-1]
@@ -119,9 +119,9 @@ async def test_snooze_expiry_callback_noop_after_shutdown(
     hass: Any, fake_track: dict[str, Any]
 ) -> None:
     """Snooze expiry callback is a no-op when coordinator runtime is torn down."""
-    entry = _make_entry(days_ago=30, interval_days=7)
+    entry = make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
-    coord = await _setup_coord(hass, entry)
+    coord = await setup_coord(hass, entry)
 
     await coord.async_snooze(dt_util.now() + timedelta(days=1))
     cb = fake_track["cb"]
@@ -134,9 +134,9 @@ async def test_schedule_snooze_returns_early_when_snooze_until_is_none(
     hass: Any,
 ) -> None:
     """_schedule_snooze is a no-op when snooze_until is None."""
-    entry = _make_entry(days_ago=30, interval_days=7)
+    entry = make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
-    coord = await _setup_coord(hass, entry)
+    coord = await setup_coord(hass, entry)
     assert coord._runtime is not None
     coord._runtime.snooze_until = None
     coord._schedule_snooze(
@@ -148,9 +148,9 @@ async def test_schedule_snooze_returns_early_when_snooze_until_in_past(
     hass: Any,
 ) -> None:
     """_schedule_snooze is a no-op when snooze_until is already in the past."""
-    entry = _make_entry(days_ago=30, interval_days=7)
+    entry = make_entry(days_ago=30, interval_days=7)
     entry.add_to_hass(hass)
-    coord = await _setup_coord(hass, entry)
+    coord = await setup_coord(hass, entry)
     assert coord._runtime is not None
     coord._runtime.snooze_until = dt_util.now() - timedelta(hours=1)
     coord._schedule_snooze(

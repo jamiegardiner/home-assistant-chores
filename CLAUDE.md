@@ -210,14 +210,19 @@ Coordinator tests are split across four focused modules:
 | `test_coordinator_complete.py` | `async_complete`, `completed_at`, notification time       |
 | `test_coordinator_coverage.py` | Timer-reschedule guard branches, `_parse_aware_datetime`  |
 
-`conftest.py` in the same directory provides:
+`conftest.py` provides two fixtures auto-discovered by pytest — no import needed:
 
-- `_make_entry(...)` and `_setup_coord(hass, entry)` — helper functions; import explicitly in each test file:
-  ```python
-  from tests.components.chores.conftest import _make_entry, _setup_coord
-  ```
-- `patch_track` fixture (`autouse=True`) — patches `async_track_point_in_time` for every coordinator test automatically; no re-declaration needed in individual files.
-- `fake_track` fixture — overrides `patch_track` to capture the scheduled callback for timer-firing tests.
+- `patch_track` (`autouse=True`) — patches `async_track_point_in_time` for every coordinator test automatically.
+- `fake_track` — overrides `patch_track` to capture the scheduled callback for timer-firing tests.
+
+`helpers.py` provides shared functions — import explicitly in each test file:
+
+```python
+from tests.components.chores.helpers import make_entry, setup_coord
+```
+
+- `make_entry(...)` — builds a `MockConfigEntry` for a single chore.
+- `setup_coord(hass, entry)` — constructs and initialises a `ChoresCoordinator`.
 
 ______________________________________________________________________
 
