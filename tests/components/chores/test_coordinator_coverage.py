@@ -219,10 +219,67 @@ async def test_invalid_interval_days_raises_config_entry_error(hass: Any) -> Non
     assert issue.severity == ir.IssueSeverity.ERROR
 
 
+async def test_garbage_snooze_until_gracefully_recovered(hass: Any) -> None:
+    """A totally unparseable snooze_until (not just naive) also triggers a repair issue."""
+    entry = make_entry(days_ago=30, interval_days=7, snooze_until="not-a-date")
+    entry.add_to_hass(hass)
+
+    coord = await setup_coord(hass, entry)
+
+    assert coord.data["snooze_until"] is None
+    assert entry.options["snooze_until"] is None
+    issue = ir.async_get(hass).async_get_issue(
+        DOMAIN, f"{REPAIR_ISSUE_CORRUPT_FIELD}_{entry.entry_id}"
+    )
+    assert issue is not None
+    assert issue.severity == ir.IssueSeverity.WARNING
+
+
 async def test_valid_options_no_repair_issue(hass: Any) -> None:
     """A clean load produces no repair issues."""
     entry = make_entry(days_ago=3, interval_days=7)
     entry.add_to_hass(hass)
+
+    await setup_coord(hass, entry)
+
+    issue_reg = ir.async_get(hass)
+    assert (
+        issue_reg.async_get_issue(
+            DOMAIN, f"{REPAIR_ISSUE_CORRUPT_FIELD}_{entry.entry_id}"
+        )
+        is None
+    )
+    assert (
+        issue_reg.async_get_issue(
+            DOMAIN, f"{REPAIR_ISSUE_CORRUPT_CONFIG}_{entry.entry_id}"
+        )
+        is None
+    )
+
+
+async def test_clean_load_deletes_stale_repair_issues(hass: Any) -> None:
+    """A clean load deletes any repair issues left over from a prior corrupt boot."""
+    entry = make_entry(days_ago=3, interval_days=7)
+    entry.add_to_hass(hass)
+
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        f"{REPAIR_ISSUE_CORRUPT_FIELD}_{entry.entry_id}",
+        is_fixable=False,
+        severity=ir.IssueSeverity.WARNING,
+        translation_key=REPAIR_ISSUE_CORRUPT_FIELD,
+        translation_placeholders={"name": "Bins", "fields": "Snooze Until"},
+    )
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        f"{REPAIR_ISSUE_CORRUPT_CONFIG}_{entry.entry_id}",
+        is_fixable=False,
+        severity=ir.IssueSeverity.ERROR,
+        translation_key=REPAIR_ISSUE_CORRUPT_CONFIG,
+        translation_placeholders={"name": "Bins", "error": "bad"},
+    )
 
     await setup_coord(hass, entry)
 

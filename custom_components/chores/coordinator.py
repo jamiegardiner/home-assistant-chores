@@ -31,6 +31,11 @@ from .models import ChoreConfig
 
 _LOGGER = logging.getLogger(__name__)
 
+_CORRUPT_FIELD_LABELS: dict[str, str] = {
+    "last_completed": "Last Completed",
+    "snooze_until": "Snooze Until",
+}
+
 
 @dataclass
 class ChoreRuntime:
@@ -87,6 +92,10 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
             raise ConfigEntryError(str(exc)) from exc
 
+        ir.async_delete_issue(
+            self.hass, DOMAIN, f"{REPAIR_ISSUE_CORRUPT_CONFIG}_{entry_id}"
+        )
+
         corrupt_fields: list[str] = []
         last_completed: datetime | None = None
         snooze_until: datetime | None = None
@@ -98,6 +107,8 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             try:
                 parsed = _parse_aware_datetime(raw)
             except ValueError:
+                parsed = None
+            if parsed is None:
                 _LOGGER.warning(
                     "Chore entry %s has a corrupt %r field (%r); clearing to None",
                     entry_id,
@@ -122,8 +133,14 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 translation_key=REPAIR_ISSUE_CORRUPT_FIELD,
                 translation_placeholders={
                     "name": config.name,
-                    "fields": ", ".join(corrupt_fields),
+                    "fields": ", ".join(
+                        _CORRUPT_FIELD_LABELS.get(f, f) for f in corrupt_fields
+                    ),
                 },
+            )
+        else:
+            ir.async_delete_issue(
+                self.hass, DOMAIN, f"{REPAIR_ISSUE_CORRUPT_FIELD}_{entry_id}"
             )
 
         rt = ChoreRuntime(
