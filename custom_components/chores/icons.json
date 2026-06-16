@@ -1,0 +1,63 @@
+{
+  "entity": {
+    "sensor": {
+      "chore": {
+        "default": "mdi:clipboard-check-outline",
+        "state": {
+          "done": "mdi:check-circle",
+          "overdue": "mdi:alert-circle",
+          "snoozed": "mdi:clock-outline"
+        }
+      },
+      "last_completed": {
+        "default": "mdi:calendar-check"
+      },
+      "next_due": {
+        "default": "mdi:calendar-clock"
+      },
+      "snooze_until": {
+        "default": "mdi:alarm"
+      }
+    },
+    "button": {
+      "complete": {
+        "default": "mdi:check-circle"
+      },
+      "snooze": {
+        "default": "mdi:alarm-snooze"
+      },
+      "unsnooze": {
+        "default": "mdi:alarm-off"
+      }
+    },
+    "number": {
+      "interval_days": {
+        "default": "mdi:calendar-range"
+      },
+      "default_snooze_value": {
+        "default": "mdi:numeric"
+      }
+    },
+    "select": {
+      "default_snooze_unit": {
+        "default": "mdi:clock-outline"
+      }
+    },
+    "time": {
+      "notification_time": {
+        "default": "mdi:clock-time-eight"
+      }
+    }
+  },
+  "services": {
+    "complete": {
+      "service": "mdi:check-circle"
+    },
+    "snooze": {
+      "service": "mdi:alarm-snooze"
+    },
+    "unsnooze": {
+      "service": "mdi:alarm-off"
+    }
+  }
+}
