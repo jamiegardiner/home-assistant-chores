@@ -178,6 +178,12 @@ See [docs/services.md](docs/services.md) for full service documentation and [doc
 
 ______________________________________________________________________
 
+## 🔍 Troubleshooting
+
+Running into an unexpected state or a repair issue? See [docs/troubleshooting.md](docs/troubleshooting.md) for guidance on common scenarios including corrupt field recovery, failed entry loads, and why new chores start overdue.
+
+______________________________________________________________________
+
 ## 🤝 Contributing
 
 Contributions, bug reports, feature suggestions, and pull requests are welcome.

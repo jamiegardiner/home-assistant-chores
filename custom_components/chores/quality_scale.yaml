@@ -86,7 +86,7 @@ rules:
   dynamic-devices:
     status: exempt
     comment: Devices are created statically at config entry setup, not discovered dynamically.
-  docs-troubleshooting: todo
+  docs-troubleshooting: done
   diagnostics: done
   docs-use-cases: done
 
