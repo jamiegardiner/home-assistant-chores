@@ -131,7 +131,7 @@ ______________________________________________________________________
 
 ### 1. New sensor attribute
 
-Add the key to `coordinator.py:_snapshot()`. To surface it as a diagnostic entity, create a new sensor class in `sensor.py` and add it to `async_setup_entry`.
+Add the key to `coordinator.py:_snapshot()`. To surface it as a diagnostic entity, create a new sensor class in `sensor.py` and add it to `async_setup_entry`. Add an icon for the new translation key under `entity.sensor` in `icons.json`.
 
 ### 2. New service
 
@@ -147,6 +147,7 @@ Services are entity services — HA handles all target resolution (entity, area,
 2. Create `custom_components/chores/<platform>.py` implementing `async_setup_entry` and the entity class.
 3. The entity should be a `CoordinatorEntity` and read state from `coordinator.data` (flat dict).
 4. Declare `PARALLEL_UPDATES = 0` at module level (after imports) — required by the Silver quality-scale `parallel-updates` rule.
+5. Add icons for each new entity translation key under the appropriate platform key in `icons.json`.
 
 ### 4. New config option
 
