@@ -58,7 +58,7 @@ rules:
   entity-device-class: done
   entity-translations: done
   docs-data-update: done
-  entity-disabled-by-default: todo
+  entity-disabled-by-default: done
   discovery:
     status: exempt
     comment: Local/calculated integration; no network discovery.
