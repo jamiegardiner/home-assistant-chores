@@ -6,7 +6,6 @@ schedules overdue-transition timers, and persists state to entry.options.
 
 import logging
 from collections.abc import Callable
-from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -33,17 +32,35 @@ from .models import ChoreConfig
 _LOGGER = logging.getLogger(__name__)
 
 
-@dataclass
 class ChoreRuntime:
     """Runtime state for the single chore managed by this coordinator."""
 
-    config: ChoreConfig
-    last_completed: datetime | None
-    status: str = STATUS_DONE
-    next_due: datetime | None = None
-    snooze_until: datetime | None = None
-    _cancel_timer: Callable[[], None] | None = field(default=None, repr=False)
-    _cancel_snooze_timer: Callable[[], None] | None = field(default=None, repr=False)
+    def __init__(
+        self,
+        config: ChoreConfig,
+        last_completed: datetime | None,
+        snooze_until: datetime | None = None,
+    ) -> None:
+        """Initialize runtime state for a chore."""
+        self.config = config
+        self.last_completed = last_completed
+        self.status: str = STATUS_DONE
+        self.next_due: datetime | None = None
+        self.snooze_until = snooze_until
+        self._unsubscribe_overdue_timer: Callable[[], None] | None = None
+        self._unsubscribe_snooze_timer: Callable[[], None] | None = None
+
+    def cancel_overdue_timer(self) -> None:
+        """Cancel the overdue transition timer if one is scheduled."""
+        if self._unsubscribe_overdue_timer is not None:
+            self._unsubscribe_overdue_timer()
+            self._unsubscribe_overdue_timer = None
+
+    def cancel_snooze_timer(self) -> None:
+        """Cancel the snooze-expiry timer if one is scheduled."""
+        if self._unsubscribe_snooze_timer is not None:
+            self._unsubscribe_snooze_timer()
+            self._unsubscribe_snooze_timer = None
 
 
 class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -177,6 +194,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         hour, minute = map(int, notification_time.split(":"))
         return dt_util.start_of_local_day(local_date).replace(hour=hour, minute=minute)
 
+    @callback
     def _schedule_timers(self) -> None:
         """Schedule overdue and/or snooze timer based on current runtime state."""
         assert self._runtime is not None
@@ -186,11 +204,10 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         else:
             self._schedule(rt)
 
+    @callback
     def _schedule(self, rt: ChoreRuntime) -> None:
         """Schedule a timer to fire the overdue transition at next_due."""
-        if rt._cancel_timer is not None:
-            rt._cancel_timer()
-            rt._cancel_timer = None
+        rt.cancel_overdue_timer()
 
         if rt.next_due is None or rt.next_due <= dt_util.now():
             return
@@ -202,15 +219,14 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._recompute(self._runtime)
             self.async_set_updated_data(self._snapshot())
 
-        rt._cancel_timer = async_track_point_in_time(
+        rt._unsubscribe_overdue_timer = async_track_point_in_time(
             self.hass, _overdue_callback, rt.next_due
         )
 
+    @callback
     def _schedule_snooze(self, rt: ChoreRuntime) -> None:
         """Schedule a snooze-expiry timer at snooze_until."""
-        if rt._cancel_snooze_timer is not None:
-            rt._cancel_snooze_timer()
-            rt._cancel_snooze_timer = None
+        rt.cancel_snooze_timer()
 
         if rt.snooze_until is None:
             return
@@ -223,25 +239,21 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if self._runtime is None:
                 return
             self._runtime.snooze_until = None
-            self._runtime._cancel_snooze_timer = None
+            self._runtime._unsubscribe_snooze_timer = None
             self._recompute(self._runtime)
             self._persist({"snooze_until": None})
             self._schedule(self._runtime)
             self.async_set_updated_data(self._snapshot())
 
-        rt._cancel_snooze_timer = async_track_point_in_time(
+        rt._unsubscribe_snooze_timer = async_track_point_in_time(
             self.hass, _snooze_expiry_callback, rt.snooze_until
         )
 
     @callback
     def _cancel_timers(self, rt: ChoreRuntime) -> None:
         """Cancel all timers on a runtime."""
-        if rt._cancel_timer is not None:
-            rt._cancel_timer()
-            rt._cancel_timer = None
-        if rt._cancel_snooze_timer is not None:
-            rt._cancel_snooze_timer()
-            rt._cancel_snooze_timer = None
+        rt.cancel_overdue_timer()
+        rt.cancel_snooze_timer()
 
     def _resolve_datetime_field(
         self,
@@ -303,9 +315,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         rt = self._runtime
 
         if rt.snooze_until is not None:
-            if rt._cancel_snooze_timer is not None:
-                rt._cancel_snooze_timer()
-                rt._cancel_snooze_timer = None
+            rt.cancel_snooze_timer()
             rt.snooze_until = None
 
         rt.last_completed = completed_at
@@ -335,9 +345,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         rt = self._runtime
         rt.snooze_until = snooze_until
 
-        if rt._cancel_timer is not None:
-            rt._cancel_timer()
-            rt._cancel_timer = None
+        rt.cancel_overdue_timer()
 
         self._schedule_snooze(rt)
         rt.status = STATUS_SNOOZED
@@ -351,9 +359,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if rt.snooze_until is None:
             return
 
-        if rt._cancel_snooze_timer is not None:
-            rt._cancel_snooze_timer()
-            rt._cancel_snooze_timer = None
+        rt.cancel_snooze_timer()
         rt.snooze_until = None
         self._recompute(rt)
         self._schedule(rt)
