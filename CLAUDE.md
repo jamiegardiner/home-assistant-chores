@@ -249,3 +249,4 @@ ______________________________________________________________________
 - `last_completed` is `null` on creation; set to a tz-aware ISO 8601 datetime string only when `chores.complete` is called.
 - `notification_time` is stored as an `"HH:MM"` string in `entry.options`.
 - The `chores.complete` service accepts an optional `completed_at` datetime (must not be in the future). Omit it to default to now.
+- `quality_scale.yaml` lives at `custom_components/chores/quality_scale.yaml` and lists every HA Integration Quality Scale rule with `done`, `todo`, or `exempt`. Update it whenever a rule's status changes (e.g. a `todo` is implemented or an `exempt` justification changes).

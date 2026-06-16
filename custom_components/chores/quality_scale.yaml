@@ -1,0 +1,87 @@
+rules:
+  # Bronze
+  config-flow: done
+  brands: done
+  dependency-transparency: done
+  common-modules: done
+  has-entity-name: done
+  action-setup: done
+  appropriate-polling: done
+  test-before-configure:
+    status: exempt
+    comment: Local integration with no external services or credentials to verify.
+  entity-event-setup:
+    status: exempt
+    comment: Integration does not subscribe to Home Assistant events.
+  unique-config-entry: todo
+  entity-unique-id: done
+  docs-installation-instructions: done
+  docs-removal-instructions: todo
+  test-before-setup: done
+  docs-high-level-description: done
+  config-flow-test-coverage: done
+  docs-actions: done
+  runtime-data: done
+
+  # Silver
+  log-when-unavailable:
+    status: exempt
+    comment: |
+      Calculated/local integration. Entity unavailability is by design (e.g. no
+      last_completed date yet), not caused by a network or device failure.
+  config-entry-unloading: done
+  reauthentication-flow:
+    status: exempt
+    comment: Integration has no authentication; nothing to re-authenticate.
+  action-exceptions: done
+  docs-installation-parameters: done
+  integration-owner: done
+  parallel-updates: done
+  test-coverage: done
+  docs-configuration-parameters: done
+  entity-unavailable: done
+
+  # Gold
+  docs-examples: done
+  discovery-update-info:
+    status: exempt
+    comment: Local/calculated integration; no device discovery.
+  entity-device-class: done
+  entity-translations: done
+  docs-data-update: done
+  entity-disabled-by-default: todo
+  discovery:
+    status: exempt
+    comment: Local/calculated integration; no network discovery.
+  exception-translations: done
+  devices: done
+  docs-supported-devices:
+    status: exempt
+    comment: Software integration; there are no physical hardware devices to document.
+  icon-translations: done
+  docs-known-limitations: done
+  stale-devices:
+    status: exempt
+    comment: |
+      Each device has a 1:1 relationship with its config entry. Home Assistant
+      removes the device automatically when the entry is deleted; no stale-device
+      cleanup is required.
+  docs-supported-functions: done
+  repair-issues: done
+  reconfiguration-flow: todo
+  entity-category: done
+  dynamic-devices:
+    status: exempt
+    comment: Devices are created statically at config entry setup, not discovered dynamically.
+  docs-troubleshooting: todo
+  diagnostics: todo
+  docs-use-cases: done
+
+  # Platinum
+  async-dependency:
+    status: exempt
+    comment: Integration has no external dependencies.
+  strict-typing: done
+  inject-websession:
+    status: exempt
+    comment: Integration makes no HTTP requests.
