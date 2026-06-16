@@ -10,7 +10,7 @@ from datetime import date, datetime, timedelta
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HassJob, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryError, HomeAssistantError
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -63,8 +63,13 @@ class ChoreRuntime:
             self._unsubscribe_snooze_timer = None
 
 
+type ChoresConfigEntry = ConfigEntry[ChoresCoordinator]
+
+
 class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Coordinator that manages a single chore's state and timers."""
+
+    config_entry: ChoresConfigEntry
 
     def __init__(self, hass: HomeAssistant, entry: ChoresConfigEntry) -> None:
         """Initialize the coordinator."""
@@ -79,7 +84,6 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def async_initialize(self) -> None:
         """Load chore from entry.options and schedule timers."""
-        assert self.config_entry is not None
         opts = dict(self.config_entry.options)
         entry_id = self.config_entry.entry_id
 
@@ -189,7 +193,8 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         rt.status = STATUS_OVERDUE if now >= rt.next_due else STATUS_DONE
 
-    def _time_on_local_date(self, local_date: date, notification_time: str) -> datetime:
+    @staticmethod
+    def _time_on_local_date(local_date: date, notification_time: str) -> datetime:
         """Return a tz-aware datetime at notification_time on local_date."""
         hour, minute = map(int, notification_time.split(":"))
         return dt_util.start_of_local_day(local_date).replace(hour=hour, minute=minute)
@@ -220,7 +225,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.async_set_updated_data(self._snapshot())
 
         rt._unsubscribe_overdue_timer = async_track_point_in_time(
-            self.hass, _overdue_callback, rt.next_due
+            self.hass, HassJob(_overdue_callback), rt.next_due
         )
 
     @callback
@@ -246,7 +251,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.async_set_updated_data(self._snapshot())
 
         rt._unsubscribe_snooze_timer = async_track_point_in_time(
-            self.hass, _snooze_expiry_callback, rt.snooze_until
+            self.hass, HassJob(_snooze_expiry_callback), rt.snooze_until
         )
 
     @callback
@@ -258,13 +263,13 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def _resolve_datetime_field(
         self,
         opts: dict[str, Any],
-        field: str,
+        field_name: str,
         issue_key: str,
         entry_id: str,
         chore_name: str,
     ) -> datetime | None:
         """Parse a datetime option field; create or delete a repair issue accordingly."""
-        raw = opts.get(field)
+        raw = opts.get(field_name)
         parsed: datetime | None = None
         if raw:
             try:
@@ -275,10 +280,10 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             _LOGGER.warning(
                 "Chore entry %s has a corrupt %r field (%r); clearing to None",
                 entry_id,
-                field,
+                field_name,
                 raw,
             )
-            self._persist({field: None})
+            self._persist({field_name: None})
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
@@ -298,7 +303,6 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     def _persist(self, fields: dict[str, Any]) -> None:
         """Write updated runtime fields back to entry.options for persistence."""
-        assert self.config_entry is not None
         new_opts = {**self.config_entry.options, **fields}
         self.hass.config_entries.async_update_entry(self.config_entry, options=new_opts)
 
@@ -421,6 +425,3 @@ def _parse_aware_datetime(value: str | None) -> datetime | None:
 def _snooze_target(value: int, unit: str) -> datetime:
     """Return the snooze expiry datetime: now + value units."""
     return dt_util.now() + timedelta(**{unit: value})
-
-
-type ChoresConfigEntry = ConfigEntry[ChoresCoordinator]

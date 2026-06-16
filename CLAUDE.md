@@ -173,6 +173,7 @@ ______________________________________________________________________
 
 Ruff and mypy own: import order, modern typing/union syntax, f-strings over `.format()`, `is None`/`is not None`, no mutable default args, no unused imports. Do not restate these.
 
+- **Check IDE diagnostics** after every change using `mcp__ide__getDiagnostics`. ruff and mypy don't catch everything — IDE inspections surface additional smells that tooling misses. Fix all warnings before committing.
 - **Never suppress tooling without confirmation.** Do not add `# noqa`, `# type: ignore`, per-file ruff exclusions, or mdformat exclusions to work around a failing check — fix the root cause instead. If suppression is genuinely necessary, ask first.
 - **Complete type hints** on every function/method (params + return). mypy runs in strict mode, so omissions are caught in CI.
 - **PEP 695 `type` aliases** for parametrised types: `type ChoresConfigEntry = ConfigEntry[ChoresCoordinator]`.
