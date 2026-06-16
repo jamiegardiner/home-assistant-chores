@@ -9,6 +9,7 @@ from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import (
     AddEntitiesCallback,
     async_get_current_platform,
@@ -17,9 +18,13 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    DOMAIN,
+    MAX_NUMBER_VALUE,
+    MIN_NUMBER_VALUE,
     SERVICE_COMPLETE,
     SERVICE_SNOOZE,
     SERVICE_UNSNOOZE,
+    SNOOZE_UNITS,
     STATUS_OPTIONS,
     ChoreSensorEntityFeature,
 )
@@ -42,6 +47,23 @@ async def _handle_complete(entity: ChoreSensor, call: ServiceCall) -> None:
 
 
 async def _handle_snooze(entity: ChoreSensor, call: ServiceCall) -> None:
+    value: int = call.data["value"]
+    unit: str = call.data["unit"]
+    if not MIN_NUMBER_VALUE <= value <= MAX_NUMBER_VALUE:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="snooze_value_out_of_range",
+            translation_placeholders={
+                "min": str(MIN_NUMBER_VALUE),
+                "max": str(MAX_NUMBER_VALUE),
+            },
+        )
+    if unit not in SNOOZE_UNITS:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="invalid_snooze_unit",
+            translation_placeholders={"option": unit, "units": ", ".join(SNOOZE_UNITS)},
+        )
     snooze_until = _parse_snooze_datetime(call.data)
     await entity.coordinator.async_snooze(snooze_until)
 

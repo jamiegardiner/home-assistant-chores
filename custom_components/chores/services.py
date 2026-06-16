@@ -6,7 +6,6 @@ from typing import Any
 import voluptuous as vol
 from homeassistant.helpers import config_validation as cv
 
-from .const import MAX_NUMBER_VALUE, MIN_NUMBER_VALUE, SNOOZE_UNITS
 from .coordinator import _snooze_target
 
 # Schemas are plain dicts so HA can wrap them with make_entity_service_schema,
@@ -16,11 +15,12 @@ COMPLETE_SCHEMA: dict[Any, Any] = {
 }
 UNSNOOZE_SCHEMA: dict[Any, Any] = {}
 
+# Type coercion only — range and unit validation is done in _handle_snooze via
+# ServiceValidationError so HA surfaces translated messages rather than raw
+# voluptuous error strings.
 SNOOZE_SCHEMA: dict[Any, Any] = {
-    vol.Required("value"): vol.All(
-        vol.Coerce(int), vol.Range(min=MIN_NUMBER_VALUE, max=MAX_NUMBER_VALUE)
-    ),
-    vol.Required("unit"): vol.In(SNOOZE_UNITS),
+    vol.Required("value"): vol.Coerce(int),
+    vol.Required("unit"): str,
 }
 
 

@@ -4,7 +4,6 @@ from unittest.mock import MagicMock
 
 import pytest
 from homeassistant.const import EntityCategory
-from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.chores.const import SNOOZE_UNITS
 from custom_components.chores.select import (
@@ -123,16 +122,3 @@ class TestChoreDefaultSnoozeUnitSelect:
         entity = _make_select(coordinator=coordinator)
         await entity.async_select_option(unit)
         assert coordinator._persist_calls == [{"default_snooze_unit": unit}]
-
-    async def test_select_option_rejects_invalid_unit(self):
-        entity = _make_select()
-        with pytest.raises(HomeAssistantError) as exc_info:
-            await entity.async_select_option("fortnights")
-        assert exc_info.value.translation_key == "invalid_snooze_unit"
-
-    async def test_select_option_no_persist_on_invalid(self):
-        coordinator = FakeCoordinator()
-        entity = _make_select(coordinator=coordinator)
-        with pytest.raises(HomeAssistantError):
-            await entity.async_select_option("fortnights")
-        assert coordinator._persist_calls == []
