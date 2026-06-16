@@ -22,7 +22,8 @@ from homeassistant.util import dt as dt_util
 from .const import (
     DOMAIN,
     REPAIR_ISSUE_CORRUPT_CONFIG,
-    REPAIR_ISSUE_CORRUPT_FIELD,
+    REPAIR_ISSUE_CORRUPT_LAST_COMPLETED,
+    REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL,
     STATUS_DONE,
     STATUS_OVERDUE,
     STATUS_SNOOZED,
@@ -31,9 +32,9 @@ from .models import ChoreConfig
 
 _LOGGER = logging.getLogger(__name__)
 
-_CORRUPT_FIELD_LABELS: dict[str, str] = {
-    "last_completed": "Last Completed",
-    "snooze_until": "Snooze Until",
+_CORRUPT_FIELD_ISSUE_KEYS: dict[str, str] = {
+    "last_completed": REPAIR_ISSUE_CORRUPT_LAST_COMPLETED,
+    "snooze_until": REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL,
 }
 
 
@@ -124,24 +125,20 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         if corrupt_fields:
             self._persist({k: None for k in corrupt_fields})
-            ir.async_create_issue(
-                self.hass,
-                DOMAIN,
-                f"{REPAIR_ISSUE_CORRUPT_FIELD}_{entry_id}",
-                is_fixable=False,
-                severity=ir.IssueSeverity.WARNING,
-                translation_key=REPAIR_ISSUE_CORRUPT_FIELD,
-                translation_placeholders={
-                    "name": config.name,
-                    "fields": ", ".join(
-                        _CORRUPT_FIELD_LABELS.get(f, f) for f in corrupt_fields
-                    ),
-                },
-            )
-        else:
-            ir.async_delete_issue(
-                self.hass, DOMAIN, f"{REPAIR_ISSUE_CORRUPT_FIELD}_{entry_id}"
-            )
+            for field_name in corrupt_fields:
+                issue_key = _CORRUPT_FIELD_ISSUE_KEYS[field_name]
+                ir.async_create_issue(
+                    self.hass,
+                    DOMAIN,
+                    f"{issue_key}_{entry_id}",
+                    is_fixable=False,
+                    severity=ir.IssueSeverity.WARNING,
+                    translation_key=issue_key,
+                    translation_placeholders={"name": config.name},
+                )
+        for field_name, issue_key in _CORRUPT_FIELD_ISSUE_KEYS.items():
+            if field_name not in corrupt_fields:
+                ir.async_delete_issue(self.hass, DOMAIN, f"{issue_key}_{entry_id}")
 
         rt = ChoreRuntime(
             config=config, last_completed=last_completed, snooze_until=snooze_until

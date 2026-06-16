@@ -20,7 +20,8 @@ SERVICE_SNOOZE = "snooze"
 SERVICE_UNSNOOZE = "unsnooze"
 
 
-REPAIR_ISSUE_CORRUPT_FIELD = "corrupt_recoverable_field"
+REPAIR_ISSUE_CORRUPT_LAST_COMPLETED = "corrupt_last_completed"
+REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL = "corrupt_snooze_until"
 REPAIR_ISSUE_CORRUPT_CONFIG = "corrupt_unrecoverable_config"
 
 

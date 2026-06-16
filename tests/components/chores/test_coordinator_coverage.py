@@ -13,7 +13,8 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.chores.const import (
     DOMAIN,
     REPAIR_ISSUE_CORRUPT_CONFIG,
-    REPAIR_ISSUE_CORRUPT_FIELD,
+    REPAIR_ISSUE_CORRUPT_LAST_COMPLETED,
+    REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL,
 )
 from custom_components.chores.coordinator import (
     ChoresCoordinator,
@@ -185,7 +186,7 @@ async def test_naive_last_completed_gracefully_recovered(hass: Any) -> None:
     assert coord.data["last_completed"] is None
     assert entry.options["last_completed"] is None
     issue = ir.async_get(hass).async_get_issue(
-        DOMAIN, f"{REPAIR_ISSUE_CORRUPT_FIELD}_{entry.entry_id}"
+        DOMAIN, f"{REPAIR_ISSUE_CORRUPT_LAST_COMPLETED}_{entry.entry_id}"
     )
     assert issue is not None
     assert issue.severity == ir.IssueSeverity.WARNING
@@ -229,7 +230,7 @@ async def test_garbage_snooze_until_gracefully_recovered(hass: Any) -> None:
     assert coord.data["snooze_until"] is None
     assert entry.options["snooze_until"] is None
     issue = ir.async_get(hass).async_get_issue(
-        DOMAIN, f"{REPAIR_ISSUE_CORRUPT_FIELD}_{entry.entry_id}"
+        DOMAIN, f"{REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL}_{entry.entry_id}"
     )
     assert issue is not None
     assert issue.severity == ir.IssueSeverity.WARNING
@@ -245,7 +246,13 @@ async def test_valid_options_no_repair_issue(hass: Any) -> None:
     issue_reg = ir.async_get(hass)
     assert (
         issue_reg.async_get_issue(
-            DOMAIN, f"{REPAIR_ISSUE_CORRUPT_FIELD}_{entry.entry_id}"
+            DOMAIN, f"{REPAIR_ISSUE_CORRUPT_LAST_COMPLETED}_{entry.entry_id}"
+        )
+        is None
+    )
+    assert (
+        issue_reg.async_get_issue(
+            DOMAIN, f"{REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL}_{entry.entry_id}"
         )
         is None
     )
@@ -265,11 +272,20 @@ async def test_clean_load_deletes_stale_repair_issues(hass: Any) -> None:
     ir.async_create_issue(
         hass,
         DOMAIN,
-        f"{REPAIR_ISSUE_CORRUPT_FIELD}_{entry.entry_id}",
+        f"{REPAIR_ISSUE_CORRUPT_LAST_COMPLETED}_{entry.entry_id}",
         is_fixable=False,
         severity=ir.IssueSeverity.WARNING,
-        translation_key=REPAIR_ISSUE_CORRUPT_FIELD,
-        translation_placeholders={"name": "Bins", "fields": "Snooze Until"},
+        translation_key=REPAIR_ISSUE_CORRUPT_LAST_COMPLETED,
+        translation_placeholders={"name": "Bins"},
+    )
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        f"{REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL}_{entry.entry_id}",
+        is_fixable=False,
+        severity=ir.IssueSeverity.WARNING,
+        translation_key=REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL,
+        translation_placeholders={"name": "Bins"},
     )
     ir.async_create_issue(
         hass,
@@ -286,7 +302,13 @@ async def test_clean_load_deletes_stale_repair_issues(hass: Any) -> None:
     issue_reg = ir.async_get(hass)
     assert (
         issue_reg.async_get_issue(
-            DOMAIN, f"{REPAIR_ISSUE_CORRUPT_FIELD}_{entry.entry_id}"
+            DOMAIN, f"{REPAIR_ISSUE_CORRUPT_LAST_COMPLETED}_{entry.entry_id}"
+        )
+        is None
+    )
+    assert (
+        issue_reg.async_get_issue(
+            DOMAIN, f"{REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL}_{entry.entry_id}"
         )
         is None
     )

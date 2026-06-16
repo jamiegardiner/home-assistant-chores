@@ -9,7 +9,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.util import dt as dt_util
 
-from custom_components.chores.const import DOMAIN, REPAIR_ISSUE_CORRUPT_FIELD
+from custom_components.chores.const import DOMAIN, REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL
 from tests.components.chores.helpers import make_entry, setup_coord
 
 # ---------------------------------------------------------------------------
@@ -148,7 +148,7 @@ async def test_naive_snooze_gracefully_recovered(hass: Any) -> None:
     assert coord.data["snooze_until"] is None
     assert entry.options["snooze_until"] is None
     issue = ir.async_get(hass).async_get_issue(
-        DOMAIN, f"{REPAIR_ISSUE_CORRUPT_FIELD}_{entry.entry_id}"
+        DOMAIN, f"{REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL}_{entry.entry_id}"
     )
     assert issue is not None
     assert issue.severity == ir.IssueSeverity.WARNING

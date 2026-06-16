@@ -56,9 +56,13 @@
     }
   },
   "issues": {
-    "corrupt_recoverable_field": {
-      "title": "Corrupt field reset for \"{name}\"",
-      "description": "The field(s) **{fields}** in chore \"{name}\" contained a malformed value and were reset to their default. If the issue persists, delete and recreate the chore."
+    "corrupt_last_completed": {
+      "title": "Last Completed date reset for \"{name}\"",
+      "description": "The Last Completed date for chore \"{name}\" contained a malformed value and was reset. If the issue persists, delete and recreate the chore."
+    },
+    "corrupt_snooze_until": {
+      "title": "Snooze Expiry reset for \"{name}\"",
+      "description": "The Snooze Expiry for chore \"{name}\" contained a malformed value and was reset. If the issue persists, delete and recreate the chore."
     },
     "corrupt_unrecoverable_config": {
       "title": "Chore configuration error for \"{name}\"",
