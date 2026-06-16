@@ -11,7 +11,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import SNOOZE_UNITS
+from .const import DOMAIN, SNOOZE_UNITS
 from .coordinator import ChoresCoordinator, _ChoreDeviceMixin
 
 PARALLEL_UPDATES = 0
@@ -51,6 +51,11 @@ class ChoreDefaultSnoozeUnitSelect(
     async def async_select_option(self, option: str) -> None:
         if option not in SNOOZE_UNITS:
             raise HomeAssistantError(
-                f"Invalid snooze unit {option!r}; must be one of {SNOOZE_UNITS}"
+                translation_domain=DOMAIN,
+                translation_key="invalid_snooze_unit",
+                translation_placeholders={
+                    "option": option,
+                    "units": ", ".join(SNOOZE_UNITS),
+                },
             )
         self.coordinator.set_option("default_snooze_unit", option)

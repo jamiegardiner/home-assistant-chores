@@ -152,13 +152,19 @@ class TestChoreIntervalNumber:
 
     async def test_set_native_value_rejects_zero(self):
         entity = _make_interval_number()
-        with pytest.raises(HomeAssistantError):
+        with pytest.raises(HomeAssistantError) as exc_info:
             await entity.async_set_native_value(0.0)
+        assert exc_info.value.translation_key == "interval_days_out_of_range"
 
     async def test_set_native_value_rejects_negative(self):
         entity = _make_interval_number()
         with pytest.raises(HomeAssistantError):
             await entity.async_set_native_value(-1.0)
+
+    async def test_set_native_value_rejects_above_max(self):
+        entity = _make_interval_number()
+        with pytest.raises(HomeAssistantError):
+            await entity.async_set_native_value(366.0)
 
     async def test_set_native_value_no_persist_on_invalid(self):
         coordinator = FakeCoordinator()
@@ -210,8 +216,14 @@ class TestChoreDefaultSnoozeValueNumber:
 
     async def test_set_native_value_rejects_zero(self):
         entity = _make_snooze_value_number()
-        with pytest.raises(HomeAssistantError):
+        with pytest.raises(HomeAssistantError) as exc_info:
             await entity.async_set_native_value(0.0)
+        assert exc_info.value.translation_key == "default_snooze_value_out_of_range"
+
+    async def test_set_native_value_rejects_above_max(self):
+        entity = _make_snooze_value_number()
+        with pytest.raises(HomeAssistantError):
+            await entity.async_set_native_value(366.0)
 
     async def test_set_native_value_no_persist_on_invalid(self):
         coordinator = FakeCoordinator()

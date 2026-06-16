@@ -34,12 +34,12 @@ ______________________________________________________________________
 
 ## `chores.snooze`
 
-Snooze a chore for a given duration. Provide a `value` (positive integer) and a `unit` (`minutes`, `hours`, `days`, or `weeks`).
+Snooze a chore for a given duration. Provide a `value` (integer, 1–365) and a `unit` (`minutes`, `hours`, `days`, or `weeks`).
 
-| Field   | Required | Description                                     |
-| ------- | -------- | ----------------------------------------------- |
-| `value` | Yes      | Positive integer — how many units to snooze for |
-| `unit`  | Yes      | One of `minutes`, `hours`, `days`, or `weeks`   |
+| Field   | Required | Description                                          |
+| ------- | -------- | ---------------------------------------------------- |
+| `value` | Yes      | Integer between 1 and 365 — how many units to snooze |
+| `unit`  | Yes      | One of `minutes`, `hours`, `days`, or `weeks`        |
 
 ```yaml
 action: chores.snooze

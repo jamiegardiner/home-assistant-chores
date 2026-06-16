@@ -103,8 +103,9 @@ async def test_snooze_non_future_datetime_raises(hass: Any, bad_dt: datetime) ->
     ):
         coord = await setup_coord(hass, entry)
 
-        with pytest.raises(HomeAssistantError):
+        with pytest.raises(HomeAssistantError) as exc_info:
             await coord.async_snooze(bad_dt)
+        assert exc_info.value.translation_key == "snooze_until_in_past"
 
     assert coord.data["status"] != "snoozed"
     assert coord.data["snooze_until"] is None
