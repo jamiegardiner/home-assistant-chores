@@ -45,20 +45,17 @@ class ChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Show the chore creation form and create the entry on submit."""
         errors: dict[str, str] = {}
-        config: ChoreConfig | None = None
 
         if user_input is not None:
-            try:
+            if not str(user_input.get("name", "")).strip():
+                errors["name"] = "name_required"
+            else:
                 config = ChoreConfig.from_dict(
                     {
                         **user_input,
                         "interval_days": int(user_input.get("interval_days", 1)),
                     }
                 )
-            except ValueError:
-                errors["name"] = "name_required"
-
-            if not errors and config is not None:
                 return self.async_create_entry(
                     title=config.name,
                     data={},
