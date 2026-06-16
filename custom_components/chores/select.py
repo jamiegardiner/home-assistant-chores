@@ -53,6 +53,9 @@ class ChoreDefaultSnoozeUnitSelect(
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="invalid_snooze_unit",
-                translation_placeholders={"option": option},
+                translation_placeholders={
+                    "option": option,
+                    "units": ", ".join(SNOOZE_UNITS),
+                },
             )
         self.coordinator.set_option("default_snooze_unit", option)

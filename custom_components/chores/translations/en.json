@@ -83,7 +83,7 @@
       "message": "Default snooze value must be between 1 and 365"
     },
     "invalid_snooze_unit": {
-      "message": "Invalid snooze unit \"{option}\"; must be one of: minutes, hours, days, weeks"
+      "message": "Invalid snooze unit \"{option}\"; must be one of: {units}"
     }
   },
   "services": {
