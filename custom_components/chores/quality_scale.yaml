@@ -87,7 +87,7 @@ rules:
     status: exempt
     comment: Devices are created statically at config entry setup, not discovered dynamically.
   docs-troubleshooting: todo
-  diagnostics: todo
+  diagnostics: done
   docs-use-cases: done
 
   # Platinum

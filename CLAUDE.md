@@ -17,6 +17,7 @@ custom_components/chores/
   select.py            # Default Snooze Unit CONFIG select entity
   time.py              # Notification Time CONFIG time entity
   sensor.py            # ChoreSensor + 3 diagnostic sensor entities (one set per config entry)
+  diagnostics.py       # async_get_config_entry_diagnostics — full coordinator snapshot for HA diagnostics download
   config_flow.py       # UI config flow (create chore — name + interval only; no options flow)
   services.py          # chores.complete/snooze/unsnooze service handlers
   services.yaml        # service structure for the HA UI (target, fields, selectors)
@@ -250,3 +251,4 @@ ______________________________________________________________________
 - `notification_time` is stored as an `"HH:MM"` string in `entry.options`.
 - The `chores.complete` service accepts an optional `completed_at` datetime (must not be in the future). Omit it to default to now.
 - `quality_scale.yaml` lives at `custom_components/chores/quality_scale.yaml` and lists every HA Integration Quality Scale rule with `done`, `todo`, or `exempt`. Update it whenever a rule's status changes (e.g. a `todo` is implemented or an `exempt` justification changes).
+- The `reconfiguration-flow` quality scale rule is intentionally not implemented. Post-creation editing is handled entirely through CONFIG entities (number, select, time), which already provide an in-place edit experience without a separate reconfiguration flow.
