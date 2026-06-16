@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.1.0](https://github.com/jamiegardiner/home-assistant-chores/compare/v1.0.1...v1.1.0) (2026-06-16)
+
+
+### Features
+
+* **issue-152:** add diagnostics platform ([#178](https://github.com/jamiegardiner/home-assistant-chores/issues/178)) ([3e9c847](https://github.com/jamiegardiner/home-assistant-chores/commit/3e9c847fe16cd64016ff0c284c538e3911d5e690))
+* **issue-153:** translatable exceptions via translation_key ([#175](https://github.com/jamiegardiner/home-assistant-chores/issues/175)) ([43cd87b](https://github.com/jamiegardiner/home-assistant-chores/commit/43cd87b31773cb275faf8af90ed6cbb911912680))
+* **issue-154:** add icons.json for icon-translations Gold quality rule ([#167](https://github.com/jamiegardiner/home-assistant-chores/issues/167)) ([4e4b80f](https://github.com/jamiegardiner/home-assistant-chores/commit/4e4b80f2367165849731ffed58d4fcb4c2bd146c))
+* **issue-155:** gracefully recover from corrupt persisted chore state ([#169](https://github.com/jamiegardiner/home-assistant-chores/issues/169)) ([efd08df](https://github.com/jamiegardiner/home-assistant-chores/commit/efd08df47419800a29ee080eebb13cac8d5602a5))
+* **issue-176:** raise ServiceValidationError for snooze validation; remove unreachable entity guards ([#179](https://github.com/jamiegardiner/home-assistant-chores/issues/179)) ([41ef9b9](https://github.com/jamiegardiner/home-assistant-chores/commit/41ef9b99479838f399ac843e8336c616932eddfd))
+
+
+### Bug Fixes
+
+* **issue-159:** remove suggested_object_id override causing doubled entity_id ([#162](https://github.com/jamiegardiner/home-assistant-chores/issues/162)) ([82ece86](https://github.com/jamiegardiner/home-assistant-chores/commit/82ece86f1d4e99571c873c255658b6a63cfa5f4d))
+
 ## [1.0.1](https://github.com/jamiegardiner/home-assistant-chores/compare/v1.0.0...v1.0.1) (2026-06-15)
 
 
