@@ -37,9 +37,10 @@ async def test_complete_future_completed_at_raises(hass: Any) -> None:
     original_last = coord.data["last_completed"]
     future_dt = dt_util.now() + timedelta(hours=1)
 
-    with pytest.raises(HomeAssistantError):
+    with pytest.raises(HomeAssistantError) as exc_info:
         await coord.async_complete(future_dt)
 
+    assert exc_info.value.translation_key == "completed_at_in_future"
     assert coord.data["last_completed"] == original_last
 
 

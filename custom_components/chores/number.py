@@ -11,7 +11,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import MAX_NUMBER_VALUE
+from .const import DOMAIN, MAX_NUMBER_VALUE, MIN_NUMBER_VALUE
 from .coordinator import ChoresCoordinator, _ChoreDeviceMixin
 
 PARALLEL_UPDATES = 0
@@ -40,8 +40,8 @@ class _ChoreNumberBase(
     _attr_has_entity_name = True
     _attr_entity_category = EntityCategory.CONFIG
     _attr_mode = NumberMode.BOX
-    _attr_native_min_value = 1.0
-    _attr_native_max_value = MAX_NUMBER_VALUE
+    _attr_native_min_value = float(MIN_NUMBER_VALUE)
+    _attr_native_max_value = float(MAX_NUMBER_VALUE)
     _attr_native_step = 1.0
 
     def __init__(self, coordinator: ChoresCoordinator, entry: ConfigEntry) -> None:
@@ -64,9 +64,10 @@ class ChoreIntervalNumber(_ChoreNumberBase):
 
     async def async_set_native_value(self, value: float) -> None:
         new_value = int(value)
-        if new_value < 1:
+        if not MIN_NUMBER_VALUE <= new_value <= MAX_NUMBER_VALUE:
             raise HomeAssistantError(
-                f"interval_days must be a positive integer, got {new_value}"
+                translation_domain=DOMAIN,
+                translation_key="interval_days_out_of_range",
             )
         self.coordinator.set_option("interval_days", new_value)
 
@@ -86,8 +87,9 @@ class ChoreDefaultSnoozeValueNumber(_ChoreNumberBase):
 
     async def async_set_native_value(self, value: float) -> None:
         new_value = int(value)
-        if new_value < 1:
+        if not MIN_NUMBER_VALUE <= new_value <= MAX_NUMBER_VALUE:
             raise HomeAssistantError(
-                f"default_snooze_value must be a positive integer, got {new_value}"
+                translation_domain=DOMAIN,
+                translation_key="default_snooze_value_out_of_range",
             )
         self.coordinator.set_option("default_snooze_value", new_value)

@@ -317,7 +317,8 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             completed_at = now
         elif completed_at > now:
             raise HomeAssistantError(
-                f"completed_at must not be in the future, got {completed_at}"
+                translation_domain=DOMAIN,
+                translation_key="completed_at_in_future",
             )
 
         rt = self._runtime
@@ -347,7 +348,8 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         assert self._runtime is not None
         if snooze_until <= dt_util.now():
             raise HomeAssistantError(
-                f"snooze_until must be a future datetime, got {snooze_until}"
+                translation_domain=DOMAIN,
+                translation_key="snooze_until_in_past",
             )
 
         rt = self._runtime

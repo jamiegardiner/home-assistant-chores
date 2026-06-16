@@ -126,8 +126,9 @@ class TestChoreDefaultSnoozeUnitSelect:
 
     async def test_select_option_rejects_invalid_unit(self):
         entity = _make_select()
-        with pytest.raises(HomeAssistantError):
+        with pytest.raises(HomeAssistantError) as exc_info:
             await entity.async_select_option("fortnights")
+        assert exc_info.value.translation_key == "invalid_snooze_unit"
 
     async def test_select_option_no_persist_on_invalid(self):
         coordinator = FakeCoordinator()

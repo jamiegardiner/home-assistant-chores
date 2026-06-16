@@ -69,6 +69,23 @@
       "description": "The chore entry could not load due to an invalid configuration value: {error}. Delete and recreate the chore to fix this."
     }
   },
+  "exceptions": {
+    "completed_at_in_future": {
+      "message": "Completed at must not be in the future"
+    },
+    "snooze_until_in_past": {
+      "message": "Snooze until must be a future date and time"
+    },
+    "interval_days_out_of_range": {
+      "message": "Interval must be between 1 and 365"
+    },
+    "default_snooze_value_out_of_range": {
+      "message": "Default snooze value must be between 1 and 365"
+    },
+    "invalid_snooze_unit": {
+      "message": "Invalid snooze unit \"{option}\"; must be one of: minutes, hours, days, weeks"
+    }
+  },
   "services": {
     "complete": {
       "name": "Complete chore",
