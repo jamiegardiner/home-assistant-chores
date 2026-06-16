@@ -55,6 +55,16 @@
       }
     }
   },
+  "issues": {
+    "corrupt_recoverable_field": {
+      "title": "Corrupt field reset for \"{name}\"",
+      "description": "The field(s) **{fields}** in chore \"{name}\" contained a malformed value and were reset to their default. If the issue persists, delete and recreate the chore."
+    },
+    "corrupt_unrecoverable_config": {
+      "title": "Chore configuration error for \"{name}\"",
+      "description": "The chore entry could not load due to an invalid configuration value: {error}. Delete and recreate the chore to fix this."
+    }
+  },
   "services": {
     "complete": {
       "name": "Complete chore",

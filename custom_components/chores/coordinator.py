@@ -12,13 +12,21 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import ConfigEntryError, HomeAssistantError
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.event import async_track_point_in_time
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN, STATUS_DONE, STATUS_OVERDUE, STATUS_SNOOZED
+from .const import (
+    DOMAIN,
+    REPAIR_ISSUE_CORRUPT_CONFIG,
+    REPAIR_ISSUE_CORRUPT_FIELD,
+    STATUS_DONE,
+    STATUS_OVERDUE,
+    STATUS_SNOOZED,
+)
 from .models import ChoreConfig
 
 _LOGGER = logging.getLogger(__name__)
@@ -55,10 +63,78 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Load chore from entry.options and schedule timers."""
         assert self.config_entry is not None
         opts = dict(self.config_entry.options)
-        had_snooze = _parse_aware_datetime(opts.get("snooze_until")) is not None
-        self._runtime = self._build_runtime(opts)
-        if had_snooze and self._runtime.snooze_until is None:
+        entry_id = self.config_entry.entry_id
+
+        try:
+            config = ChoreConfig.from_dict(opts)
+        except ValueError as exc:
+            _LOGGER.error(
+                "Chore entry %s has invalid configuration and cannot load: %s",
+                entry_id,
+                exc,
+            )
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                f"{REPAIR_ISSUE_CORRUPT_CONFIG}_{entry_id}",
+                is_fixable=False,
+                severity=ir.IssueSeverity.ERROR,
+                translation_key=REPAIR_ISSUE_CORRUPT_CONFIG,
+                translation_placeholders={
+                    "name": str(opts.get("name", entry_id)),
+                    "error": str(exc),
+                },
+            )
+            raise ConfigEntryError(str(exc)) from exc
+
+        corrupt_fields: list[str] = []
+        last_completed: datetime | None = None
+        snooze_until: datetime | None = None
+
+        for field_name in ("last_completed", "snooze_until"):
+            raw = opts.get(field_name)
+            if not raw:
+                continue
+            try:
+                parsed = _parse_aware_datetime(raw)
+            except ValueError:
+                _LOGGER.warning(
+                    "Chore entry %s has a corrupt %r field (%r); clearing to None",
+                    entry_id,
+                    field_name,
+                    raw,
+                )
+                corrupt_fields.append(field_name)
+                continue
+            if field_name == "last_completed":
+                last_completed = parsed
+            else:
+                snooze_until = parsed
+
+        if corrupt_fields:
+            self._persist({k: None for k in corrupt_fields})
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                f"{REPAIR_ISSUE_CORRUPT_FIELD}_{entry_id}",
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key=REPAIR_ISSUE_CORRUPT_FIELD,
+                translation_placeholders={
+                    "name": config.name,
+                    "fields": ", ".join(corrupt_fields),
+                },
+            )
+
+        rt = ChoreRuntime(
+            config=config, last_completed=last_completed, snooze_until=snooze_until
+        )
+        self._recompute(rt)
+        self._runtime = rt
+
+        if snooze_until is not None and rt.snooze_until is None:
             self._persist({"snooze_until": None})
+
         self._schedule_timers()
         self.async_set_updated_data(self._snapshot())
 
@@ -89,17 +165,6 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._persist({"snooze_until": None})
         self._schedule_timers()
         self.async_set_updated_data(self._snapshot())
-
-    def _build_runtime(self, opts: dict[str, Any]) -> ChoreRuntime:
-        """Construct a ChoreRuntime from an options dict."""
-        config = ChoreConfig.from_dict(opts)
-        last_completed = _parse_aware_datetime(opts.get("last_completed"))
-        snooze_until = _parse_aware_datetime(opts.get("snooze_until"))
-        rt = ChoreRuntime(
-            config=config, last_completed=last_completed, snooze_until=snooze_until
-        )
-        self._recompute(rt)
-        return rt
 
     def _recompute(self, rt: ChoreRuntime) -> None:
         """Recompute status and next_due."""

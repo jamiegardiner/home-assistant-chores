@@ -1,12 +1,24 @@
-"""Tests for timer-reschedule guard branches and _parse_aware_datetime."""
+"""Tests for timer-reschedule guard branches, _parse_aware_datetime, and repair issues."""
 
 from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 from unittest.mock import MagicMock
 
+import pytest
+from homeassistant.exceptions import ConfigEntryError
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.util import dt as dt_util
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.chores.coordinator import _parse_aware_datetime
+from custom_components.chores.const import (
+    DOMAIN,
+    REPAIR_ISSUE_CORRUPT_CONFIG,
+    REPAIR_ISSUE_CORRUPT_FIELD,
+)
+from custom_components.chores.coordinator import (
+    ChoresCoordinator,
+    _parse_aware_datetime,
+)
 from tests.components.chores.helpers import make_entry, setup_coord
 
 # ---------------------------------------------------------------------------
@@ -156,3 +168,74 @@ async def test_schedule_snooze_returns_early_when_snooze_until_in_past(
     coord._schedule_snooze(
         coord._runtime
     )  # must not raise and must not schedule a timer
+
+
+# ---------------------------------------------------------------------------
+# Repair issue tests
+# ---------------------------------------------------------------------------
+
+
+async def test_naive_last_completed_gracefully_recovered(hass: Any) -> None:
+    """A naive last_completed is cleared to None and a repair issue is raised."""
+    entry = make_entry(interval_days=7, last_completed="2020-01-01")
+    entry.add_to_hass(hass)
+
+    coord = await setup_coord(hass, entry)
+
+    assert coord.data["last_completed"] is None
+    assert entry.options["last_completed"] is None
+    issue = ir.async_get(hass).async_get_issue(
+        DOMAIN, f"{REPAIR_ISSUE_CORRUPT_FIELD}_{entry.entry_id}"
+    )
+    assert issue is not None
+    assert issue.severity == ir.IssueSeverity.WARNING
+
+
+async def test_invalid_interval_days_raises_config_entry_error(hass: Any) -> None:
+    """An invalid interval_days raises ConfigEntryError and surfaces an ERROR repair issue."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        entry_id="test_entry_id",
+        options={
+            "name": "Bins",
+            "interval_days": 0,
+            "default_snooze_value": 1,
+            "default_snooze_unit": "days",
+            "notification_time": "08:00",
+            "last_completed": None,
+            "snooze_until": None,
+        },
+    )
+    entry.add_to_hass(hass)
+
+    with pytest.raises(ConfigEntryError):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+
+    issue = ir.async_get(hass).async_get_issue(
+        DOMAIN, f"{REPAIR_ISSUE_CORRUPT_CONFIG}_{entry.entry_id}"
+    )
+    assert issue is not None
+    assert issue.severity == ir.IssueSeverity.ERROR
+
+
+async def test_valid_options_no_repair_issue(hass: Any) -> None:
+    """A clean load produces no repair issues."""
+    entry = make_entry(days_ago=3, interval_days=7)
+    entry.add_to_hass(hass)
+
+    await setup_coord(hass, entry)
+
+    issue_reg = ir.async_get(hass)
+    assert (
+        issue_reg.async_get_issue(
+            DOMAIN, f"{REPAIR_ISSUE_CORRUPT_FIELD}_{entry.entry_id}"
+        )
+        is None
+    )
+    assert (
+        issue_reg.async_get_issue(
+            DOMAIN, f"{REPAIR_ISSUE_CORRUPT_CONFIG}_{entry.entry_id}"
+        )
+        is None
+    )

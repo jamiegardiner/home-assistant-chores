@@ -20,6 +20,10 @@ SERVICE_SNOOZE = "snooze"
 SERVICE_UNSNOOZE = "unsnooze"
 
 
+REPAIR_ISSUE_CORRUPT_FIELD = "corrupt_recoverable_field"
+REPAIR_ISSUE_CORRUPT_CONFIG = "corrupt_unrecoverable_config"
+
+
 class ChoreSensorEntityFeature(IntFlag):
     """Features supported by ChoreSensor entities."""
 
