@@ -68,6 +68,10 @@ class ChoreIntervalNumber(_ChoreNumberBase):
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="interval_days_out_of_range",
+                translation_placeholders={
+                    "min": str(MIN_NUMBER_VALUE),
+                    "max": str(MAX_NUMBER_VALUE),
+                },
             )
         self.coordinator.set_option("interval_days", new_value)
 
@@ -91,5 +95,9 @@ class ChoreDefaultSnoozeValueNumber(_ChoreNumberBase):
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="default_snooze_value_out_of_range",
+                translation_placeholders={
+                    "min": str(MIN_NUMBER_VALUE),
+                    "max": str(MAX_NUMBER_VALUE),
+                },
             )
         self.coordinator.set_option("default_snooze_value", new_value)
