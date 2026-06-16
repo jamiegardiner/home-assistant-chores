@@ -91,6 +91,7 @@ Options updates (from config flow edits) are handled in-place via `async_update_
 - **`done` → `overdue`**: HA point-in-time timer fires at `next_due` (`notification_time` on the local day of `last_completed + interval`)
 - **`overdue` → `done`**: `chores.complete` service call sets `last_completed` to now (or the supplied `completed_at` datetime), persists to `entry.options`, recomputes `next_due`, schedules new timer
 - **`snoozed`**: any state (including never-completed) can be snoozed; `chores.snooze` sets `snooze_until` in `entry.options` as a timezone-aware ISO datetime; a snooze-expiry timer fires at exactly `snooze_until`; expiry returns to `overdue` when `last_completed` is `None`
+- **Corrupt state recovery**: `async_initialize` handles two failure modes — recoverable fields (`last_completed`, `snooze_until`) are sanitised to `None` and a WARNING repair issue is raised via `ir.async_create_issue`; unrecoverable fields (`name`, `interval_days`) raise `ConfigEntryError` and an ERROR repair issue. Repair issue IDs are `{REPAIR_ISSUE_CORRUPT_FIELD}_{entry_id}` and `{REPAIR_ISSUE_CORRUPT_CONFIG}_{entry_id}` (constants in `const.py`).
 
 ______________________________________________________________________
 

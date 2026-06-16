@@ -55,6 +55,20 @@
       }
     }
   },
+  "issues": {
+    "corrupt_last_completed": {
+      "title": "Last Completed date reset for \"{name}\"",
+      "description": "The Last Completed date for chore \"{name}\" contained a malformed value and was reset. If the issue persists, delete and recreate the chore."
+    },
+    "corrupt_snooze_until": {
+      "title": "Snooze Expiry reset for \"{name}\"",
+      "description": "The Snooze Expiry for chore \"{name}\" contained a malformed value and was reset. If the issue persists, delete and recreate the chore."
+    },
+    "corrupt_unrecoverable_config": {
+      "title": "Chore configuration error for \"{name}\"",
+      "description": "The chore entry could not load due to an invalid configuration value: {error}. Delete and recreate the chore to fix this."
+    }
+  },
   "services": {
     "complete": {
       "name": "Complete chore",

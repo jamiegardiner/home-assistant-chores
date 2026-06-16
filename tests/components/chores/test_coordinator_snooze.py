@@ -6,8 +6,10 @@ from unittest.mock import patch
 
 import pytest
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.util import dt as dt_util
 
+from custom_components.chores.const import DOMAIN, REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL
 from tests.components.chores.helpers import make_entry, setup_coord
 
 # ---------------------------------------------------------------------------
@@ -136,13 +138,20 @@ async def test_expired_snooze_not_restored_on_restart(hass: Any) -> None:
     assert entry.options["snooze_until"] is None
 
 
-async def test_naive_snooze_raises_on_load(hass: Any) -> None:
-    """A naive snooze_until string raises ValueError on load (indicates a storage bug)."""
+async def test_naive_snooze_gracefully_recovered(hass: Any) -> None:
+    """A naive snooze_until is cleared to None and a repair issue is raised."""
     entry = make_entry(days_ago=30, interval_days=7, snooze_until="2099-12-31")
     entry.add_to_hass(hass)
 
-    with pytest.raises(ValueError, match="got naive"):
-        await setup_coord(hass, entry)
+    coord = await setup_coord(hass, entry)
+
+    assert coord.data["snooze_until"] is None
+    assert entry.options["snooze_until"] is None
+    issue = ir.async_get(hass).async_get_issue(
+        DOMAIN, f"{REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL}_{entry.entry_id}"
+    )
+    assert issue is not None
+    assert issue.severity == ir.IssueSeverity.WARNING
 
 
 async def test_unsnooze_clears_snooze_and_recalculates(hass: Any) -> None:
