@@ -194,6 +194,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         hour, minute = map(int, notification_time.split(":"))
         return dt_util.start_of_local_day(local_date).replace(hour=hour, minute=minute)
 
+    @callback
     def _schedule_timers(self) -> None:
         """Schedule overdue and/or snooze timer based on current runtime state."""
         assert self._runtime is not None
@@ -203,6 +204,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         else:
             self._schedule(rt)
 
+    @callback
     def _schedule(self, rt: ChoreRuntime) -> None:
         """Schedule a timer to fire the overdue transition at next_due."""
         rt.cancel_overdue_timer()
@@ -221,6 +223,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.hass, _overdue_callback, rt.next_due
         )
 
+    @callback
     def _schedule_snooze(self, rt: ChoreRuntime) -> None:
         """Schedule a snooze-expiry timer at snooze_until."""
         rt.cancel_snooze_timer()
