@@ -1,13 +1,9 @@
 """The Chores integration."""
 
-import logging
-
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
 from .coordinator import ChoresConfigEntry, ChoresCoordinator
-
-_LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [
     Platform.BUTTON,

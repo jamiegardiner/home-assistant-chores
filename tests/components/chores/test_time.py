@@ -37,6 +37,9 @@ class FakeCoordinator:
     def async_remove_listener(self, *_args, **_kwargs):
         pass
 
+    def set_option(self, key: str, value: object) -> None:
+        self._persist({key: value})
+
     def _persist(self, fields: dict) -> None:
         self._persist_calls.append(fields)
         self.config_entry.options = {**self.config_entry.options, **fields}

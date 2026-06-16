@@ -53,6 +53,6 @@ class ChoreNotificationTimeEntity(
             return None
 
     async def async_set_value(self, value: time) -> None:
-        self.coordinator._persist(
-            {"notification_time": f"{value.hour:02d}:{value.minute:02d}"}
+        self.coordinator.set_option(
+            "notification_time", f"{value.hour:02d}:{value.minute:02d}"
         )

@@ -156,7 +156,7 @@ Config options can be surfaced in two ways:
 
 **Via creation form only** (name, interval_days): Add the form field to `config_flow.py:_chore_schema()` and add the label to both `strings.json` and `translations/en.json` under `config.step.user.data`. There is no options flow — all post-creation editing goes through CONFIG entities.
 
-**Via CONFIG entity** (interval_days, default_snooze_value, default_snooze_unit, notification_time): Add the key to `coordinator.py:_snapshot()`. Create a number, select, or time entity in `number.py`, `select.py`, or `time.py` whose setter calls `coordinator._persist({"key": value})` — this triggers the update listener which calls `async_update_config` for in-place recomputation. Add entity strings under `entity.number`, `entity.select`, or `entity.time` in both `strings.json` and `translations/en.json`.
+**Via CONFIG entity** (interval_days, default_snooze_value, default_snooze_unit, notification_time): Add the key to `coordinator.py:_snapshot()`. Create a number, select, or time entity in `number.py`, `select.py`, or `time.py` whose setter calls `coordinator.set_option("key", value)` — this triggers the update listener which calls `async_update_config` for in-place recomputation. Add entity strings under `entity.number`, `entity.select`, or `entity.time` in both `strings.json` and `translations/en.json`.
 
 ### 5. Strings / translations
 

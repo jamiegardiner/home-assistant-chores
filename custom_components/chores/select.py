@@ -53,4 +53,4 @@ class ChoreDefaultSnoozeUnitSelect(
             raise HomeAssistantError(
                 f"Invalid snooze unit {option!r}; must be one of {SNOOZE_UNITS}"
             )
-        self.coordinator._persist({"default_snooze_unit": option})
+        self.coordinator.set_option("default_snooze_unit", option)

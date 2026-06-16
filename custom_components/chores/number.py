@@ -68,7 +68,7 @@ class ChoreIntervalNumber(_ChoreNumberBase):
             raise HomeAssistantError(
                 f"interval_days must be a positive integer, got {new_value}"
             )
-        self.coordinator._persist({"interval_days": new_value})
+        self.coordinator.set_option("interval_days", new_value)
 
 
 class ChoreDefaultSnoozeValueNumber(_ChoreNumberBase):
@@ -90,4 +90,4 @@ class ChoreDefaultSnoozeValueNumber(_ChoreNumberBase):
             raise HomeAssistantError(
                 f"default_snooze_value must be a positive integer, got {new_value}"
             )
-        self.coordinator._persist({"default_snooze_value": new_value})
+        self.coordinator.set_option("default_snooze_value", new_value)
