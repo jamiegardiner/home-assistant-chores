@@ -40,8 +40,8 @@ class _ChoreNumberBase(
     _attr_has_entity_name = True
     _attr_entity_category = EntityCategory.CONFIG
     _attr_mode = NumberMode.BOX
-    _attr_native_min_value = float(MIN_NUMBER_VALUE)
-    _attr_native_max_value = float(MAX_NUMBER_VALUE)
+    _attr_native_min_value = MIN_NUMBER_VALUE
+    _attr_native_max_value = MAX_NUMBER_VALUE
     _attr_native_step = 1.0
 
     def __init__(self, coordinator: ChoresCoordinator, entry: ConfigEntry) -> None:
