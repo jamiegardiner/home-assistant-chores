@@ -4,6 +4,7 @@ from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+import voluptuous as vol
 from homeassistant.util import dt as dt_util
 
 from custom_components.chores.const import SNOOZE_UNITS
@@ -12,7 +13,7 @@ from custom_components.chores.sensor import (
     _handle_snooze,
     _handle_unsnooze,
 )
-from custom_components.chores.services import _parse_snooze_datetime
+from custom_components.chores.services import SNOOZE_SCHEMA, _parse_snooze_datetime
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -37,6 +38,20 @@ def _make_entity() -> MagicMock:
 # ---------------------------------------------------------------------------
 # _parse_snooze_datetime
 # ---------------------------------------------------------------------------
+
+
+_SNOOZE_VALIDATOR = vol.Schema(SNOOZE_SCHEMA)
+
+
+class TestSnoozeSchema:
+    @pytest.mark.parametrize("value", [1, 100, 365])
+    def test_valid_values_accepted(self, value: int) -> None:
+        _SNOOZE_VALIDATOR({"value": value, "unit": "days"})
+
+    @pytest.mark.parametrize("value", [0, -1, 366, 1000])
+    def test_out_of_range_values_rejected(self, value: int) -> None:
+        with pytest.raises(vol.Invalid):
+            _SNOOZE_VALIDATOR({"value": value, "unit": "days"})
 
 
 class TestParseSnoozeDateTime:
