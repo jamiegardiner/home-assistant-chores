@@ -5,18 +5,27 @@ rules:
   dependency-transparency: done
   common-modules: done
   has-entity-name: done
-  action-setup: done
-  appropriate-polling: done
+  action-setup:
+    status: exempt
+    comment: Only entity actions are provided, registered via async_register_entity_service in the platform.
+  appropriate-polling:
+    status: exempt
+    comment: Push-based integration; state is driven by point-in-time timers and service calls, not polling.
   test-before-configure:
     status: exempt
     comment: Local integration with no external services or credentials to verify.
   entity-event-setup:
     status: exempt
     comment: Integration does not subscribe to Home Assistant events.
-  unique-config-entry: todo
+  unique-config-entry:
+    status: exempt
+    comment: |
+      Chores are user-created concepts with no external device or service identity
+      to deduplicate against. The rule assumes a canonical unique identifier
+      (MAC, serial, URL) exists; it does not for this integration.
   entity-unique-id: done
   docs-installation-instructions: done
-  docs-removal-instructions: todo
+  docs-removal-instructions: done
   test-before-setup: done
   docs-high-level-description: done
   config-flow-test-coverage: done
@@ -68,7 +77,11 @@ rules:
       cleanup is required.
   docs-supported-functions: done
   repair-issues: done
-  reconfiguration-flow: todo
+  reconfiguration-flow:
+    status: exempt
+    comment: |
+      All creation-flow fields are reconfigurable post-setup: interval_days via
+      the CONFIG number entity, and name via HA's built-in device rename flow.
   entity-category: done
   dynamic-devices:
     status: exempt
