@@ -20,7 +20,7 @@ def fake_track(patch_track: MagicMock) -> dict[str, Any]:
     captured: dict[str, Any] = {}
 
     def _side_effect(hass_: Any, cb: Any, point_in_time: Any) -> MagicMock:
-        captured["cb"] = cb
+        captured["cb"] = cb.target
         return MagicMock()
 
     patch_track.side_effect = _side_effect

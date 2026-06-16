@@ -10,7 +10,7 @@ from datetime import date, datetime, timedelta
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HassJob, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryError, HomeAssistantError
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -69,6 +69,8 @@ type ChoresConfigEntry = ConfigEntry[ChoresCoordinator]
 class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Coordinator that manages a single chore's state and timers."""
 
+    config_entry: ChoresConfigEntry
+
     def __init__(self, hass: HomeAssistant, entry: ChoresConfigEntry) -> None:
         """Initialize the coordinator."""
         super().__init__(
@@ -82,7 +84,6 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def async_initialize(self) -> None:
         """Load chore from entry.options and schedule timers."""
-        assert self.config_entry is not None
         opts = dict(self.config_entry.options)
         entry_id = self.config_entry.entry_id
 
@@ -224,7 +225,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.async_set_updated_data(self._snapshot())
 
         rt._unsubscribe_overdue_timer = async_track_point_in_time(
-            self.hass, _overdue_callback, rt.next_due
+            self.hass, HassJob(_overdue_callback), rt.next_due
         )
 
     @callback
@@ -250,7 +251,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.async_set_updated_data(self._snapshot())
 
         rt._unsubscribe_snooze_timer = async_track_point_in_time(
-            self.hass, _snooze_expiry_callback, rt.snooze_until
+            self.hass, HassJob(_snooze_expiry_callback), rt.snooze_until
         )
 
     @callback
@@ -302,7 +303,6 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     def _persist(self, fields: dict[str, Any]) -> None:
         """Write updated runtime fields back to entry.options for persistence."""
-        assert self.config_entry is not None
         new_opts = {**self.config_entry.options, **fields}
         self.hass.config_entries.async_update_entry(self.config_entry, options=new_opts)
 
