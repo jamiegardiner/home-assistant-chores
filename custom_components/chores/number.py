@@ -7,11 +7,10 @@ from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, MAX_NUMBER_VALUE, MIN_NUMBER_VALUE
+from .const import MAX_NUMBER_VALUE, MIN_NUMBER_VALUE
 from .coordinator import ChoresCoordinator, _ChoreDeviceMixin
 
 PARALLEL_UPDATES = 0
@@ -63,17 +62,7 @@ class ChoreIntervalNumber(_ChoreNumberBase):
         return (self.coordinator.data or {}).get("interval_days")
 
     async def async_set_native_value(self, value: float) -> None:
-        new_value = int(value)
-        if not MIN_NUMBER_VALUE <= new_value <= MAX_NUMBER_VALUE:
-            raise HomeAssistantError(
-                translation_domain=DOMAIN,
-                translation_key="interval_days_out_of_range",
-                translation_placeholders={
-                    "min": str(MIN_NUMBER_VALUE),
-                    "max": str(MAX_NUMBER_VALUE),
-                },
-            )
-        self.coordinator.set_option("interval_days", new_value)
+        self.coordinator.set_option("interval_days", int(value))
 
 
 class ChoreDefaultSnoozeValueNumber(_ChoreNumberBase):
@@ -90,14 +79,4 @@ class ChoreDefaultSnoozeValueNumber(_ChoreNumberBase):
         return (self.coordinator.data or {}).get("default_snooze_value")
 
     async def async_set_native_value(self, value: float) -> None:
-        new_value = int(value)
-        if not MIN_NUMBER_VALUE <= new_value <= MAX_NUMBER_VALUE:
-            raise HomeAssistantError(
-                translation_domain=DOMAIN,
-                translation_key="default_snooze_value_out_of_range",
-                translation_placeholders={
-                    "min": str(MIN_NUMBER_VALUE),
-                    "max": str(MAX_NUMBER_VALUE),
-                },
-            )
-        self.coordinator.set_option("default_snooze_value", new_value)
+        self.coordinator.set_option("default_snooze_value", int(value))
