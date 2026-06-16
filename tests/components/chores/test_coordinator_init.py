@@ -1,6 +1,6 @@
 """Tests for coordinator initialization, status computation, and async_update_config."""
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -216,3 +216,29 @@ async def test_update_config_noop_when_options_match_runtime(
     await coord.async_update_config(dict(entry.options))
 
     assert patch_track.call_count == call_count_after_init
+
+
+async def test_next_due_dst_spring_forward(hass: Any) -> None:
+    """next_due is correctly offset-aware when it falls on a DST spring-forward day.
+
+    America/New_York springs forward on 2024-03-10 (2am -> 3am, EST -> EDT).
+    last_completed 7 days prior places next_due exactly on the transition date.
+    """
+    await hass.config.async_set_time_zone("America/New_York")
+
+    last_completed_dt = datetime(2024, 3, 3, 12, 0, 0, tzinfo=UTC)
+    entry = make_entry(
+        interval_days=7,
+        notification_time="08:00",
+        last_completed=last_completed_dt.isoformat(),
+    )
+    entry.add_to_hass(hass)
+    coord = await setup_coord(hass, entry)
+
+    next_due = coord.data["next_due"]
+    assert next_due is not None
+    assert next_due.tzinfo is not None
+    local_next_due = dt_util.as_local(next_due)
+    assert local_next_due.date() == date(2024, 3, 10)
+    assert local_next_due.hour == 8
+    assert local_next_due.minute == 0

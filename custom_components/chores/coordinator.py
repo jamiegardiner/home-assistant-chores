@@ -292,6 +292,10 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             ir.async_delete_issue(self.hass, DOMAIN, f"{issue_key}_{entry_id}")
         return parsed
 
+    def set_option(self, key: str, value: Any) -> None:
+        """Persist a single option field. Public interface for entity setters."""
+        self._persist({key: value})
+
     def _persist(self, fields: dict[str, Any]) -> None:
         """Write updated runtime fields back to entry.options for persistence."""
         assert self.config_entry is not None

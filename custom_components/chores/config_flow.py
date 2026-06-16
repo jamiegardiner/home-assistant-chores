@@ -18,6 +18,7 @@ from .const import (
     DOMAIN,
     MAX_NUMBER_VALUE,
 )
+from .models import ChoreConfig
 
 
 def _chore_schema() -> vol.Schema:
@@ -44,21 +45,26 @@ class ChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Show the chore creation form and create the entry on submit."""
         errors: dict[str, str] = {}
+        config: ChoreConfig | None = None
 
         if user_input is not None:
-            name = str(user_input.get("name", "")).strip()
-            if not name:
+            try:
+                config = ChoreConfig.from_dict(
+                    {
+                        **user_input,
+                        "interval_days": int(user_input.get("interval_days", 1)),
+                    }
+                )
+            except ValueError:
                 errors["name"] = "name_required"
 
-            interval_days = int(user_input.get("interval_days", 1))
-
-            if not errors:
+            if not errors and config is not None:
                 return self.async_create_entry(
-                    title=name,
+                    title=config.name,
                     data={},
                     options={
-                        "name": name,
-                        "interval_days": interval_days,
+                        "name": config.name,
+                        "interval_days": config.interval_days,
                         "default_snooze_value": DEFAULT_SNOOZE_VALUE,
                         "default_snooze_unit": DEFAULT_SNOOZE_UNIT,
                         "notification_time": DEFAULT_NOTIFICATION_TIME,
