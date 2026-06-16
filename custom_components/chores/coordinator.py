@@ -32,11 +32,6 @@ from .models import ChoreConfig
 
 _LOGGER = logging.getLogger(__name__)
 
-_CORRUPT_FIELD_ISSUE_KEYS: dict[str, str] = {
-    "last_completed": REPAIR_ISSUE_CORRUPT_LAST_COMPLETED,
-    "snooze_until": REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL,
-}
-
 
 @dataclass
 class ChoreRuntime:
@@ -97,48 +92,20 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.hass, DOMAIN, f"{REPAIR_ISSUE_CORRUPT_CONFIG}_{entry_id}"
         )
 
-        corrupt_fields: list[str] = []
-        last_completed: datetime | None = None
-        snooze_until: datetime | None = None
-
-        for field_name in ("last_completed", "snooze_until"):
-            raw = opts.get(field_name)
-            if not raw:
-                continue
-            try:
-                parsed = _parse_aware_datetime(raw)
-            except ValueError:
-                parsed = None
-            if parsed is None:
-                _LOGGER.warning(
-                    "Chore entry %s has a corrupt %r field (%r); clearing to None",
-                    entry_id,
-                    field_name,
-                    raw,
-                )
-                corrupt_fields.append(field_name)
-                continue
-            if field_name == "last_completed":
-                last_completed = parsed
-            else:
-                snooze_until = parsed
-
-        if corrupt_fields:
-            self._persist({k: None for k in corrupt_fields})
-            for field_name in corrupt_fields:
-                issue_key = _CORRUPT_FIELD_ISSUE_KEYS[field_name]
-                ir.async_create_issue(
-                    self.hass,
-                    DOMAIN,
-                    f"{issue_key}_{entry_id}",
-                    is_fixable=False,
-                    severity=ir.IssueSeverity.WARNING,
-                    translation_key=issue_key,
-                    translation_placeholders={"name": config.name},
-                )
-        for field_name, issue_key in _CORRUPT_FIELD_ISSUE_KEYS.items():
-            if field_name not in corrupt_fields:
-                ir.async_delete_issue(self.hass, DOMAIN, f"{issue_key}_{entry_id}")
+        last_completed = self._resolve_datetime_field(
+            opts,
+            "last_completed",
+            REPAIR_ISSUE_CORRUPT_LAST_COMPLETED,
+            entry_id,
+            config.name,
+        )
+        snooze_until = self._resolve_datetime_field(
+            opts,
+            "snooze_until",
+            REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL,
+            entry_id,
+            config.name,
+        )
 
         rt = ChoreRuntime(
             config=config, last_completed=last_completed, snooze_until=snooze_until
@@ -275,6 +242,43 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if rt._cancel_snooze_timer is not None:
             rt._cancel_snooze_timer()
             rt._cancel_snooze_timer = None
+
+    def _resolve_datetime_field(
+        self,
+        opts: dict[str, Any],
+        field: str,
+        issue_key: str,
+        entry_id: str,
+        chore_name: str,
+    ) -> datetime | None:
+        """Parse a datetime option field; create or delete a repair issue accordingly."""
+        raw = opts.get(field)
+        parsed: datetime | None = None
+        if raw:
+            try:
+                parsed = _parse_aware_datetime(raw)
+            except ValueError:
+                parsed = None
+        if raw and parsed is None:
+            _LOGGER.warning(
+                "Chore entry %s has a corrupt %r field (%r); clearing to None",
+                entry_id,
+                field,
+                raw,
+            )
+            self._persist({field: None})
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                f"{issue_key}_{entry_id}",
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key=issue_key,
+                translation_placeholders={"name": chore_name},
+            )
+        else:
+            ir.async_delete_issue(self.hass, DOMAIN, f"{issue_key}_{entry_id}")
+        return parsed
 
     def _persist(self, fields: dict[str, Any]) -> None:
         """Write updated runtime fields back to entry.options for persistence."""
