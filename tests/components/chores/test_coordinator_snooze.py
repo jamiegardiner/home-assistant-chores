@@ -18,7 +18,7 @@ from tests.components.chores.helpers import make_entry, setup_coord
 
 
 async def test_snooze_transitions_to_snoozed(hass: Any) -> None:
-    entry = make_entry(days_ago=30, interval_days=7)
+    entry = make_entry(days_ago=30, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 
@@ -30,7 +30,7 @@ async def test_snooze_transitions_to_snoozed(hass: Any) -> None:
 
 
 async def test_snooze_persists_to_entry_options(hass: Any) -> None:
-    entry = make_entry(days_ago=30, interval_days=7)
+    entry = make_entry(days_ago=30, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 
@@ -42,7 +42,7 @@ async def test_snooze_persists_to_entry_options(hass: Any) -> None:
 
 async def test_snooze_survives_restart(hass: Any) -> None:
     """snooze_until in entry.options is restored on a new coordinator."""
-    entry = make_entry(days_ago=30, interval_days=7)
+    entry = make_entry(days_ago=30, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 
@@ -65,7 +65,7 @@ async def test_snooze_expiry_transitions_to_overdue(
 ) -> None:
     """When the snooze-expiry timer fires, status transitions to overdue."""
     entry = make_entry(
-        days_ago=30, interval_days=7, notification_time=notification_time
+        days_ago=30, interval_value=7, notification_time=notification_time
     )
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
@@ -93,7 +93,7 @@ async def test_snooze_expiry_transitions_to_overdue(
 )
 async def test_snooze_non_future_datetime_raises(hass: Any, bad_dt: datetime) -> None:
     """async_snooze with a past or present datetime raises HomeAssistantError."""
-    entry = make_entry(days_ago=30, interval_days=7)
+    entry = make_entry(days_ago=30, interval_value=7)
     entry.add_to_hass(hass)
 
     fixed_now = datetime(2026, 6, 12, 12, 0, tzinfo=UTC)
@@ -113,7 +113,7 @@ async def test_snooze_non_future_datetime_raises(hass: Any, bad_dt: datetime) ->
 
 async def test_complete_clears_snooze(hass: Any) -> None:
     """Completing a snoozed chore clears the snooze and marks it done."""
-    entry = make_entry(days_ago=30, interval_days=7)
+    entry = make_entry(days_ago=30, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 
@@ -130,7 +130,7 @@ async def test_complete_clears_snooze(hass: Any) -> None:
 async def test_expired_snooze_not_restored_on_restart(hass: Any) -> None:
     """An expired snooze_until is discarded on restart and cleared from entry.options."""
     expired_dt = (dt_util.now() - timedelta(hours=1)).isoformat()
-    entry = make_entry(days_ago=30, interval_days=7, snooze_until=expired_dt)
+    entry = make_entry(days_ago=30, interval_value=7, snooze_until=expired_dt)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 
@@ -141,7 +141,7 @@ async def test_expired_snooze_not_restored_on_restart(hass: Any) -> None:
 
 async def test_naive_snooze_gracefully_recovered(hass: Any) -> None:
     """A naive snooze_until is cleared to None and a repair issue is raised."""
-    entry = make_entry(days_ago=30, interval_days=7, snooze_until="2099-12-31")
+    entry = make_entry(days_ago=30, interval_value=7, snooze_until="2099-12-31")
     entry.add_to_hass(hass)
 
     coord = await setup_coord(hass, entry)
@@ -158,7 +158,9 @@ async def test_naive_snooze_gracefully_recovered(hass: Any) -> None:
 async def test_unsnooze_clears_snooze_and_recalculates(hass: Any) -> None:
     """Unsnoozed overdue chore returns to overdue."""
     snooze_dt = dt_util.now() + timedelta(days=3)
-    entry = make_entry(days_ago=30, interval_days=7, snooze_until=snooze_dt.isoformat())
+    entry = make_entry(
+        days_ago=30, interval_value=7, snooze_until=snooze_dt.isoformat()
+    )
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 
@@ -172,7 +174,7 @@ async def test_unsnooze_clears_snooze_and_recalculates(hass: Any) -> None:
 async def test_unsnooze_done_chore(hass: Any) -> None:
     """Unsnoozed done chore (not yet overdue) returns to done."""
     snooze_dt = dt_util.now() + timedelta(days=3)
-    entry = make_entry(days_ago=1, interval_days=7, snooze_until=snooze_dt.isoformat())
+    entry = make_entry(days_ago=1, interval_value=7, snooze_until=snooze_dt.isoformat())
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 
@@ -187,7 +189,7 @@ async def test_snooze_default_uses_default_snooze_value_and_unit(hass: Any) -> N
     """async_snooze_default snoozes for default_snooze_value + default_snooze_unit from now."""
     entry = make_entry(
         days_ago=30,
-        interval_days=14,
+        interval_value=14,
         default_snooze_value=2,
         default_snooze_unit="hours",
     )
@@ -206,7 +208,7 @@ async def test_snooze_default_days_unit(hass: Any) -> None:
     """async_snooze_default with unit=days defers by the configured number of days."""
     entry = make_entry(
         days_ago=30,
-        interval_days=14,
+        interval_value=14,
         default_snooze_value=3,
         default_snooze_unit="days",
     )
@@ -223,7 +225,7 @@ async def test_snooze_default_days_unit(hass: Any) -> None:
 
 async def test_unsnooze_on_non_snoozed_is_noop(hass: Any) -> None:
     """Calling async_unsnooze on a non-snoozed chore is a no-op."""
-    entry = make_entry(days_ago=30, interval_days=7)
+    entry = make_entry(days_ago=30, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 
@@ -268,7 +270,7 @@ async def test_never_completed_last_completed_is_none_in_snapshot(hass: Any) -> 
 
 async def test_completing_never_completed_chore_starts_cycle(hass: Any) -> None:
     """Completing a never-completed chore sets last_completed, next_due, and status done."""
-    entry = make_entry(last_completed=None, interval_days=7)
+    entry = make_entry(last_completed=None, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 

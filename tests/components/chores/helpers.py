@@ -12,7 +12,8 @@ from custom_components.chores.coordinator import ChoresCoordinator
 
 def make_entry(
     name: str = "Bins",
-    interval_days: int = 7,
+    interval_value: int = 7,
+    interval_unit: str = "days",
     default_snooze_value: int = 1,
     default_snooze_unit: str = "days",
     notification_time: str = "00:00",
@@ -30,7 +31,8 @@ def make_entry(
         last_completed = (dt_util.now() - timedelta(days=days_ago)).isoformat()
     opts: dict[str, Any] = {
         "name": name,
-        "interval_days": interval_days,
+        "interval_value": interval_value,
+        "interval_unit": interval_unit,
         "default_snooze_value": default_snooze_value,
         "default_snooze_unit": default_snooze_unit,
         "notification_time": notification_time,

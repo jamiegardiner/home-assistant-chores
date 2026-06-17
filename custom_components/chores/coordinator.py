@@ -179,8 +179,11 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             rt.status = STATUS_OVERDUE
             return
 
+        interval_days = rt.config.interval_value * (
+            7 if rt.config.interval_unit == "weeks" else 1
+        )
         due_date = dt_util.as_local(rt.last_completed).date() + timedelta(
-            days=rt.config.interval_days
+            days=interval_days
         )
         rt.next_due = self._time_on_local_date(due_date, rt.config.notification_time)
         now = dt_util.now()
@@ -393,7 +396,8 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "status": rt.status,
             "next_due": rt.next_due,
             "snooze_until": rt.snooze_until,
-            "interval_days": rt.config.interval_days,
+            "interval_value": rt.config.interval_value,
+            "interval_unit": rt.config.interval_unit,
             "default_snooze_value": rt.config.default_snooze_value,
             "default_snooze_unit": rt.config.default_snooze_unit,
             "notification_time": rt.config.notification_time,

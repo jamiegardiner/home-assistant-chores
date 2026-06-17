@@ -49,20 +49,20 @@ class _ChoreNumberBase(
 
 
 class ChoreIntervalNumber(_ChoreNumberBase):
-    """CONFIG number entity for interval_days."""
+    """CONFIG number entity for interval_value."""
 
-    _attr_translation_key = "interval_days"
+    _attr_translation_key = "interval_value"
 
     def __init__(self, coordinator: ChoresCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry)
-        self._attr_unique_id = f"{entry.entry_id}_interval_days"
+        self._attr_unique_id = f"{entry.entry_id}_interval_value"
 
     @property
     def native_value(self) -> float | None:
-        return (self.coordinator.data or {}).get("interval_days")
+        return (self.coordinator.data or {}).get("interval_value")
 
     async def async_set_native_value(self, value: float) -> None:
-        self.coordinator.set_option("interval_days", int(value))
+        self.coordinator.set_option("interval_value", int(value))
 
 
 class ChoreDefaultSnoozeValueNumber(_ChoreNumberBase):

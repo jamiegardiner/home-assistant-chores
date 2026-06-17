@@ -6,10 +6,17 @@
       "unsnooze": { "name": "Unsnooze" }
     },
     "number": {
-      "interval_days": { "name": "Due interval" },
+      "interval_value": { "name": "Due interval" },
       "default_snooze_value": { "name": "Snooze interval" }
     },
     "select": {
+      "interval_unit": {
+        "name": "Interval unit",
+        "state": {
+          "days": "Days",
+          "weeks": "Weeks"
+        }
+      },
       "default_snooze_unit": {
         "name": "Snooze unit",
         "state": {
@@ -46,11 +53,13 @@
         "description": "Create a new chore. Each chore becomes a device that transitions between done and overdue on the configured interval.",
         "data": {
           "name": "Name",
-          "interval_days": "Interval (days)"
+          "interval_value": "Interval",
+          "interval_unit": "Interval unit"
         },
         "data_description": {
           "name": "A short label for this chore, e.g. Mow grass or Vacuuming.",
-          "interval_days": "How many days between completions."
+          "interval_value": "How often the chore recurs.",
+          "interval_unit": "Whether the interval is measured in days or weeks."
         }
       }
     }

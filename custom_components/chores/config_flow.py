@@ -9,13 +9,17 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
+    SelectSelector,
+    SelectSelectorConfig,
 )
 
 from .const import (
+    DEFAULT_INTERVAL_UNIT,
     DEFAULT_NOTIFICATION_TIME,
     DEFAULT_SNOOZE_UNIT,
     DEFAULT_SNOOZE_VALUE,
     DOMAIN,
+    INTERVAL_UNITS,
     MAX_NUMBER_VALUE,
 )
 from .models import ChoreConfig
@@ -26,11 +30,14 @@ def _chore_schema() -> vol.Schema:
     return vol.Schema(
         {
             vol.Required("name"): str,
-            vol.Required("interval_days"): NumberSelector(
+            vol.Required("interval_value"): NumberSelector(
                 NumberSelectorConfig(
                     min=1, max=MAX_NUMBER_VALUE, step=1, mode=NumberSelectorMode.BOX
                 )
             ),
+            vol.Required(
+                "interval_unit", default=DEFAULT_INTERVAL_UNIT
+            ): SelectSelector(SelectSelectorConfig(options=list(INTERVAL_UNITS))),
         }
     )
 
@@ -38,7 +45,7 @@ def _chore_schema() -> vol.Schema:
 class ChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle the initial config flow: collect name and interval for one chore."""
 
-    VERSION = 1
+    VERSION = 2
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -53,7 +60,7 @@ class ChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 config = ChoreConfig.from_dict(
                     {
                         **user_input,
-                        "interval_days": int(user_input.get("interval_days", 1)),
+                        "interval_value": int(user_input.get("interval_value", 1)),
                     }
                 )
                 return self.async_create_entry(
@@ -61,7 +68,8 @@ class ChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     data={},
                     options={
                         "name": config.name,
-                        "interval_days": config.interval_days,
+                        "interval_value": config.interval_value,
+                        "interval_unit": config.interval_unit,
                         "default_snooze_value": DEFAULT_SNOOZE_VALUE,
                         "default_snooze_unit": DEFAULT_SNOOZE_UNIT,
                         "notification_time": DEFAULT_NOTIFICATION_TIME,

@@ -31,7 +31,7 @@
       }
     },
     "number": {
-      "interval_days": {
+      "interval_value": {
         "default": "mdi:calendar-range"
       },
       "default_snooze_value": {
@@ -39,6 +39,9 @@
       }
     },
     "select": {
+      "interval_unit": {
+        "default": "mdi:calendar-range"
+      },
       "default_snooze_unit": {
         "default": "mdi:clock-outline"
       }

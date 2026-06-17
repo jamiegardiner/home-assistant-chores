@@ -17,7 +17,7 @@ from tests.components.chores.helpers import make_entry, setup_coord
 
 async def test_complete_with_explicit_completed_at(hass: Any) -> None:
     """async_complete with a past datetime stores that datetime."""
-    entry = make_entry(days_ago=30, interval_days=7)
+    entry = make_entry(days_ago=30, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 
@@ -30,7 +30,7 @@ async def test_complete_with_explicit_completed_at(hass: Any) -> None:
 
 async def test_complete_future_completed_at_raises(hass: Any) -> None:
     """async_complete with a future datetime raises HomeAssistantError."""
-    entry = make_entry(days_ago=30, interval_days=7)
+    entry = make_entry(days_ago=30, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 
@@ -46,7 +46,7 @@ async def test_complete_future_completed_at_raises(hass: Any) -> None:
 
 async def test_last_completed_is_datetime_not_date(hass: Any) -> None:
     """Snapshot last_completed is a datetime, not a date."""
-    entry = make_entry(days_ago=0, interval_days=7)
+    entry = make_entry(days_ago=0, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
     assert isinstance(coord.data["last_completed"], datetime)
@@ -54,7 +54,7 @@ async def test_last_completed_is_datetime_not_date(hass: Any) -> None:
 
 async def test_complete_persists_tz_aware_datetime(hass: Any) -> None:
     """async_complete stores a tz-aware ISO datetime string in entry.options."""
-    entry = make_entry(days_ago=30, interval_days=7)
+    entry = make_entry(days_ago=30, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
     await coord.async_complete()
@@ -71,7 +71,7 @@ async def test_complete_persists_tz_aware_datetime(hass: Any) -> None:
 
 async def test_next_due_at_notification_time(hass: Any) -> None:
     """next_due is at notification_time on the due date, not midnight."""
-    entry = make_entry(days_ago=0, interval_days=7, notification_time="08:00")
+    entry = make_entry(days_ago=0, interval_value=7, notification_time="08:00")
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 
@@ -84,7 +84,7 @@ async def test_next_due_at_notification_time(hass: Any) -> None:
 
 async def test_next_due_default_notification_time_is_midnight(hass: Any) -> None:
     """notification_time 00:00 gives midnight next_due."""
-    entry = make_entry(days_ago=0, interval_days=7, notification_time="00:00")
+    entry = make_entry(days_ago=0, interval_value=7, notification_time="00:00")
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 
@@ -142,7 +142,7 @@ async def test_snooze_timer_fires_at_snooze_until_regardless_of_notification_tim
 
     patch_track.side_effect = _fake_track
 
-    entry = make_entry(days_ago=30, interval_days=7, notification_time="08:00")
+    entry = make_entry(days_ago=30, interval_value=7, notification_time="08:00")
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 
@@ -154,7 +154,7 @@ async def test_snooze_timer_fires_at_snooze_until_regardless_of_notification_tim
 
 async def test_notification_time_in_snapshot(hass: Any) -> None:
     """notification_time is included in the coordinator snapshot."""
-    entry = make_entry(days_ago=0, interval_days=7, notification_time="08:30")
+    entry = make_entry(days_ago=0, interval_value=7, notification_time="08:30")
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
     assert coord.data["notification_time"] == "08:30"
