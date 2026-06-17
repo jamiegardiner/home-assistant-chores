@@ -120,12 +120,12 @@ Each chore has one of three states:
 
 Available from the device's **Configuration** section:
 
-| Entity               | Description                                                 |
-| -------------------- | ----------------------------------------------------------- |
-| Interval             | Number of days before the chore becomes overdue again       |
-| Default snooze value | Amount of time to snooze when the Snooze button is pressed  |
-| Default snooze unit  | Minutes, hours, days, or weeks                              |
-| Overdue time         | Time of day when the chore becomes overdue (default: 08:00) |
+| Entity          | Description                                                 |
+| --------------- | ----------------------------------------------------------- |
+| Interval        | Number of days before the chore becomes overdue again       |
+| Snooze interval | Amount of time to snooze when the Snooze button is pressed  |
+| Snooze unit     | Minutes, hours, days, or weeks                              |
+| Overdue time    | Time of day when the chore becomes overdue (default: 08:00) |
 
 ______________________________________________________________________
 

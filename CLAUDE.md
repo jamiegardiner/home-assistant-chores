@@ -13,8 +13,8 @@ custom_components/chores/
   models.py            # ChoreConfig dataclass (name, interval_days, default_snooze_value, default_snooze_unit, notification_time)
   coordinator.py       # ChoresCoordinator — runtime state, timers, persistence
   button.py            # Complete, Snooze, Unsnooze button entities
-  number.py            # Interval and Default Snooze Value CONFIG number entities
-  select.py            # Default Snooze Unit CONFIG select entity
+  number.py            # Interval and Snooze interval CONFIG number entities
+  select.py            # Snooze unit CONFIG select entity
   time.py              # Overdue time CONFIG time entity
   sensor.py            # ChoreSensor + 2 primary date sensors + 1 diagnostic sensor (one set per config entry)
   diagnostics.py       # async_get_config_entry_diagnostics — full coordinator snapshot for HA diagnostics download

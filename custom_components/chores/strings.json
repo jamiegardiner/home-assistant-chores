@@ -7,11 +7,11 @@
     },
     "number": {
       "interval_days": { "name": "Interval" },
-      "default_snooze_value": { "name": "Default snooze value" }
+      "default_snooze_value": { "name": "Snooze interval" }
     },
     "select": {
       "default_snooze_unit": {
-        "name": "Default snooze unit",
+        "name": "Snooze unit",
         "state": {
           "minutes": "Minutes",
           "hours": "Hours",
