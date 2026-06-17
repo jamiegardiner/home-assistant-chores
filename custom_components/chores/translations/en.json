@@ -49,7 +49,7 @@
           "interval_days": "Interval (days)"
         },
         "data_description": {
-          "name": "A short label for this chore, e.g. Bins or Vacuuming.",
+          "name": "A short label for this chore, e.g. Mow grass or Vacuuming.",
           "interval_days": "How many days between completions."
         }
       }
