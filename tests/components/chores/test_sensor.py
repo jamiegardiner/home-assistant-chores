@@ -226,9 +226,9 @@ class TestChoreLastCompletedSensor:
         sensor = _make_diagnostic_sensor(ChoreLastCompletedSensor)
         assert sensor.device_class == SensorDeviceClass.TIMESTAMP
 
-    def test_entity_category_diagnostic(self):
+    def test_entity_category_none(self):
         sensor = _make_diagnostic_sensor(ChoreLastCompletedSensor)
-        assert sensor.entity_category == EntityCategory.DIAGNOSTIC
+        assert sensor.entity_category is None
 
     def test_unique_id_format(self):
         entry = _make_entry(entry_id="abc")
@@ -267,9 +267,9 @@ class TestChoreNextDueSensor:
         sensor = _make_diagnostic_sensor(ChoreNextDueSensor)
         assert sensor.device_class == SensorDeviceClass.TIMESTAMP
 
-    def test_entity_category_diagnostic(self):
+    def test_entity_category_none(self):
         sensor = _make_diagnostic_sensor(ChoreNextDueSensor)
-        assert sensor.entity_category == EntityCategory.DIAGNOSTIC
+        assert sensor.entity_category is None
 
     def test_unique_id_format(self):
         entry = _make_entry(entry_id="abc")
@@ -317,6 +317,10 @@ class TestChoreSnoozeUntilSensor:
     def test_entity_category_diagnostic(self):
         sensor = _make_diagnostic_sensor(ChoreSnoozeUntilSensor)
         assert sensor.entity_category == EntityCategory.DIAGNOSTIC
+
+    def test_entity_registry_enabled_default_false(self):
+        sensor = _make_diagnostic_sensor(ChoreSnoozeUntilSensor)
+        assert sensor.entity_registry_enabled_default is False
 
     def test_unique_id_format(self):
         entry = _make_entry(entry_id="abc")
