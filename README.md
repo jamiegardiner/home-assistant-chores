@@ -22,7 +22,7 @@ ______________________________________________________________________
 - 🔄 **Set it and forget it** — chores automatically become overdue when they're due again
 - 📅 **Rolling schedules** that adapt to when chores are actually completed
 - 😴 **Snooze and unsnooze** chores with configurable defaults (minutes, hours, days, or weeks)
-- 🕗 **Choose when chores become overdue** with a configurable notification time
+- 🕗 **Choose when chores become overdue** with a configurable overdue time
 - 📡 **Date sensors** for last completed and next due dates (dashboard-ready); diagnostic snooze expiry sensor (hidden by default)
 - 🖱️ **Full UI configuration** — create and manage chores without touching YAML
 - ⚡ **Automation-friendly services** for completing, snoozing, and unsnoozing chores
@@ -125,7 +125,7 @@ Available from the device's **Configuration** section:
 | Interval             | Number of days before the chore becomes overdue again       |
 | Default snooze value | Amount of time to snooze when the Snooze button is pressed  |
 | Default snooze unit  | Minutes, hours, days, or weeks                              |
-| Notification time    | Time of day when the chore becomes overdue (default: 08:00) |
+| Overdue time         | Time of day when the chore becomes overdue (default: 08:00) |
 
 ______________________________________________________________________
 
@@ -147,7 +147,7 @@ The chore will appear immediately and can be completed to start its regular sche
 1. Go to **Settings → Devices & Services**
 2. Open **Chore Tracker**
 3. Select the chore device
-4. Use the **Configuration** entities to update intervals, snooze defaults, and notification times
+4. Use the **Configuration** entities to update intervals, snooze defaults, and overdue times
 
 To rename a chore, use Home Assistant's built-in device rename option from the device page.
 
