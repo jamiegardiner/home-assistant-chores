@@ -81,6 +81,9 @@
     },
     "invalid_snooze_unit": {
       "message": "Invalid snooze unit \"{option}\"; must be one of: {units}"
+    },
+    "snooze_partial_params": {
+      "message": "Provide both value and unit together, or omit both to use the device default."
     }
   },
   "services": {
@@ -96,15 +99,15 @@
     },
     "snooze": {
       "name": "Snooze chore",
-      "description": "Snooze a chore for a given duration, suppressing overdue transitions until then. Provide a value and a unit (minutes, hours, days, or weeks).",
+      "description": "Snooze a chore for a given duration, suppressing overdue transitions until then. Omit both value and unit to use the device's configured default snooze duration; provide both to override it.",
       "fields": {
         "value": {
           "name": "Value",
-          "description": "Number of units to snooze from now."
+          "description": "Number of units to snooze from now. Omit together with unit to use the device default."
         },
         "unit": {
           "name": "Unit",
-          "description": "Time unit for the snooze duration (minutes, hours, days, or weeks)."
+          "description": "Time unit for the snooze duration (minutes, hours, days, or weeks). Omit together with value to use the device default."
         }
       }
     },

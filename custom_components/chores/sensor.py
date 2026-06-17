@@ -48,8 +48,16 @@ async def _handle_complete(entity: ChoreSensor, call: ServiceCall) -> None:
 
 
 async def _handle_snooze(entity: ChoreSensor, call: ServiceCall) -> None:
-    value: int = call.data["value"]
-    unit: str = call.data["unit"]
+    value: int | None = call.data.get("value")
+    unit: str | None = call.data.get("unit")
+    if value is None and unit is None:
+        await entity.coordinator.async_snooze_default()
+        return
+    if value is None or unit is None:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="snooze_partial_params",
+        )
     if not MIN_NUMBER_VALUE <= value <= MAX_NUMBER_VALUE:
         raise ServiceValidationError(
             translation_domain=DOMAIN,

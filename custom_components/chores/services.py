@@ -19,8 +19,8 @@ UNSNOOZE_SCHEMA: dict[Any, Any] = {}
 # ServiceValidationError so HA surfaces translated messages rather than raw
 # voluptuous error strings.
 SNOOZE_SCHEMA: dict[Any, Any] = {
-    vol.Required("value"): vol.Coerce(int),
-    vol.Required("unit"): str,
+    vol.Optional("value"): vol.Coerce(int),
+    vol.Optional("unit"): str,
 }
 
 

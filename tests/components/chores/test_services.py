@@ -31,6 +31,7 @@ def _make_entity() -> MagicMock:
     entity.coordinator = MagicMock()
     entity.coordinator.async_complete = AsyncMock()
     entity.coordinator.async_snooze = AsyncMock()
+    entity.coordinator.async_snooze_default = AsyncMock()
     entity.coordinator.async_unsnooze = AsyncMock()
     return entity
 
@@ -122,6 +123,12 @@ class TestHandleSnooze:
             <= after + timedelta(**{unit: value})
         )
 
+    async def test_no_params_calls_async_snooze_default(self) -> None:
+        entity = _make_entity()
+        await _handle_snooze(entity, _make_call({}))
+        entity.coordinator.async_snooze_default.assert_called_once_with()
+        entity.coordinator.async_snooze.assert_not_called()
+
 
 class TestHandleSnoozeValidation:
     async def test_out_of_range_value_raises_service_validation_error(self) -> None:
@@ -146,6 +153,22 @@ class TestHandleSnoozeValidation:
         with pytest.raises(ServiceValidationError):
             await _handle_snooze(entity, _make_call({"value": 500, "unit": "days"}))
         entity.coordinator.async_snooze.assert_not_called()
+
+    async def test_value_only_raises_partial_params_error(self) -> None:
+        entity = _make_entity()
+        with pytest.raises(ServiceValidationError) as exc_info:
+            await _handle_snooze(entity, _make_call({"value": 3}))
+        assert exc_info.value.translation_key == "snooze_partial_params"
+        entity.coordinator.async_snooze.assert_not_called()
+        entity.coordinator.async_snooze_default.assert_not_called()
+
+    async def test_unit_only_raises_partial_params_error(self) -> None:
+        entity = _make_entity()
+        with pytest.raises(ServiceValidationError) as exc_info:
+            await _handle_snooze(entity, _make_call({"unit": "days"}))
+        assert exc_info.value.translation_key == "snooze_partial_params"
+        entity.coordinator.async_snooze.assert_not_called()
+        entity.coordinator.async_snooze_default.assert_not_called()
 
 
 class TestHandleUnsnooze:
