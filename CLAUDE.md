@@ -16,7 +16,7 @@ custom_components/chores/
   number.py            # Interval and Default Snooze Value CONFIG number entities
   select.py            # Default Snooze Unit CONFIG select entity
   time.py              # Notification Time CONFIG time entity
-  sensor.py            # ChoreSensor + 3 diagnostic sensor entities (one set per config entry)
+  sensor.py            # ChoreSensor + 2 primary date sensors + 1 diagnostic sensor (one set per config entry)
   diagnostics.py       # async_get_config_entry_diagnostics — full coordinator snapshot for HA diagnostics download
   config_flow.py       # UI config flow (create chore — name + interval only; no options flow)
   services.py          # chores.complete/snooze/unsnooze service handlers
@@ -73,18 +73,18 @@ Options updates (from config flow edits) are handled in-place via `async_update_
 
 ### Key types
 
-| Type                            | File             | Purpose                                                                                             |
-| ------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------- |
-| `ChoreConfig`                   | `models.py`      | Immutable config: name, interval_days, default_snooze_value, default_snooze_unit, notification_time |
-| `ChoreRuntime`                  | `coordinator.py` | Mutable runtime state: last_completed (datetime \| None), status, next_due, timer fns               |
-| `ChoresCoordinator`             | `coordinator.py` | Owns one chore, pushes updates to all entities                                                      |
-| `ChoreSensor`                   | `sensor.py`      | Primary `CoordinatorEntity` — reads status from coordinator snapshot                                |
-| `_ChoreDateSensor`              | `sensor.py`      | Base class for diagnostic date sensors                                                              |
-| `ChoreIntervalNumber`           | `number.py`      | CONFIG number entity for interval_days (writable)                                                   |
-| `ChoreDefaultSnoozeValueNumber` | `number.py`      | CONFIG number entity for default_snooze_value (writable)                                            |
-| `ChoreDefaultSnoozeUnitSelect`  | `select.py`      | CONFIG select entity for default_snooze_unit (writable)                                             |
-| `ChoreNotificationTimeEntity`   | `time.py`        | CONFIG time entity for notification_time (writable)                                                 |
-| `Chore*Button`                  | `button.py`      | Complete / Snooze / Unsnooze button entities                                                        |
+| Type                            | File             | Purpose                                                                                                                     |
+| ------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `ChoreConfig`                   | `models.py`      | Immutable config: name, interval_days, default_snooze_value, default_snooze_unit, notification_time                         |
+| `ChoreRuntime`                  | `coordinator.py` | Mutable runtime state: last_completed (datetime \| None), status, next_due, timer fns                                       |
+| `ChoresCoordinator`             | `coordinator.py` | Owns one chore, pushes updates to all entities                                                                              |
+| `ChoreSensor`                   | `sensor.py`      | Primary `CoordinatorEntity` — reads status from coordinator snapshot                                                        |
+| `_ChoreDateSensor`              | `sensor.py`      | Base class for date sensors; `last_completed` and `next_due` are primary; `snooze_until` is diagnostic, disabled by default |
+| `ChoreIntervalNumber`           | `number.py`      | CONFIG number entity for interval_days (writable)                                                                           |
+| `ChoreDefaultSnoozeValueNumber` | `number.py`      | CONFIG number entity for default_snooze_value (writable)                                                                    |
+| `ChoreDefaultSnoozeUnitSelect`  | `select.py`      | CONFIG select entity for default_snooze_unit (writable)                                                                     |
+| `ChoreNotificationTimeEntity`   | `time.py`        | CONFIG time entity for notification_time (writable)                                                                         |
+| `Chore*Button`                  | `button.py`      | Complete / Snooze / Unsnooze button entities                                                                                |
 
 ### Status transitions
 

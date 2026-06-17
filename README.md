@@ -23,7 +23,7 @@ ______________________________________________________________________
 - 📅 **Rolling schedules** that adapt to when chores are actually completed
 - 😴 **Snooze and unsnooze** chores with configurable defaults (minutes, hours, days, or weeks)
 - 🕗 **Choose when chores become overdue** with a configurable notification time
-- 📡 **Diagnostic sensors** for last completed, next due, and snooze expiry dates
+- 📡 **Date sensors** for last completed and next due dates (dashboard-ready); diagnostic snooze expiry sensor (hidden by default)
 - 🖱️ **Full UI configuration** — create and manage chores without touching YAML
 - ⚡ **Automation-friendly services** for completing, snoozing, and unsnoozing chores
 
@@ -102,11 +102,11 @@ Each chore has one of three states:
 
 ### 📡 Sensors
 
-| Entity         | Description                             |
-| -------------- | --------------------------------------- |
-| Last completed | When the chore was last marked complete |
-| Next due       | When the chore will next become overdue |
-| Snooze expiry  | When the current snooze period ends     |
+| Entity         | Description                             | Notes                           |
+| -------------- | --------------------------------------- | ------------------------------- |
+| Last completed | When the chore was last marked complete | Primary — appears on dashboards |
+| Next due       | When the chore will next become overdue | Primary — appears on dashboards |
+| Snooze expiry  | When the current snooze period ends     | Diagnostic — hidden by default  |
 
 ### 🔘 Buttons
 

@@ -1,6 +1,7 @@
 """Sensor platform for the Chores integration.
 
-Four sensor entities per config entry: primary status sensor plus three diagnostics.
+Four sensor entities per config entry: primary status sensor, two primary date sensors,
+and one diagnostic sensor (snooze expiry, disabled by default).
 """
 
 from datetime import date, datetime
@@ -135,11 +136,9 @@ class ChoreSensor(
 class _ChoreDateSensor(
     _ChoreDeviceMixin, CoordinatorEntity[ChoresCoordinator], SensorEntity
 ):
-    """Base class for diagnostic date/datetime sensors on a chore device."""
+    """Base class for date/datetime sensors on a chore device."""
 
     _attr_has_entity_name = True
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_entity_registry_enabled_default = True
 
     def __init__(
         self,
@@ -190,6 +189,8 @@ class ChoreSnoozeUntilSensor(_ChoreDateSensor):
 
     _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_translation_key = "snooze_until"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_entity_registry_enabled_default = False
 
     def __init__(self, coordinator: ChoresCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry, "snooze_until", "snooze_until")
