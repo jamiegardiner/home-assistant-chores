@@ -21,7 +21,7 @@
       }
     },
     "time": {
-      "notification_time": { "name": "Overdue time" }
+      "notification_time": { "name": "Overdue time of day" }
     },
     "sensor": {
       "chore": {
