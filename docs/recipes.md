@@ -37,31 +37,30 @@ Add this block to your `configuration.yaml` (or a file included from it). Add or
 
 ______________________________________________________________________
 
-## 2. Next chore due
+## 2. Next chore due in a room
 
-A template sensor that returns the timestamp of the soonest upcoming chore from a named set. Pair it with a badge or a conditional card to highlight when something is coming up soon.
+A template sensor that returns the name of the chore with the soonest next-due date within a given HA area. Requires chore devices to be assigned to an area in **Settings → Areas & Zones**, and requires the `next_due` attribute on the status sensor (see [#196](https://github.com/jamiegardiner/home-assistant-chores/issues/196)).
+
+Replace `kitchen` with your area name (lower-cased, spaces as underscores).
 
 ```yaml
 template:
   - sensor:
-      - name: Next chore due
-        device_class: timestamp
+      - name: Next chore due in kitchen
         state: >
-          {# Build a list of next-due timestamps, skipping any chore that has
-             never been completed (its next_due sensor will be unavailable). #}
-          {% set ns = namespace(dates=[]) %}
-          {% for s in [
-               'sensor.change_air_filter_next_due',
-               'sensor.clean_oven_next_due',
-             ] %}
-            {% if has_value(s) %}
-              {% set ns.dates = ns.dates + [states(s)] %}
+          {% set ns = namespace(name=none, ts=none) %}
+          {% for eid in integration_entities('chores') | select('in', area_entities('kitchen')) %}
+            {% set t = state_attr(eid, 'next_due') | as_timestamp(none) %}
+            {% if t is not none and (ns.ts is none or t < ns.ts) %}
+              {% set ns.ts = t %}
+              {% set ns.name = state_attr(eid, 'friendly_name') %}
             {% endif %}
           {% endfor %}
-          {{ ns.dates | min if ns.dates else 'unknown' }}
+          {{ ns.name if ns.ts is not none else 'unknown' }}
+        icon: mdi:clipboard-clock
 ```
 
-`has_value(s)` returns `False` when the sensor is `unavailable` or `unknown`, which is the case for chores that have never been completed. The ISO 8601 timestamps produced by Chore Tracker sort correctly as strings, so `min` reliably returns the earliest date.
+`integration_entities('chores')` scopes the search to Chore Tracker entities only, and `select('in', area_entities('kitchen'))` narrows it to the room. `next_due` is `none` for chores that have never been completed, so they are automatically skipped. The sensor state is `unknown` when no chores in the area have a next-due date yet.
 
 ______________________________________________________________________
 
