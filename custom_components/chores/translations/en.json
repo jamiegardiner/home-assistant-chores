@@ -6,7 +6,7 @@
       "unsnooze": { "name": "Unsnooze" }
     },
     "number": {
-      "interval_days": { "name": "Interval" },
+      "interval_days": { "name": "Due interval" },
       "default_snooze_value": { "name": "Snooze interval" }
     },
     "select": {
@@ -21,7 +21,7 @@
       }
     },
     "time": {
-      "notification_time": { "name": "Overdue time of day" }
+      "notification_time": { "name": "Due time" }
     },
     "sensor": {
       "chore": {
