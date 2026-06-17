@@ -7,11 +7,11 @@
     },
     "number": {
       "interval_days": { "name": "Interval" },
-      "default_snooze_value": { "name": "Default Snooze Value" }
+      "default_snooze_value": { "name": "Default snooze value" }
     },
     "select": {
       "default_snooze_unit": {
-        "name": "Default Snooze Unit",
+        "name": "Default snooze unit",
         "state": {
           "minutes": "Minutes",
           "hours": "Hours",
@@ -31,9 +31,9 @@
           "snoozed": "Snoozed"
         }
       },
-      "last_completed": { "name": "Last Completed" },
-      "next_due": { "name": "Next Due" },
-      "snooze_until": { "name": "Snooze Expiry" }
+      "last_completed": { "name": "Last completed" },
+      "next_due": { "name": "Next due" },
+      "snooze_until": { "name": "Snooze expiry" }
     }
   },
   "config": {
@@ -57,12 +57,12 @@
   },
   "issues": {
     "corrupt_last_completed": {
-      "title": "Last Completed date reset for \"{name}\"",
-      "description": "The Last Completed date for chore \"{name}\" contained a malformed value and was reset. If the issue persists, delete and recreate the chore."
+      "title": "Last completed date reset for \"{name}\"",
+      "description": "The last completed date for chore \"{name}\" contained a malformed value and was reset. If the issue persists, delete and recreate the chore."
     },
     "corrupt_snooze_until": {
-      "title": "Snooze Expiry reset for \"{name}\"",
-      "description": "The Snooze Expiry for chore \"{name}\" contained a malformed value and was reset. If the issue persists, delete and recreate the chore."
+      "title": "Snooze expiry reset for \"{name}\"",
+      "description": "The snooze expiry for chore \"{name}\" contained a malformed value and was reset. If the issue persists, delete and recreate the chore."
     },
     "corrupt_unrecoverable_config": {
       "title": "Chore configuration error for \"{name}\"",
