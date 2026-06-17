@@ -221,6 +221,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         def _overdue_callback(_now: datetime) -> None:
             if self._runtime is None:
                 return
+            self._runtime._unsubscribe_overdue_timer = None
             self._recompute(self._runtime)
             self.async_set_updated_data(self._snapshot())
 
