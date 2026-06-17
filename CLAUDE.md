@@ -10,11 +10,11 @@ ______________________________________________________________________
 custom_components/chores/
   __init__.py          # entry setup/teardown, forwards to platforms and services
   const.py             # DOMAIN, STATUS_* constants
-  models.py            # ChoreConfig dataclass (name, interval_days, default_snooze_value, default_snooze_unit, notification_time)
+  models.py            # ChoreConfig dataclass (name, interval_value, interval_unit, default_snooze_value, default_snooze_unit, notification_time)
   coordinator.py       # ChoresCoordinator — runtime state, timers, persistence
   button.py            # Complete, Snooze, Unsnooze button entities
   number.py            # Interval and Snooze interval CONFIG number entities
-  select.py            # Snooze unit CONFIG select entity
+  select.py            # Interval unit and Snooze unit CONFIG select entities
   time.py              # Overdue time of day CONFIG time entity
   sensor.py            # ChoreSensor + 2 primary date sensors + 1 diagnostic sensor (one set per config entry)
   diagnostics.py       # async_get_config_entry_diagnostics — full coordinator snapshot for HA diagnostics download
@@ -40,7 +40,8 @@ Each chore is a separate config entry (`integration_type: device`). All state li
 ```json
 {
   "name": "Bins",
-  "interval_days": 14,
+  "interval_value": 2,
+  "interval_unit": "weeks",
   "default_snooze_value": 1,
   "default_snooze_unit": "days",
   "notification_time": "08:00",
@@ -58,7 +59,7 @@ entry.options (one chore per entry)
         │
         ▼
 ChoresCoordinator.async_initialize()
-  ├── reads last_completed / snooze_until / interval_days / default_snooze_value / default_snooze_unit / notification_time from entry.options
+  ├── reads last_completed / snooze_until / interval_value / interval_unit / default_snooze_value / default_snooze_unit / notification_time from entry.options
   ├── builds ChoreRuntime (status, next_due — both None when last_completed is None)
   └── schedules a point-in-time timer at next_due (skipped when next_due is None)
         │
@@ -75,13 +76,14 @@ Options updates (from config flow edits) are handled in-place via `async_update_
 
 | Type                            | File             | Purpose                                                                                                                     |
 | ------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `ChoreConfig`                   | `models.py`      | Immutable config: name, interval_days, default_snooze_value, default_snooze_unit, notification_time                         |
+| `ChoreConfig`                   | `models.py`      | Immutable config: name, interval_value, interval_unit, default_snooze_value, default_snooze_unit, notification_time         |
 | `ChoreRuntime`                  | `coordinator.py` | Mutable runtime state: last_completed (datetime \| None), status, next_due, timer fns                                       |
 | `ChoresCoordinator`             | `coordinator.py` | Owns one chore, pushes updates to all entities                                                                              |
 | `ChoreSensor`                   | `sensor.py`      | Primary `CoordinatorEntity` — reads status from coordinator snapshot                                                        |
 | `_ChoreDateSensor`              | `sensor.py`      | Base class for date sensors; `last_completed` and `next_due` are primary; `snooze_until` is diagnostic, disabled by default |
-| `ChoreIntervalNumber`           | `number.py`      | CONFIG number entity for interval_days (writable)                                                                           |
+| `ChoreIntervalNumber`           | `number.py`      | CONFIG number entity for interval_value (writable)                                                                          |
 | `ChoreDefaultSnoozeValueNumber` | `number.py`      | CONFIG number entity for default_snooze_value (writable)                                                                    |
+| `ChoreIntervalUnitSelect`       | `select.py`      | CONFIG select entity for interval_unit (writable)                                                                           |
 | `ChoreDefaultSnoozeUnitSelect`  | `select.py`      | CONFIG select entity for default_snooze_unit (writable)                                                                     |
 | `ChoreNotificationTimeEntity`   | `time.py`        | CONFIG time entity for notification_time (writable)                                                                         |
 | `Chore*Button`                  | `button.py`      | Complete / Snooze / Unsnooze button entities                                                                                |
@@ -92,7 +94,7 @@ Options updates (from config flow edits) are handled in-place via `async_update_
 - **`done` → `overdue`**: HA point-in-time timer fires at `next_due` (`notification_time` on the local day of `last_completed + interval`)
 - **`overdue` → `done`**: `chores.complete` service call sets `last_completed` to now (or the supplied `completed_at` datetime), persists to `entry.options`, recomputes `next_due`, schedules new timer
 - **`snoozed`**: any state (including never-completed) can be snoozed; `chores.snooze` sets `snooze_until` in `entry.options` as a timezone-aware ISO datetime; a snooze-expiry timer fires at exactly `snooze_until`; expiry returns to `overdue` when `last_completed` is `None`
-- **Corrupt state recovery**: `async_initialize` handles two failure modes — recoverable fields (`last_completed`, `snooze_until`) are sanitised to `None` and a WARNING repair issue is raised via `ir.async_create_issue`; unrecoverable fields (`name`, `interval_days`) raise `ConfigEntryError` and an ERROR repair issue. Repair issue IDs are `{REPAIR_ISSUE_CORRUPT_FIELD}_{entry_id}` and `{REPAIR_ISSUE_CORRUPT_CONFIG}_{entry_id}` (constants in `const.py`).
+- **Corrupt state recovery**: `async_initialize` handles two failure modes — recoverable fields (`last_completed`, `snooze_until`) are sanitised to `None` and a WARNING repair issue is raised via `ir.async_create_issue`; unrecoverable fields (`name`, `interval_value`) raise `ConfigEntryError` and an ERROR repair issue. Repair issue IDs are `{REPAIR_ISSUE_CORRUPT_FIELD}_{entry_id}` and `{REPAIR_ISSUE_CORRUPT_CONFIG}_{entry_id}` (constants in `const.py`).
 
 ______________________________________________________________________
 
@@ -155,9 +157,9 @@ Services are entity services — HA handles all target resolution (entity, area,
 
 Config options can be surfaced in two ways:
 
-**Via creation form only** (name, interval_days): Add the form field to `config_flow.py:_chore_schema()` and add the label to both `strings.json` and `translations/en.json` under `config.step.user.data`. There is no options flow — all post-creation editing goes through CONFIG entities.
+**Via creation form only** (name, interval_value, interval_unit): Add the form field to `config_flow.py:_chore_schema()` and add the label to both `strings.json` and `translations/en.json` under `config.step.user.data`. There is no options flow — all post-creation editing goes through CONFIG entities.
 
-**Via CONFIG entity** (interval_days, default_snooze_value, default_snooze_unit, notification_time): Add the key to `coordinator.py:_snapshot()`. Create a number, select, or time entity in `number.py`, `select.py`, or `time.py` whose setter calls `coordinator.set_option("key", value)` — this triggers the update listener which calls `async_update_config` for in-place recomputation. Add entity strings under `entity.number`, `entity.select`, or `entity.time` in both `strings.json` and `translations/en.json`.
+**Via CONFIG entity** (interval_value, interval_unit, default_snooze_value, default_snooze_unit, notification_time): Add the key to `coordinator.py:_snapshot()`. Create a number, select, or time entity in `number.py`, `select.py`, or `time.py` whose setter calls `coordinator.set_option("key", value)` — this triggers the update listener which calls `async_update_config` for in-place recomputation. Add entity strings under `entity.number`, `entity.select`, or `entity.time` in both `strings.json` and `translations/en.json`.
 
 ### 5. Strings / translations
 
@@ -245,7 +247,7 @@ ______________________________________________________________________
 - All chore state (`last_completed`, `snooze_until`) lives in `entry.options`.
 - Python `>=3.14.2` (matches Home Assistant's own requirement). This enables PEP 758 — `except TypeError, ValueError:` without parentheses is **valid syntax** at this version. Ruff enforces the parenthesis-free form; do not flag it as a bug.
 - `integration_type: device` in `manifest.json` — chores appear in the Devices & Services panel, not the Helpers panel.
-- Interval is stored as `interval_days` (int, days only).
+- Interval is stored as `interval_value` (int) + `interval_unit` (`"days"` | `"weeks"`). On creation `interval_unit` defaults to `"days"`. Pre-v2 entries (which stored `interval_days`) are migrated by `async_migrate_entry` in `__init__.py`.
 - `default_snooze_value` (default: `1`) + `default_snooze_unit` (default: `"days"`) control the snooze duration. Both the Snooze button and the `chores.snooze` service share the same unit set, defined in `const.py`.
 - `last_completed` is `null` on creation; set to a tz-aware ISO 8601 datetime string only when `chores.complete` is called.
 - `notification_time` is stored as an `"HH:MM"` string in `entry.options`.
