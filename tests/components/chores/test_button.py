@@ -1,6 +1,7 @@
 """Unit tests for custom_components/chores/button.py."""
 
 from datetime import date
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 from custom_components.chores.button import (
@@ -10,6 +11,7 @@ from custom_components.chores.button import (
     async_setup_entry,
 )
 from custom_components.chores.const import DOMAIN
+from tests.components.chores.helpers import make_entry, setup_coord
 
 CHORE_STATE = {
     "name": "Dishes",
@@ -171,3 +173,21 @@ class TestUniqueIdsDistinct:
             _make_unsnooze_button(coordinator=coordinator, entry=entry).unique_id,
         }
         assert len(ids) == 3
+
+
+# ---------------------------------------------------------------------------
+# Integration tests — real ChoresCoordinator
+# ---------------------------------------------------------------------------
+
+
+class TestCompleteButtonIntegration:
+    async def test_complete_button_flips_status_to_done(self, hass: Any) -> None:
+        """Pressing Complete against a real coordinator transitions status to done."""
+        entry = make_entry(days_ago=30, interval_days=7)
+        entry.add_to_hass(hass)
+        coord = await setup_coord(hass, entry)
+        button = ChoreCompleteButton(coord, entry)
+
+        assert coord.data["status"] == "overdue"
+        await button.async_press()
+        assert coord.data["status"] == "done"

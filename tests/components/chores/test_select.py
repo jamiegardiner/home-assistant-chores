@@ -1,5 +1,6 @@
 """Unit tests for custom_components/chores/select.py."""
 
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -10,6 +11,7 @@ from custom_components.chores.select import (
     ChoreDefaultSnoozeUnitSelect,
     async_setup_entry,
 )
+from tests.components.chores.helpers import make_entry, setup_coord
 
 # ---------------------------------------------------------------------------
 # Fake coordinator
@@ -122,3 +124,22 @@ class TestChoreDefaultSnoozeUnitSelect:
         entity = _make_select(coordinator=coordinator)
         await entity.async_select_option(unit)
         assert coordinator._persist_calls == [{"default_snooze_unit": unit}]
+
+
+# ---------------------------------------------------------------------------
+# Integration tests — real ChoresCoordinator
+# ---------------------------------------------------------------------------
+
+
+class TestSnoozeUnitSelectIntegration:
+    async def test_select_option_updates_coordinator_data(self, hass: Any) -> None:
+        """Snooze unit select updates coordinator.data via the real set_option → _persist path."""
+        entry = make_entry(default_snooze_unit="days")
+        entry.add_to_hass(hass)
+        coord = await setup_coord(hass, entry)
+        entity = ChoreDefaultSnoozeUnitSelect(coord, entry)
+
+        await entity.async_select_option("hours")
+        await coord.async_update_config(dict(entry.options))
+
+        assert coord.data["default_snooze_unit"] == "hours"
