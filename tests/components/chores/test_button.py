@@ -183,7 +183,7 @@ class TestUniqueIdsDistinct:
 class TestCompleteButtonIntegration:
     async def test_complete_button_flips_status_to_done(self, hass: Any) -> None:
         """Pressing Complete against a real coordinator transitions status to done."""
-        entry = make_entry(days_ago=30, interval_days=7)
+        entry = make_entry(days_ago=30, interval_value=7)
         entry.add_to_hass(hass)
         coord = await setup_coord(hass, entry)
         button = ChoreCompleteButton(coord, entry)

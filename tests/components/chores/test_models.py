@@ -7,23 +7,23 @@ from custom_components.chores.models import ChoreConfig
 
 
 def test_from_dict_valid() -> None:
-    config = ChoreConfig.from_dict({"name": "Bins", "interval_days": 7})
+    config = ChoreConfig.from_dict({"name": "Bins", "interval_value": 7})
     assert config.name == "Bins"
-    assert config.interval_days == 7
+    assert config.interval_value == 7
     assert config.default_snooze_value == 1
     assert config.default_snooze_unit == "days"
 
 
 def test_from_dict_custom_snooze_value() -> None:
     config = ChoreConfig.from_dict(
-        {"name": "Bins", "interval_days": 7, "default_snooze_value": 3}
+        {"name": "Bins", "interval_value": 7, "default_snooze_value": 3}
     )
     assert config.default_snooze_value == 3
 
 
 def test_from_dict_custom_snooze_unit() -> None:
     config = ChoreConfig.from_dict(
-        {"name": "Bins", "interval_days": 7, "default_snooze_unit": "hours"}
+        {"name": "Bins", "interval_value": 7, "default_snooze_unit": "hours"}
     )
     assert config.default_snooze_unit == "hours"
 
@@ -32,7 +32,7 @@ def test_from_dict_custom_snooze_value_and_unit() -> None:
     config = ChoreConfig.from_dict(
         {
             "name": "Bins",
-            "interval_days": 7,
+            "interval_value": 7,
             "default_snooze_value": 2,
             "default_snooze_unit": "hours",
         }
@@ -42,56 +42,56 @@ def test_from_dict_custom_snooze_value_and_unit() -> None:
 
 
 def test_from_dict_default_snooze_value_absent_defaults_to_one() -> None:
-    config = ChoreConfig.from_dict({"name": "Bins", "interval_days": 14})
+    config = ChoreConfig.from_dict({"name": "Bins", "interval_value": 14})
     assert config.default_snooze_value == 1
 
 
 def test_from_dict_default_snooze_unit_absent_defaults_to_days() -> None:
-    config = ChoreConfig.from_dict({"name": "Bins", "interval_days": 14})
+    config = ChoreConfig.from_dict({"name": "Bins", "interval_value": 14})
     assert config.default_snooze_unit == "days"
 
 
 def test_from_dict_all_valid_units() -> None:
     for unit in ("minutes", "hours", "days", "weeks"):
         config = ChoreConfig.from_dict(
-            {"name": "Bins", "interval_days": 7, "default_snooze_unit": unit}
+            {"name": "Bins", "interval_value": 7, "default_snooze_unit": unit}
         )
         assert config.default_snooze_unit == unit
 
 
-def test_from_dict_missing_interval_days_raises() -> None:
+def test_from_dict_missing_interval_value_raises() -> None:
     with pytest.raises(ValueError, match="missing required keys"):
         ChoreConfig.from_dict({"name": "Bins"})
 
 
 def test_from_dict_missing_name_raises() -> None:
     with pytest.raises(ValueError, match="missing required keys"):
-        ChoreConfig.from_dict({"interval_days": 7})
+        ChoreConfig.from_dict({"interval_value": 7})
 
 
 def test_from_dict_zero_interval_raises() -> None:
-    with pytest.raises(ValueError, match="Invalid interval_days"):
-        ChoreConfig.from_dict({"name": "Bins", "interval_days": 0})
+    with pytest.raises(ValueError, match="Invalid interval_value"):
+        ChoreConfig.from_dict({"name": "Bins", "interval_value": 0})
 
 
 def test_from_dict_negative_interval_raises() -> None:
-    with pytest.raises(ValueError, match="Invalid interval_days"):
-        ChoreConfig.from_dict({"name": "Bins", "interval_days": -1})
+    with pytest.raises(ValueError, match="Invalid interval_value"):
+        ChoreConfig.from_dict({"name": "Bins", "interval_value": -1})
 
 
 def test_from_dict_bool_interval_raises() -> None:
-    with pytest.raises(ValueError, match="Invalid interval_days"):
-        ChoreConfig.from_dict({"name": "Bins", "interval_days": True})
+    with pytest.raises(ValueError, match="Invalid interval_value"):
+        ChoreConfig.from_dict({"name": "Bins", "interval_value": True})
 
 
 def test_from_dict_name_is_stripped() -> None:
-    config = ChoreConfig.from_dict({"name": "  Bins  ", "interval_days": 7})
+    config = ChoreConfig.from_dict({"name": "  Bins  ", "interval_value": 7})
     assert config.name == "Bins"
 
 
 def test_from_dict_non_str_name_raises() -> None:
     with pytest.raises(ValueError, match="Invalid name"):
-        ChoreConfig.from_dict({"name": 123, "interval_days": 7})
+        ChoreConfig.from_dict({"name": 123, "interval_value": 7})
 
 
 @pytest.mark.parametrize(
@@ -103,27 +103,27 @@ def test_from_dict_non_str_name_raises() -> None:
 )
 def test_from_dict_blank_name_raises(bad_name: str) -> None:
     with pytest.raises(ValueError, match="Invalid name"):
-        ChoreConfig.from_dict({"name": bad_name, "interval_days": 7})
+        ChoreConfig.from_dict({"name": bad_name, "interval_value": 7})
 
 
 def test_from_dict_zero_snooze_value_raises() -> None:
     with pytest.raises(ValueError, match="Invalid default_snooze_value"):
         ChoreConfig.from_dict(
-            {"name": "Bins", "interval_days": 7, "default_snooze_value": 0}
+            {"name": "Bins", "interval_value": 7, "default_snooze_value": 0}
         )
 
 
 def test_from_dict_bool_snooze_value_raises() -> None:
     with pytest.raises(ValueError, match="Invalid default_snooze_value"):
         ChoreConfig.from_dict(
-            {"name": "Bins", "interval_days": 7, "default_snooze_value": True}
+            {"name": "Bins", "interval_value": 7, "default_snooze_value": True}
         )
 
 
 def test_from_dict_invalid_snooze_unit_raises() -> None:
     with pytest.raises(ValueError, match="Invalid default_snooze_unit"):
         ChoreConfig.from_dict(
-            {"name": "Bins", "interval_days": 7, "default_snooze_unit": "fortnights"}
+            {"name": "Bins", "interval_value": 7, "default_snooze_unit": "fortnights"}
         )
 
 
@@ -131,7 +131,7 @@ def test_from_dict_ignores_extra_keys() -> None:
     config = ChoreConfig.from_dict(
         {
             "name": "Bins",
-            "interval_days": 7,
+            "interval_value": 7,
             "last_completed": "2026-06-01",
             "snooze_until": None,
         }
@@ -144,19 +144,19 @@ def test_const_domain() -> None:
 
 
 def test_from_dict_default_notification_time() -> None:
-    config = ChoreConfig.from_dict({"name": "Bins", "interval_days": 7})
+    config = ChoreConfig.from_dict({"name": "Bins", "interval_value": 7})
     assert config.notification_time == "08:00"
 
 
 def test_from_dict_notification_time_absent_uses_default() -> None:
-    data = {"name": "Bins", "interval_days": 14}
+    data = {"name": "Bins", "interval_value": 14}
     config = ChoreConfig.from_dict(data)
     assert config.notification_time == "08:00"
 
 
 def test_from_dict_custom_notification_time() -> None:
     config = ChoreConfig.from_dict(
-        {"name": "Bins", "interval_days": 7, "notification_time": "08:30"}
+        {"name": "Bins", "interval_value": 7, "notification_time": "08:30"}
     )
     assert config.notification_time == "08:30"
 
@@ -175,5 +175,24 @@ def test_from_dict_custom_notification_time() -> None:
 def test_from_dict_invalid_notification_time_raises(bad_time) -> None:
     with pytest.raises(ValueError, match="Invalid notification_time"):
         ChoreConfig.from_dict(
-            {"name": "Bins", "interval_days": 7, "notification_time": bad_time}
+            {"name": "Bins", "interval_value": 7, "notification_time": bad_time}
+        )
+
+
+def test_from_dict_interval_unit_defaults_to_days() -> None:
+    config = ChoreConfig.from_dict({"name": "Bins", "interval_value": 7})
+    assert config.interval_unit == "days"
+
+
+def test_from_dict_custom_interval_unit_weeks() -> None:
+    config = ChoreConfig.from_dict(
+        {"name": "Bins", "interval_value": 2, "interval_unit": "weeks"}
+    )
+    assert config.interval_unit == "weeks"
+
+
+def test_from_dict_invalid_interval_unit_raises() -> None:
+    with pytest.raises(ValueError, match="Invalid interval_unit"):
+        ChoreConfig.from_dict(
+            {"name": "Bins", "interval_value": 7, "interval_unit": "fortnights"}
         )

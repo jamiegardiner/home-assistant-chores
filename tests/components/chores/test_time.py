@@ -17,7 +17,7 @@ from custom_components.chores.time import (
 CHORE_STATE = {
     "name": "Dishes",
     "status": "overdue",
-    "interval_days": 7,
+    "interval_value": 7,
     "default_snooze_value": 1,
     "default_snooze_unit": "days",
     "notification_time": "00:00",

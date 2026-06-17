@@ -80,8 +80,8 @@ rules:
   reconfiguration-flow:
     status: exempt
     comment: |
-      All creation-flow fields are reconfigurable post-setup: interval_days via
-      the CONFIG number entity, and name via HA's built-in device rename flow.
+      All creation-flow fields are reconfigurable post-setup: interval_value and
+      interval_unit via CONFIG entities, and name via HA's built-in device rename flow.
   entity-category: done
   dynamic-devices:
     status: exempt

@@ -15,7 +15,7 @@ from tests.components.chores.helpers import make_entry, setup_coord
 
 async def test_initial_status_overdue(hass: Any) -> None:
     """Chore last completed 30 days ago with 7-day interval is overdue."""
-    entry = make_entry(days_ago=30, interval_days=7)
+    entry = make_entry(days_ago=30, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
     assert coord.data["status"] == "overdue"
@@ -23,7 +23,7 @@ async def test_initial_status_overdue(hass: Any) -> None:
 
 async def test_initial_status_done(hass: Any) -> None:
     """Chore last completed today with 7-day interval is done."""
-    entry = make_entry(days_ago=0, interval_days=7)
+    entry = make_entry(days_ago=0, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
     assert coord.data["status"] == "done"
@@ -31,7 +31,7 @@ async def test_initial_status_done(hass: Any) -> None:
 
 async def test_next_due_computed_correctly(hass: Any) -> None:
     """next_due is last_completed + interval, expressed as start of that local day."""
-    entry = make_entry(days_ago=0, interval_days=7)
+    entry = make_entry(days_ago=0, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
     expected_date = dt_util.now().date() + timedelta(days=7)
@@ -42,7 +42,7 @@ async def test_timer_fires_overdue_transition(
     hass: Any, fake_track: dict[str, Any]
 ) -> None:
     """When the scheduled timer fires, status transitions to overdue."""
-    entry = make_entry(days_ago=0, interval_days=7)
+    entry = make_entry(days_ago=0, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 
@@ -58,7 +58,7 @@ async def test_timer_fires_overdue_transition(
 
 async def test_complete_resets_to_done(hass: Any) -> None:
     """async_complete sets last_completed to today, status to done."""
-    entry = make_entry(days_ago=30, interval_days=7)
+    entry = make_entry(days_ago=30, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 
@@ -72,7 +72,7 @@ async def test_complete_resets_to_done(hass: Any) -> None:
 
 async def test_complete_persists_to_entry_options(hass: Any) -> None:
     """async_complete writes last_completed to entry.options."""
-    entry = make_entry(days_ago=30, interval_days=7)
+    entry = make_entry(days_ago=30, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
     await coord.async_complete()
@@ -85,7 +85,7 @@ async def test_complete_persists_to_entry_options(hass: Any) -> None:
 
 async def test_last_completed_survives_restart(hass: Any) -> None:
     """After completing, a new coordinator reads last_completed from entry.options."""
-    entry = make_entry(days_ago=30, interval_days=7)
+    entry = make_entry(days_ago=30, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
     await coord.async_complete()
@@ -108,7 +108,7 @@ async def test_unload_cancels_timers(hass: Any, patch_track: MagicMock) -> None:
 
     patch_track.side_effect = _fake_track
 
-    entry = make_entry(days_ago=0, interval_days=7)
+    entry = make_entry(days_ago=0, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 
@@ -128,7 +128,7 @@ async def test_update_config_recomputes_from_preserved_last_completed(
 ) -> None:
     """Changing interval recomputes next_due from the existing last_completed, not today."""
     last_completed_date = dt_util.now().date() - timedelta(days=7)
-    entry = make_entry(days_ago=7, interval_days=7)
+    entry = make_entry(days_ago=7, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 
@@ -136,7 +136,7 @@ async def test_update_config_recomputes_from_preserved_last_completed(
 
     new_opts = {
         **dict(entry.options),
-        "interval_days": 14,
+        "interval_value": 14,
     }
     await coord.async_update_config(new_opts)
 
@@ -148,7 +148,7 @@ async def test_update_config_recomputes_from_preserved_last_completed(
 
 async def test_update_config_name_change_no_status_change(hass: Any) -> None:
     """Editing the name does not change status or next_due."""
-    entry = make_entry(name="Bins", days_ago=0, interval_days=7)
+    entry = make_entry(name="Bins", days_ago=0, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 
@@ -166,7 +166,9 @@ async def test_update_config_name_change_no_status_change(hass: Any) -> None:
 async def test_update_config_preserves_snooze(hass: Any) -> None:
     """async_update_config preserves snooze_until when options still carry it."""
     snooze_dt = dt_util.now() + timedelta(days=3)
-    entry = make_entry(days_ago=30, interval_days=7, snooze_until=snooze_dt.isoformat())
+    entry = make_entry(
+        days_ago=30, interval_value=7, snooze_until=snooze_dt.isoformat()
+    )
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 
@@ -187,7 +189,7 @@ async def test_update_config_expired_snooze_cleared_from_entry_options(
     The expired snooze is injected after async_initialize so that async_initialize's
     own issue-114 guard does not pre-clear it before async_update_config runs.
     """
-    entry = make_entry(days_ago=30, interval_days=7)
+    entry = make_entry(days_ago=30, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 
@@ -208,7 +210,7 @@ async def test_update_config_noop_when_options_match_runtime(
     hass: Any, patch_track: MagicMock
 ) -> None:
     """async_update_config early-returns when options already match runtime state."""
-    entry = make_entry(days_ago=0, interval_days=7)
+    entry = make_entry(days_ago=0, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
     call_count_after_init = patch_track.call_count
@@ -228,7 +230,7 @@ async def test_next_due_dst_spring_forward(hass: Any) -> None:
 
     last_completed_dt = datetime(2024, 3, 3, 12, 0, 0, tzinfo=UTC)
     entry = make_entry(
-        interval_days=7,
+        interval_value=7,
         notification_time="08:00",
         last_completed=last_completed_dt.isoformat(),
     )

@@ -19,7 +19,7 @@ from tests.components.chores.helpers import make_entry, setup_coord
 CHORE_STATE = {
     "name": "Dishes",
     "status": "overdue",
-    "interval_days": 7,
+    "interval_value": 7,
     "default_snooze_value": 1,
     "default_snooze_unit": "days",
 }
@@ -110,12 +110,12 @@ class TestChoreIntervalNumber:
 
     def test_native_value_custom(self):
         entity = _make_interval_number(
-            coordinator=FakeCoordinator({**CHORE_STATE, "interval_days": 14})
+            coordinator=FakeCoordinator({**CHORE_STATE, "interval_value": 14})
         )
         assert entity.native_value == 14
 
     def test_native_value_none_when_missing(self):
-        state = {k: v for k, v in CHORE_STATE.items() if k != "interval_days"}
+        state = {k: v for k, v in CHORE_STATE.items() if k != "interval_value"}
         entity = _make_interval_number(coordinator=FakeCoordinator(state))
         assert entity.native_value is None
 
@@ -126,11 +126,11 @@ class TestChoreIntervalNumber:
     def test_unique_id_format(self):
         entry = _make_entry(entry_id="abc")
         entity = _make_interval_number(entry=entry)
-        assert entity.unique_id == "abc_interval_days"
+        assert entity.unique_id == "abc_interval_value"
 
     def test_translation_key(self):
         entity = _make_interval_number()
-        assert entity.translation_key == "interval_days"
+        assert entity.translation_key == "interval_value"
 
     def test_min_value(self):
         entity = _make_interval_number()
@@ -148,7 +148,7 @@ class TestChoreIntervalNumber:
         coordinator = FakeCoordinator()
         entity = _make_interval_number(coordinator=coordinator)
         await entity.async_set_native_value(14.0)
-        assert coordinator._persist_calls == [{"interval_days": 14}]
+        assert coordinator._persist_calls == [{"interval_value": 14}]
 
 
 # ---------------------------------------------------------------------------
@@ -200,7 +200,7 @@ class TestChoreDefaultSnoozeValueNumber:
 class TestIntervalNumberIntegration:
     async def test_set_native_value_updates_coordinator_data(self, hass: Any) -> None:
         """Interval number setter updates coordinator.data via the real set_option → _persist path."""
-        entry = make_entry(interval_days=7)
+        entry = make_entry(interval_value=7)
         entry.add_to_hass(hass)
         coord = await setup_coord(hass, entry)
         entity = ChoreIntervalNumber(coord, entry)
@@ -208,7 +208,7 @@ class TestIntervalNumberIntegration:
         await entity.async_set_native_value(14.0)
         await coord.async_update_config(dict(entry.options))
 
-        assert coord.data["interval_days"] == 14
+        assert coord.data["interval_value"] == 14
 
 
 class TestSnoozeValueNumberIntegration:

@@ -38,7 +38,7 @@ Adding your first chore takes less than a minute:
 1. Go to **Settings → Devices & Services → Add Integration**
 2. Search for **Chore Tracker**
 3. Enter a name (for example, "Vacuum living room")
-4. Enter an interval in days (for example, `7`)
+4. Enter an interval and choose the unit (days or weeks, for example `2 weeks`)
 5. Click **Submit**
 
 That's it.
@@ -122,7 +122,8 @@ Available from the device's **Configuration** section:
 
 | Entity              | Description                                                 |
 | ------------------- | ----------------------------------------------------------- |
-| Interval            | Number of days before the chore becomes overdue again       |
+| Interval            | How many days or weeks before the chore becomes overdue     |
+| Interval unit       | Days or weeks                                               |
 | Snooze interval     | Amount of time to snooze when the Snooze button is pressed  |
 | Snooze unit         | Minutes, hours, days, or weeks                              |
 | Overdue time of day | Time of day when the chore becomes overdue (default: 08:00) |

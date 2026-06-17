@@ -29,18 +29,34 @@ async def test_user_flow_creates_entry_with_options(hass):
 
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
-        {"name": "Bins", "interval_days": 14},
+        {"name": "Bins", "interval_value": 14, "interval_unit": "days"},
     )
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert result["title"] == "Bins"
     assert result["data"] == {}
     opts = result["options"]
     assert opts["name"] == "Bins"
-    assert opts["interval_days"] == 14
+    assert opts["interval_value"] == 14
+    assert opts["interval_unit"] == "days"
     assert opts["default_snooze_value"] == 1
     assert opts["default_snooze_unit"] == "days"
     assert opts["last_completed"] is None
     assert opts["snooze_until"] is None
+
+
+async def test_user_flow_creates_entry_with_weeks_unit(hass):
+    """Submitting interval_unit=weeks stores weeks in options."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": "user"}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {"name": "Bins", "interval_value": 2, "interval_unit": "weeks"},
+    )
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    opts = result["options"]
+    assert opts["interval_value"] == 2
+    assert opts["interval_unit"] == "weeks"
 
 
 async def test_user_flow_last_completed_is_none(hass):
@@ -50,7 +66,7 @@ async def test_user_flow_last_completed_is_none(hass):
     )
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
-        {"name": "Vacuuming", "interval_days": 7},
+        {"name": "Vacuuming", "interval_value": 7, "interval_unit": "days"},
     )
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert result["options"]["last_completed"] is None
@@ -63,7 +79,7 @@ async def test_user_flow_snooze_defaults_hardcoded(hass):
     )
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
-        {"name": "Bins", "interval_days": 7},
+        {"name": "Bins", "interval_value": 7, "interval_unit": "days"},
     )
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert result["options"]["default_snooze_value"] == 1
@@ -78,7 +94,7 @@ async def test_user_flow_multiple_entries_allowed(hass):
         )
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            {"name": name, "interval_days": 7},
+            {"name": name, "interval_value": 7, "interval_unit": "days"},
         )
         assert result["type"] == FlowResultType.CREATE_ENTRY
 
@@ -90,7 +106,7 @@ async def test_user_flow_rejects_empty_name(hass):
     )
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
-        {"name": "   ", "interval_days": 1},
+        {"name": "   ", "interval_value": 1, "interval_unit": "days"},
     )
     assert result["type"] == FlowResultType.FORM
     assert result["step_id"] == "user"
@@ -98,12 +114,12 @@ async def test_user_flow_rejects_empty_name(hass):
 
 
 async def test_user_flow_rejects_non_positive_interval(hass):
-    """NumberSelector(min=1) rejects interval_days=0 at schema validation."""
+    """NumberSelector(min=1) rejects interval_value=0 at schema validation."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": "user"}
     )
     with pytest.raises(InvalidData):
         await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            {"name": "Valid Name", "interval_days": 0},
+            {"name": "Valid Name", "interval_value": 0, "interval_unit": "days"},
         )

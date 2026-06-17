@@ -2,7 +2,9 @@
 
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 
+from .const import DEFAULT_INTERVAL_UNIT, DOMAIN
 from .coordinator import ChoresConfigEntry, ChoresCoordinator
 
 PLATFORMS: list[Platform] = [
@@ -12,6 +14,27 @@ PLATFORMS: list[Platform] = [
     Platform.SENSOR,
     Platform.TIME,
 ]
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: ChoresConfigEntry) -> bool:
+    """Migrate old config entry versions to the current version."""
+    if entry.version == 1:
+        options = dict(entry.options)
+        options["interval_value"] = options.pop(
+            "interval_days", options.get("interval_value", 1)
+        )
+        options.setdefault("interval_unit", DEFAULT_INTERVAL_UNIT)
+
+        ent_reg = er.async_get(hass)
+        old_entity_id = ent_reg.async_get_entity_id(
+            "number", DOMAIN, f"{entry.entry_id}_interval_days"
+        )
+        if old_entity_id:
+            ent_reg.async_remove(old_entity_id)
+
+        hass.config_entries.async_update_entry(entry, options=options, version=2)
+
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ChoresConfigEntry) -> bool:

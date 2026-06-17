@@ -51,7 +51,7 @@ async def test_complete_while_timer_live_cancels_prior_timer(
 
     patch_track.side_effect = _side_effect
 
-    entry = make_entry(days_ago=0, interval_days=7)
+    entry = make_entry(days_ago=0, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
     assert len(cancel_mocks) == 1
@@ -75,7 +75,7 @@ async def test_snooze_while_timer_live_cancels_overdue_timer(
 
     patch_track.side_effect = _side_effect
 
-    entry = make_entry(days_ago=0, interval_days=7)
+    entry = make_entry(days_ago=0, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
     first_cancel = cancel_mocks[0]
@@ -89,7 +89,7 @@ async def test_overdue_callback_noop_after_shutdown(
     hass: Any, fake_track: dict[str, Any]
 ) -> None:
     """Timer callback is a no-op when coordinator runtime is torn down."""
-    entry = make_entry(days_ago=0, interval_days=7)
+    entry = make_entry(days_ago=0, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
     cb = fake_track["cb"]
@@ -116,7 +116,7 @@ async def test_snooze_reschedule_cancels_prior_snooze_timer(
 
     patch_track.side_effect = _side_effect
 
-    entry = make_entry(days_ago=30, interval_days=7)
+    entry = make_entry(days_ago=30, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 
@@ -132,7 +132,7 @@ async def test_snooze_expiry_callback_noop_after_shutdown(
     hass: Any, fake_track: dict[str, Any]
 ) -> None:
     """Snooze expiry callback is a no-op when coordinator runtime is torn down."""
-    entry = make_entry(days_ago=30, interval_days=7)
+    entry = make_entry(days_ago=30, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
 
@@ -147,7 +147,7 @@ async def test_schedule_snooze_returns_early_when_snooze_until_is_none(
     hass: Any,
 ) -> None:
     """_schedule_snooze is a no-op when snooze_until is None."""
-    entry = make_entry(days_ago=30, interval_days=7)
+    entry = make_entry(days_ago=30, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
     assert coord._runtime is not None
@@ -161,7 +161,7 @@ async def test_schedule_snooze_returns_early_when_snooze_until_in_past(
     hass: Any,
 ) -> None:
     """_schedule_snooze is a no-op when snooze_until is already in the past."""
-    entry = make_entry(days_ago=30, interval_days=7)
+    entry = make_entry(days_ago=30, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
     assert coord._runtime is not None
@@ -178,7 +178,7 @@ async def test_schedule_snooze_returns_early_when_snooze_until_in_past(
 
 async def test_naive_last_completed_gracefully_recovered(hass: Any) -> None:
     """A naive last_completed is cleared to None and a repair issue is raised."""
-    entry = make_entry(interval_days=7, last_completed="2020-01-01")
+    entry = make_entry(interval_value=7, last_completed="2020-01-01")
     entry.add_to_hass(hass)
 
     coord = await setup_coord(hass, entry)
@@ -192,14 +192,14 @@ async def test_naive_last_completed_gracefully_recovered(hass: Any) -> None:
     assert issue.severity == ir.IssueSeverity.WARNING
 
 
-async def test_invalid_interval_days_raises_config_entry_error(hass: Any) -> None:
-    """An invalid interval_days raises ConfigEntryError and surfaces an ERROR repair issue."""
+async def test_invalid_interval_value_raises_config_entry_error(hass: Any) -> None:
+    """An invalid interval_value raises ConfigEntryError and surfaces an ERROR repair issue."""
     entry = MockConfigEntry(
         domain=DOMAIN,
         entry_id="test_entry_id",
         options={
             "name": "Bins",
-            "interval_days": 0,
+            "interval_value": 0,
             "default_snooze_value": 1,
             "default_snooze_unit": "days",
             "notification_time": "08:00",
@@ -222,7 +222,7 @@ async def test_invalid_interval_days_raises_config_entry_error(hass: Any) -> Non
 
 async def test_garbage_snooze_until_gracefully_recovered(hass: Any) -> None:
     """A totally unparseable snooze_until (not just naive) also triggers a repair issue."""
-    entry = make_entry(days_ago=30, interval_days=7, snooze_until="not-a-date")
+    entry = make_entry(days_ago=30, interval_value=7, snooze_until="not-a-date")
     entry.add_to_hass(hass)
 
     coord = await setup_coord(hass, entry)
@@ -238,7 +238,7 @@ async def test_garbage_snooze_until_gracefully_recovered(hass: Any) -> None:
 
 async def test_valid_options_no_repair_issue(hass: Any) -> None:
     """A clean load produces no repair issues."""
-    entry = make_entry(days_ago=3, interval_days=7)
+    entry = make_entry(days_ago=3, interval_value=7)
     entry.add_to_hass(hass)
 
     await setup_coord(hass, entry)
@@ -266,7 +266,7 @@ async def test_valid_options_no_repair_issue(hass: Any) -> None:
 
 async def test_clean_load_deletes_stale_repair_issues(hass: Any) -> None:
     """A clean load deletes any repair issues left over from a prior corrupt boot."""
-    entry = make_entry(days_ago=3, interval_days=7)
+    entry = make_entry(days_ago=3, interval_value=7)
     entry.add_to_hass(hass)
 
     ir.async_create_issue(
