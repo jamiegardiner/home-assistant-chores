@@ -34,12 +34,24 @@ ______________________________________________________________________
 
 ## `chores.snooze`
 
-Snooze a chore for a given duration. Provide a `value` (integer, 1–365) and a `unit` (`minutes`, `hours`, `days`, or `weeks`).
+Snooze a chore for a given duration. Omit both `value` and `unit` to use the device's configured default snooze duration (the same as pressing the Snooze button). Provide both to override the default.
 
-| Field   | Required | Description                                          |
-| ------- | -------- | ---------------------------------------------------- |
-| `value` | Yes      | Integer between 1 and 365 — how many units to snooze |
-| `unit`  | Yes      | One of `minutes`, `hours`, `days`, or `weeks`        |
+| Field   | Required | Description                                                                         |
+| ------- | -------- | ----------------------------------------------------------------------------------- |
+| `value` | No       | Integer between 1 and 365 — how many units to snooze. Omit with `unit` for default. |
+| `unit`  | No       | One of `minutes`, `hours`, `days`, or `weeks`. Omit with `value` for default.       |
+
+Both fields must be supplied together — providing only one raises a validation error.
+
+**Use the device default:**
+
+```yaml
+action: chores.snooze
+target:
+  entity_id: sensor.vacuum_living_room
+```
+
+**Override with a specific duration:**
 
 ```yaml
 action: chores.snooze
