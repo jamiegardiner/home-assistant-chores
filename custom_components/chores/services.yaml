@@ -18,7 +18,7 @@ snooze:
       device_class: enum
   fields:
     value:
-      required: true
+      required: false
       selector:
         number:
           min: 1
@@ -26,7 +26,7 @@ snooze:
           step: 1
           mode: box
     unit:
-      required: true
+      required: false
       selector:
         select:
           options:
