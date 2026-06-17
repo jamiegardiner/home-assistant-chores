@@ -11,7 +11,7 @@
     },
     "select": {
       "interval_unit": {
-        "name": "Interval unit",
+        "name": "Due interval unit",
         "state": {
           "days": "Days",
           "weeks": "Weeks"
