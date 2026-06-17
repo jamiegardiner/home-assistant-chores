@@ -1,5 +1,6 @@
 """Unit tests for custom_components/chores/number.py."""
 
+from typing import Any
 from unittest.mock import MagicMock
 
 from homeassistant.const import EntityCategory
@@ -9,6 +10,7 @@ from custom_components.chores.number import (
     ChoreIntervalNumber,
     async_setup_entry,
 )
+from tests.components.chores.helpers import make_entry, setup_coord
 
 # ---------------------------------------------------------------------------
 # Fake coordinator
@@ -188,3 +190,36 @@ class TestChoreDefaultSnoozeValueNumber:
         entity = _make_snooze_value_number(coordinator=coordinator)
         await entity.async_set_native_value(3.0)
         assert coordinator._persist_calls == [{"default_snooze_value": 3}]
+
+
+# ---------------------------------------------------------------------------
+# Integration tests — real ChoresCoordinator
+# ---------------------------------------------------------------------------
+
+
+class TestIntervalNumberIntegration:
+    async def test_set_native_value_updates_coordinator_data(self, hass: Any) -> None:
+        """Interval number setter updates coordinator.data via the real set_option → _persist path."""
+        entry = make_entry(interval_days=7)
+        entry.add_to_hass(hass)
+        coord = await setup_coord(hass, entry)
+        entity = ChoreIntervalNumber(coord, entry)
+
+        await entity.async_set_native_value(14.0)
+        await coord.async_update_config(dict(entry.options))
+
+        assert coord.data["interval_days"] == 14
+
+
+class TestSnoozeValueNumberIntegration:
+    async def test_set_native_value_updates_coordinator_data(self, hass: Any) -> None:
+        """Snooze value number setter updates coordinator.data via the real set_option → _persist path."""
+        entry = make_entry(default_snooze_value=1)
+        entry.add_to_hass(hass)
+        coord = await setup_coord(hass, entry)
+        entity = ChoreDefaultSnoozeValueNumber(coord, entry)
+
+        await entity.async_set_native_value(3.0)
+        await coord.async_update_config(dict(entry.options))
+
+        assert coord.data["default_snooze_value"] == 3
