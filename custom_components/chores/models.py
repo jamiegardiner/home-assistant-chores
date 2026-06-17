@@ -7,6 +7,7 @@ from .const import (
     DEFAULT_NOTIFICATION_TIME,
     DEFAULT_SNOOZE_UNIT,
     DEFAULT_SNOOZE_VALUE,
+    INTERVAL_UNIT_DAYS,
     INTERVAL_UNITS,
     SNOOZE_UNITS,
 )
@@ -20,6 +21,11 @@ class ChoreConfig:
     default_snooze_value: int = DEFAULT_SNOOZE_VALUE
     default_snooze_unit: str = DEFAULT_SNOOZE_UNIT
     notification_time: str = DEFAULT_NOTIFICATION_TIME
+
+    @property
+    def interval_in_days(self) -> int:
+        """Return the interval expressed as a number of days."""
+        return self.interval_value * INTERVAL_UNIT_DAYS[self.interval_unit]
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> ChoreConfig:

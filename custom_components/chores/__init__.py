@@ -4,7 +4,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 
-from .const import DOMAIN
+from .const import DEFAULT_INTERVAL_UNIT, DOMAIN
 from .coordinator import ChoresConfigEntry, ChoresCoordinator
 
 PLATFORMS: list[Platform] = [
@@ -23,7 +23,7 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ChoresConfigEntry) -> 
         options["interval_value"] = options.pop(
             "interval_days", options.get("interval_value", 1)
         )
-        options.setdefault("interval_unit", "days")
+        options.setdefault("interval_unit", DEFAULT_INTERVAL_UNIT)
 
         ent_reg = er.async_get(hass)
         old_entity_id = ent_reg.async_get_entity_id(
