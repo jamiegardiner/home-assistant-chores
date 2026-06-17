@@ -136,7 +136,7 @@ class ChoreSensor(
 class _ChoreDateSensor(
     _ChoreDeviceMixin, CoordinatorEntity[ChoresCoordinator], SensorEntity
 ):
-    """Base class for diagnostic date/datetime sensors on a chore device."""
+    """Base class for date/datetime sensors on a chore device."""
 
     _attr_has_entity_name = True
 
