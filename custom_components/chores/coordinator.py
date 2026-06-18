@@ -287,11 +287,13 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Schedule a timer to fire the overdue transition at next_due."""
         rt.cancel_overdue_timer()
 
-        if (
-            rt.status == STATUS_SNOOZED
-            or rt.next_due is None
-            or rt.next_due <= dt_util.now()
-        ):
+        if rt.status == STATUS_SNOOZED:
+            return
+
+        if rt.next_due is None:
+            return
+
+        if rt.next_due <= dt_util.now():
             return
 
         @callback
