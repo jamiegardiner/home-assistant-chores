@@ -62,6 +62,31 @@ class ChoreRuntime:
             self._unsubscribe_snooze_timer()
             self._unsubscribe_snooze_timer = None
 
+    def recompute(self) -> None:
+        """Recompute status and next_due from current field values."""
+        if self.last_completed is None:
+            self.next_due = None
+            if self.snooze_until is not None and dt_util.now() < self.snooze_until:
+                self.status = STATUS_SNOOZED
+                return
+            self.snooze_until = None
+            self.status = STATUS_OVERDUE
+            return
+
+        due_date = dt_util.as_local(self.last_completed).date() + timedelta(
+            days=self.config.interval_in_days
+        )
+        self.next_due = _time_on_local_date(due_date, self.config.notification_time)
+        now = dt_util.now()
+
+        if self.snooze_until is not None:
+            if now < self.snooze_until:
+                self.status = STATUS_SNOOZED
+                return
+            self.snooze_until = None
+
+        self.status = STATUS_OVERDUE if now >= self.next_due else STATUS_DONE
+
 
 type ChoresConfigEntry = ConfigEntry[ChoresCoordinator]
 
@@ -135,7 +160,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         rt = ChoreRuntime(
             config=config, last_completed=last_completed, snooze_until=snooze_until
         )
-        self._recompute(rt)
+        rt.recompute()
         self._runtime = rt
 
         self._commit()
@@ -162,7 +187,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         rt.config = new_config
         rt.last_completed = new_last_completed
         rt.snooze_until = new_snooze_until
-        self._recompute(rt)
+        rt.recompute()
         self._commit()
 
     @callback
@@ -197,7 +222,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             rt.snooze_until = None
 
         rt.last_completed = completed_at
-        self._recompute(rt)
+        rt.recompute()
         self._commit()
 
     async def async_snooze_default(self) -> None:
@@ -234,7 +259,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         rt.cancel_snooze_timer()
         rt.snooze_until = None
-        self._recompute(rt)
+        rt.recompute()
         self._commit()
 
     def set_option(self, key: str, value: Any) -> None:
@@ -244,32 +269,6 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     # ------------------------------------------------------------------
     # Private state
     # ------------------------------------------------------------------
-
-    @staticmethod
-    def _recompute(rt: ChoreRuntime) -> None:
-        """Recompute status and next_due."""
-        if rt.last_completed is None:
-            rt.next_due = None
-            if rt.snooze_until is not None and dt_util.now() < rt.snooze_until:
-                rt.status = STATUS_SNOOZED
-                return
-            rt.snooze_until = None
-            rt.status = STATUS_OVERDUE
-            return
-
-        due_date = dt_util.as_local(rt.last_completed).date() + timedelta(
-            days=rt.config.interval_in_days
-        )
-        rt.next_due = _time_on_local_date(due_date, rt.config.notification_time)
-        now = dt_util.now()
-
-        if rt.snooze_until is not None:
-            if now < rt.snooze_until:
-                rt.status = STATUS_SNOOZED
-                return
-            rt.snooze_until = None
-
-        rt.status = STATUS_OVERDUE if now >= rt.next_due else STATUS_DONE
 
     def _snapshot(self) -> dict[str, Any]:
         """Return a snapshot of current chore state (consumed by sensor platform)."""
@@ -315,7 +314,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if self._runtime is None:
                 return
             self._runtime._unsubscribe_overdue_timer = None
-            self._recompute(self._runtime)
+            self._runtime.recompute()
             self.async_set_updated_data(self._snapshot())
 
         rt._unsubscribe_overdue_timer = async_track_point_in_time(
@@ -339,7 +338,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 return
             self._runtime.snooze_until = None
             self._runtime._unsubscribe_snooze_timer = None
-            self._recompute(self._runtime)
+            self._runtime.recompute()
             self._persist({"snooze_until": None})
             self._schedule(self._runtime)
             self.async_set_updated_data(self._snapshot())
