@@ -64,9 +64,10 @@ class ChoreRuntime:
 
     def recompute(self) -> None:
         """Recompute status and next_due from current field values."""
+        now = dt_util.now()
         if self.last_completed is None:
             self.next_due = None
-            if self.snooze_until is not None and dt_util.now() < self.snooze_until:
+            if self.snooze_until is not None and now < self.snooze_until:
                 self.status = STATUS_SNOOZED
                 return
             self.snooze_until = None
@@ -77,7 +78,6 @@ class ChoreRuntime:
             days=self.config.interval_in_days
         )
         self.next_due = _time_on_local_date(due_date, self.config.notification_time)
-        now = dt_util.now()
 
         if self.snooze_until is not None:
             if now < self.snooze_until:
@@ -180,7 +180,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         ):
             return
 
-        self._cancel_timers(rt)
+        self._cancel_timers()
         rt.config = new_config
         rt.last_completed = new_last_completed
         rt.snooze_until = new_snooze_until
@@ -190,7 +190,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def async_shutdown_timers(self) -> None:
         """Cancel all scheduled timers. Called on entry unload."""
         if self._runtime is not None:
-            self._cancel_timers(self._runtime)
+            self._cancel_timers()
 
     # ------------------------------------------------------------------
     # Public commands
@@ -212,11 +212,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
 
         rt = self._runtime
-
-        if rt.snooze_until is not None:
-            rt.cancel_snooze_timer()
-            rt.snooze_until = None
-
+        rt.snooze_until = None
         rt.last_completed = completed_at
         self._commit()
 
@@ -240,7 +236,6 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         rt = self._runtime
         rt.snooze_until = snooze_until
-        rt.cancel_overdue_timer()
         self._commit()
 
     async def async_unsnooze(self) -> None:
@@ -333,10 +328,11 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
     @callback
-    def _cancel_timers(self, rt: ChoreRuntime) -> None:
-        """Cancel all timers on a runtime."""
-        rt.cancel_overdue_timer()
-        rt.cancel_snooze_timer()
+    def _cancel_timers(self) -> None:
+        """Cancel all timers on the current runtime."""
+        assert self._runtime is not None
+        self._runtime.cancel_overdue_timer()
+        self._runtime.cancel_snooze_timer()
 
     # ------------------------------------------------------------------
     # Private persistence
