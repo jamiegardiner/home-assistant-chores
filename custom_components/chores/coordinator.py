@@ -283,7 +283,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     # ------------------------------------------------------------------
 
     @callback
-    def _schedule(self, rt: ChoreRuntime) -> None:
+    def _schedule_overdue(self, rt: ChoreRuntime) -> None:
         """Schedule a timer to fire the overdue transition at next_due."""
         rt.cancel_overdue_timer()
 
@@ -348,7 +348,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         assert self._runtime is not None
         rt = self._runtime
         rt.recompute()
-        self._schedule(rt)
+        self._schedule_overdue(rt)
         self._schedule_snooze(rt)
         self._persist(
             {
