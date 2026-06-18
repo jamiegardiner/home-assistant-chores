@@ -316,9 +316,7 @@ async def test_schedule_snooze_returns_early_when_snooze_until_is_none(
     coord = await setup_coord(hass, entry)
     assert coord._runtime is not None
     coord._runtime.snooze_until = None
-    coord._schedule_snooze(
-        coord._runtime
-    )  # must not raise and must not schedule a timer
+    coord._schedule_snooze()  # must not raise and must not schedule a timer
 
 
 async def test_schedule_snooze_returns_early_when_snooze_until_in_past(
@@ -330,9 +328,7 @@ async def test_schedule_snooze_returns_early_when_snooze_until_in_past(
     coord = await setup_coord(hass, entry)
     assert coord._runtime is not None
     coord._runtime.snooze_until = dt_util.now() - timedelta(hours=1)
-    coord._schedule_snooze(
-        coord._runtime
-    )  # must not raise and must not schedule a timer
+    coord._schedule_snooze()  # must not raise and must not schedule a timer
 
 
 # ---------------------------------------------------------------------------
