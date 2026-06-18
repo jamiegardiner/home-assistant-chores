@@ -180,7 +180,6 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         ):
             return
 
-        self._cancel_timers()
         rt.config = new_config
         rt.last_completed = new_last_completed
         rt.snooze_until = new_snooze_until
@@ -190,7 +189,8 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def async_shutdown_timers(self) -> None:
         """Cancel all scheduled timers. Called on entry unload."""
         if self._runtime is not None:
-            self._cancel_timers()
+            self._runtime.cancel_overdue_timer()
+            self._runtime.cancel_snooze_timer()
 
     # ------------------------------------------------------------------
     # Public commands
@@ -326,13 +326,6 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         rt._unsubscribe_snooze_timer = async_track_point_in_time(
             self.hass, HassJob(_snooze_expiry_callback), rt.snooze_until
         )
-
-    @callback
-    def _cancel_timers(self) -> None:
-        """Cancel all timers on the current runtime."""
-        assert self._runtime is not None
-        self._runtime.cancel_overdue_timer()
-        self._runtime.cancel_snooze_timer()
 
     # ------------------------------------------------------------------
     # Private persistence
