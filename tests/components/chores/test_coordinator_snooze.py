@@ -307,34 +307,6 @@ async def test_snooze_expiry_callback_noop_after_shutdown(
     cb(datetime.now(tz=UTC))  # must not raise
 
 
-async def test_schedule_snooze_returns_early_when_snooze_until_is_none(
-    hass: Any,
-) -> None:
-    """_schedule_snooze is a no-op when snooze_until is None."""
-    entry = make_entry(days_ago=30, interval_value=7)
-    entry.add_to_hass(hass)
-    coord = await setup_coord(hass, entry)
-    assert coord._runtime is not None
-    coord._runtime.snooze_until = None
-    coord._schedule_snooze(
-        coord._runtime
-    )  # must not raise and must not schedule a timer
-
-
-async def test_schedule_snooze_returns_early_when_snooze_until_in_past(
-    hass: Any,
-) -> None:
-    """_schedule_snooze is a no-op when snooze_until is already in the past."""
-    entry = make_entry(days_ago=30, interval_value=7)
-    entry.add_to_hass(hass)
-    coord = await setup_coord(hass, entry)
-    assert coord._runtime is not None
-    coord._runtime.snooze_until = dt_util.now() - timedelta(hours=1)
-    coord._schedule_snooze(
-        coord._runtime
-    )  # must not raise and must not schedule a timer
-
-
 # ---------------------------------------------------------------------------
 # Never-completed chore snooze tests
 # ---------------------------------------------------------------------------

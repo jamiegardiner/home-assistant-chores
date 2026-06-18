@@ -62,6 +62,31 @@ class ChoreRuntime:
             self._unsubscribe_snooze_timer()
             self._unsubscribe_snooze_timer = None
 
+    def recompute(self) -> None:
+        """Recompute status and next_due from current field values."""
+        now = dt_util.now()
+        if self.last_completed is None:
+            self.next_due = None
+            if self.snooze_until is not None and now < self.snooze_until:
+                self.status = STATUS_SNOOZED
+                return
+            self.snooze_until = None
+            self.status = STATUS_OVERDUE
+            return
+
+        due_date = dt_util.as_local(self.last_completed).date() + timedelta(
+            days=self.config.interval_in_days
+        )
+        self.next_due = _time_on_local_date(due_date, self.config.notification_time)
+
+        if self.snooze_until is not None:
+            if now < self.snooze_until:
+                self.status = STATUS_SNOOZED
+                return
+            self.snooze_until = None
+
+        self.status = STATUS_OVERDUE if now >= self.next_due else STATUS_DONE
+
 
 type ChoresConfigEntry = ConfigEntry[ChoresCoordinator]
 
@@ -132,17 +157,10 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             config.name,
         )
 
-        rt = ChoreRuntime(
+        self._runtime = ChoreRuntime(
             config=config, last_completed=last_completed, snooze_until=snooze_until
         )
-        self._recompute(rt)
-        self._runtime = rt
-
-        if snooze_until is not None and rt.snooze_until is None:
-            self._persist({"snooze_until": None})
-
-        self._schedule_timers()
-        self.async_set_updated_data(self._snapshot())
+        self._commit()
 
     async def async_update_config(self, new_options: dict[str, Any]) -> None:
         """Reconcile runtime state from new options. Called by the update listener."""
@@ -162,21 +180,17 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         ):
             return
 
-        self._cancel_timers(rt)
         rt.config = new_config
         rt.last_completed = new_last_completed
         rt.snooze_until = new_snooze_until
-        self._recompute(rt)
-        if new_snooze_until is not None and rt.snooze_until is None:
-            self._persist({"snooze_until": None})
-        self._schedule_timers()
-        self.async_set_updated_data(self._snapshot())
+        self._commit()
 
     @callback
     def async_shutdown_timers(self) -> None:
         """Cancel all scheduled timers. Called on entry unload."""
         if self._runtime is not None:
-            self._cancel_timers(self._runtime)
+            self._runtime.cancel_overdue_timer()
+            self._runtime.cancel_snooze_timer()
 
     # ------------------------------------------------------------------
     # Public commands
@@ -198,25 +212,17 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
 
         rt = self._runtime
-
-        if rt.snooze_until is not None:
-            rt.cancel_snooze_timer()
-            rt.snooze_until = None
-
+        rt.snooze_until = None
         rt.last_completed = completed_at
-        self._recompute(rt)
-        self._schedule(rt)
-        self._persist(
-            {"last_completed": rt.last_completed.isoformat(), "snooze_until": None}
-        )
-        self.async_set_updated_data(self._snapshot())
+        self._commit()
 
     async def async_snooze_default(self) -> None:
         """Snooze by default_snooze_value + default_snooze_unit from now."""
         assert self._runtime is not None
         cfg = self._runtime.config
         await self.async_snooze(
-            _snooze_target(cfg.default_snooze_value, cfg.default_snooze_unit)
+            dt_util.now()
+            + timedelta(**{cfg.default_snooze_unit: cfg.default_snooze_value})
         )
 
     async def async_snooze(self, snooze_until: datetime) -> None:
@@ -230,13 +236,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         rt = self._runtime
         rt.snooze_until = snooze_until
-
-        rt.cancel_overdue_timer()
-
-        self._schedule_snooze(rt)
-        rt.status = STATUS_SNOOZED
-        self._persist({"snooze_until": snooze_until.isoformat()})
-        self.async_set_updated_data(self._snapshot())
+        self._commit()
 
     async def async_unsnooze(self) -> None:
         """Cancel an active snooze, returning the chore to done or overdue."""
@@ -247,10 +247,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         rt.cancel_snooze_timer()
         rt.snooze_until = None
-        self._recompute(rt)
-        self._schedule(rt)
-        self._persist({"snooze_until": None})
-        self.async_set_updated_data(self._snapshot())
+        self._commit()
 
     def set_option(self, key: str, value: Any) -> None:
         """Persist a single option field. Public interface for entity setters."""
@@ -259,32 +256,6 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     # ------------------------------------------------------------------
     # Private state
     # ------------------------------------------------------------------
-
-    @staticmethod
-    def _recompute(rt: ChoreRuntime) -> None:
-        """Recompute status and next_due."""
-        if rt.last_completed is None:
-            rt.next_due = None
-            if rt.snooze_until is not None and dt_util.now() < rt.snooze_until:
-                rt.status = STATUS_SNOOZED
-                return
-            rt.snooze_until = None
-            rt.status = STATUS_OVERDUE
-            return
-
-        due_date = dt_util.as_local(rt.last_completed).date() + timedelta(
-            days=rt.config.interval_in_days
-        )
-        rt.next_due = _time_on_local_date(due_date, rt.config.notification_time)
-        now = dt_util.now()
-
-        if rt.snooze_until is not None:
-            if now < rt.snooze_until:
-                rt.status = STATUS_SNOOZED
-                return
-            rt.snooze_until = None
-
-        rt.status = STATUS_OVERDUE if now >= rt.next_due else STATUS_DONE
 
     def _snapshot(self) -> dict[str, Any]:
         """Return a snapshot of current chore state (consumed by sensor platform)."""
@@ -308,21 +279,19 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     # ------------------------------------------------------------------
 
     @callback
-    def _schedule_timers(self) -> None:
-        """Schedule overdue and/or snooze timer based on current runtime state."""
+    def _schedule_overdue(self) -> None:
+        """Schedule a timer to fire the overdue transition at next_due."""
         assert self._runtime is not None
         rt = self._runtime
-        if rt.status == STATUS_SNOOZED:
-            self._schedule_snooze(rt)
-        else:
-            self._schedule(rt)
-
-    @callback
-    def _schedule(self, rt: ChoreRuntime) -> None:
-        """Schedule a timer to fire the overdue transition at next_due."""
         rt.cancel_overdue_timer()
 
-        if rt.next_due is None or rt.next_due <= dt_util.now():
+        if rt.status == STATUS_SNOOZED:
+            return
+
+        if rt.next_due is None:
+            return
+
+        if rt.next_due <= dt_util.now():
             return
 
         @callback
@@ -330,22 +299,20 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if self._runtime is None:
                 return
             self._runtime._unsubscribe_overdue_timer = None
-            self._recompute(self._runtime)
-            self.async_set_updated_data(self._snapshot())
+            self._commit()
 
         rt._unsubscribe_overdue_timer = async_track_point_in_time(
             self.hass, HassJob(_overdue_callback), rt.next_due
         )
 
     @callback
-    def _schedule_snooze(self, rt: ChoreRuntime) -> None:
+    def _schedule_snooze(self) -> None:
         """Schedule a snooze-expiry timer at snooze_until."""
+        assert self._runtime is not None
+        rt = self._runtime
         rt.cancel_snooze_timer()
 
         if rt.snooze_until is None:
-            return
-
-        if rt.snooze_until <= dt_util.now():
             return
 
         @callback
@@ -354,20 +321,11 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 return
             self._runtime.snooze_until = None
             self._runtime._unsubscribe_snooze_timer = None
-            self._recompute(self._runtime)
-            self._persist({"snooze_until": None})
-            self._schedule(self._runtime)
-            self.async_set_updated_data(self._snapshot())
+            self._commit()
 
         rt._unsubscribe_snooze_timer = async_track_point_in_time(
             self.hass, HassJob(_snooze_expiry_callback), rt.snooze_until
         )
-
-    @callback
-    def _cancel_timers(self, rt: ChoreRuntime) -> None:
-        """Cancel all timers on a runtime."""
-        rt.cancel_overdue_timer()
-        rt.cancel_snooze_timer()
 
     # ------------------------------------------------------------------
     # Private persistence
@@ -377,6 +335,25 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Write updated runtime fields back to entry.options for persistence."""
         new_opts = {**self.config_entry.options, **fields}
         self.hass.config_entries.async_update_entry(self.config_entry, options=new_opts)
+
+    def _commit(self) -> None:
+        """Recompute state, schedule timers, persist runtime fields, and push a snapshot update."""
+        assert self._runtime is not None
+        rt = self._runtime
+        rt.recompute()
+        self._schedule_overdue()
+        self._schedule_snooze()
+        self._persist(
+            {
+                "last_completed": rt.last_completed.isoformat()
+                if rt.last_completed
+                else None,
+                "snooze_until": rt.snooze_until.isoformat()
+                if rt.snooze_until
+                else None,
+            }
+        )
+        self.async_set_updated_data(self._snapshot())
 
     def _resolve_datetime_field(
         self,
@@ -401,7 +378,6 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 field_name,
                 raw,
             )
-            self._persist({field_name: None})
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
@@ -439,11 +415,6 @@ def _parse_aware_datetime(value: str | None) -> datetime | None:
     if candidate.tzinfo is None:
         raise ValueError(f"Expected a tz-aware datetime string, got naive: {value!r}")
     return candidate
-
-
-def _snooze_target(value: int, unit: str) -> datetime:
-    """Return the snooze expiry datetime: now + value units."""
-    return dt_util.now() + timedelta(**{unit: value})
 
 
 def _time_on_local_date(local_date: date, notification_time: str) -> datetime:
