@@ -213,7 +213,7 @@ Coordinator tests are split across three focused modules:
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `test_coordinator_init.py`     | Initialization, status computation, `async_update_config`, never-completed state, repair issues, `_parse_aware_datetime`, timer-guard branches |
 | `test_coordinator_complete.py` | `async_complete`, `completed_at`, notification time, completing a never-completed chore, timer-cancel on complete                              |
-| `test_coordinator_snooze.py`   | Snooze, unsnooze, snooze on never-completed chores, timer-reschedule and expiry guard branches                                                 |
+| `test_coordinator_snooze.py`   | Snooze, unsnooze, snooze on never-completed chores, timer-reschedule and snooze-expiry firing                                                  |
 
 `conftest.py` provides two fixtures auto-discovered by pytest — no import needed:
 
