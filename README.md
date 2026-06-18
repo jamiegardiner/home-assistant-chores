@@ -108,6 +108,20 @@ Each chore has one of three states:
 | Next due       | When the chore will next become overdue | Primary — appears on dashboards |
 | Snooze expiry  | When the current snooze period ends     | Diagnostic — hidden by default  |
 
+The **status sensor** (`sensor.<chore>`) also exposes `next_due` and `last_completed` as extra state attributes. This lets templates filter chores by area without matching entity IDs by string:
+
+```yaml
+{% set ns = namespace(name=none, ts=none) %}
+{% for eid in integration_entities('chores') | select('in', area_entities('kitchen')) %}
+  {% set t = state_attr(eid, 'next_due') | as_timestamp(none) %}
+  {% if t is not none and (ns.ts is none or t < ns.ts) %}
+    {% set ns.ts = t %}
+    {% set ns.name = state_attr(eid, 'friendly_name') %}
+  {% endif %}
+{% endfor %}
+{{ ns.name }}
+```
+
 ### 🔘 Buttons
 
 | Button   | Action                                                      |

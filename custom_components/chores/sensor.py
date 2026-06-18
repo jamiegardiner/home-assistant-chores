@@ -142,6 +142,7 @@ class ChoreSensor(
 
     @property
     def extra_state_attributes(self) -> dict[str, datetime | None]:
+        """Return next_due and last_completed for use in templates."""
         data = self.coordinator.data or {}
         return {
             "next_due": data.get("next_due"),
