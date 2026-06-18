@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime, timedelta
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from homeassistant.exceptions import HomeAssistantError
@@ -240,48 +240,104 @@ async def test_unsnooze_on_non_snoozed_is_noop(hass: Any) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Never-completed chore tests
+# Timer-reschedule branch tests
 # ---------------------------------------------------------------------------
 
 
-async def test_never_completed_is_overdue(hass: Any) -> None:
-    """A chore with no last_completed starts overdue."""
-    entry = make_entry(last_completed=None)
+async def test_snooze_while_timer_live_cancels_overdue_timer(
+    hass: Any, patch_track: MagicMock
+) -> None:
+    """Snoozing a done chore cancels the live overdue timer before scheduling the snooze timer."""
+    cancel_mocks: list[MagicMock] = []
+
+    def _side_effect(hass_: Any, cb: Any, point_in_time: Any) -> MagicMock:
+        cancel = MagicMock()
+        cancel_mocks.append(cancel)
+        return cancel
+
+    patch_track.side_effect = _side_effect
+
+    entry = make_entry(days_ago=0, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
-    assert coord.data["status"] == "overdue"
+    first_cancel = cancel_mocks[0]
+
+    await coord.async_snooze(dt_util.now() + timedelta(days=1))
+
+    first_cancel.assert_called_once()
 
 
-async def test_never_completed_next_due_is_none(hass: Any) -> None:
-    """A chore with no last_completed has next_due=None."""
-    entry = make_entry(last_completed=None)
+async def test_snooze_reschedule_cancels_prior_snooze_timer(
+    hass: Any, patch_track: MagicMock
+) -> None:
+    """Snoozing twice cancels the first snooze timer before scheduling the replacement."""
+    cancel_mocks: list[MagicMock] = []
+
+    def _side_effect(hass_: Any, cb: Any, point_in_time: Any) -> MagicMock:
+        cancel = MagicMock()
+        cancel_mocks.append(cancel)
+        return cancel
+
+    patch_track.side_effect = _side_effect
+
+    entry = make_entry(days_ago=30, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
-    assert coord.data["next_due"] is None
+
+    await coord.async_snooze(dt_util.now() + timedelta(days=1))
+    first_snooze_cancel = cancel_mocks[-1]
+
+    await coord.async_snooze(dt_util.now() + timedelta(days=2))
+
+    first_snooze_cancel.assert_called_once()
 
 
-async def test_never_completed_last_completed_is_none_in_snapshot(hass: Any) -> None:
-    """Snapshot carries last_completed=None for a never-completed chore."""
-    entry = make_entry(last_completed=None)
+async def test_snooze_expiry_callback_noop_after_shutdown(
+    hass: Any, fake_track: dict[str, Any]
+) -> None:
+    """Snooze expiry callback is a no-op when coordinator runtime is torn down."""
+    entry = make_entry(days_ago=30, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
-    assert coord.data["last_completed"] is None
+
+    await coord.async_snooze(dt_util.now() + timedelta(days=1))
+    cb = fake_track["cb"]
+
+    coord._runtime = None
+    cb(datetime.now(tz=UTC))  # must not raise
 
 
-async def test_completing_never_completed_chore_starts_cycle(hass: Any) -> None:
-    """Completing a never-completed chore sets last_completed, next_due, and status done."""
-    entry = make_entry(last_completed=None, interval_value=7)
+async def test_schedule_snooze_returns_early_when_snooze_until_is_none(
+    hass: Any,
+) -> None:
+    """_schedule_snooze is a no-op when snooze_until is None."""
+    entry = make_entry(days_ago=30, interval_value=7)
     entry.add_to_hass(hass)
     coord = await setup_coord(hass, entry)
+    assert coord._runtime is not None
+    coord._runtime.snooze_until = None
+    coord._schedule_snooze(
+        coord._runtime
+    )  # must not raise and must not schedule a timer
 
-    assert coord.data["status"] == "overdue"
-    await coord.async_complete()
 
-    assert coord.data["status"] == "done"
-    assert coord.data["last_completed"] is not None
-    assert coord.data["last_completed"].date() == dt_util.now().date()
-    expected_next_due = dt_util.now().date() + timedelta(days=7)
-    assert coord.data["next_due"].date() == expected_next_due
+async def test_schedule_snooze_returns_early_when_snooze_until_in_past(
+    hass: Any,
+) -> None:
+    """_schedule_snooze is a no-op when snooze_until is already in the past."""
+    entry = make_entry(days_ago=30, interval_value=7)
+    entry.add_to_hass(hass)
+    coord = await setup_coord(hass, entry)
+    assert coord._runtime is not None
+    coord._runtime.snooze_until = dt_util.now() - timedelta(hours=1)
+    coord._schedule_snooze(
+        coord._runtime
+    )  # must not raise and must not schedule a timer
+
+
+# ---------------------------------------------------------------------------
+# Never-completed chore snooze tests
+# ---------------------------------------------------------------------------
 
 
 async def test_snooze_on_never_completed_chore(

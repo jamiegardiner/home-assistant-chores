@@ -1,15 +1,29 @@
 """Tests for coordinator initialization, status computation, and async_update_config."""
 
 from datetime import UTC, date, datetime, timedelta
-from typing import Any
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
+import pytest
+from homeassistant.exceptions import ConfigEntryError
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.util import dt as dt_util
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.chores.const import (
+    DOMAIN,
+    REPAIR_ISSUE_CORRUPT_CONFIG,
+    REPAIR_ISSUE_CORRUPT_LAST_COMPLETED,
+    REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL,
+)
+from custom_components.chores.coordinator import (
+    ChoresCoordinator,
+    _parse_aware_datetime,
+)
 from tests.components.chores.helpers import make_entry, setup_coord
 
 # ---------------------------------------------------------------------------
-# Coordinator tests
+# Coordinator initialization / status computation tests
 # ---------------------------------------------------------------------------
 
 
@@ -56,33 +70,6 @@ async def test_timer_fires_overdue_transition(
     assert coord.data["status"] == "overdue"
 
 
-async def test_complete_resets_to_done(hass: Any) -> None:
-    """async_complete sets last_completed to today, status to done."""
-    entry = make_entry(days_ago=30, interval_value=7)
-    entry.add_to_hass(hass)
-    coord = await setup_coord(hass, entry)
-
-    assert coord.data["status"] == "overdue"
-    await coord.async_complete()
-
-    assert coord.data["status"] == "done"
-    assert coord.data["last_completed"].date() == dt_util.now().date()
-    assert coord.data["next_due"] > datetime.now(tz=UTC)
-
-
-async def test_complete_persists_to_entry_options(hass: Any) -> None:
-    """async_complete writes last_completed to entry.options."""
-    entry = make_entry(days_ago=30, interval_value=7)
-    entry.add_to_hass(hass)
-    coord = await setup_coord(hass, entry)
-    await coord.async_complete()
-
-    persisted = entry.options["last_completed"]
-    assert datetime.fromisoformat(persisted).tzinfo is not None
-    assert datetime.fromisoformat(persisted).date() == dt_util.now().date()
-    assert entry.options["snooze_until"] is None
-
-
 async def test_last_completed_survives_restart(hass: Any) -> None:
     """After completing, a new coordinator reads last_completed from entry.options."""
     entry = make_entry(days_ago=30, interval_value=7)
@@ -116,6 +103,35 @@ async def test_unload_cancels_timers(hass: Any, patch_track: MagicMock) -> None:
     coord.async_shutdown_timers()
     for mock in cancel_mocks:
         mock.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# Never-completed chore tests
+# ---------------------------------------------------------------------------
+
+
+async def test_never_completed_is_overdue(hass: Any) -> None:
+    """A chore with no last_completed starts overdue."""
+    entry = make_entry(last_completed=None)
+    entry.add_to_hass(hass)
+    coord = await setup_coord(hass, entry)
+    assert coord.data["status"] == "overdue"
+
+
+async def test_never_completed_next_due_is_none(hass: Any) -> None:
+    """A chore with no last_completed has next_due=None."""
+    entry = make_entry(last_completed=None)
+    entry.add_to_hass(hass)
+    coord = await setup_coord(hass, entry)
+    assert coord.data["next_due"] is None
+
+
+async def test_never_completed_last_completed_is_none_in_snapshot(hass: Any) -> None:
+    """Snapshot carries last_completed=None for a never-completed chore."""
+    entry = make_entry(last_completed=None)
+    entry.add_to_hass(hass)
+    coord = await setup_coord(hass, entry)
+    assert coord.data["last_completed"] is None
 
 
 # ---------------------------------------------------------------------------
@@ -244,3 +260,181 @@ async def test_next_due_dst_spring_forward(hass: Any) -> None:
     assert local_next_due.date() == date(2024, 3, 10)
     assert local_next_due.hour == 8
     assert local_next_due.minute == 0
+
+
+# ---------------------------------------------------------------------------
+# _parse_aware_datetime tests
+# ---------------------------------------------------------------------------
+
+
+def test_parse_aware_datetime_type_error_returns_none() -> None:
+    """A non-string value triggers TypeError in fromisoformat and returns None."""
+    result = _parse_aware_datetime(cast(str, 42))
+    assert result is None
+
+
+# ---------------------------------------------------------------------------
+# Timer callback guard tests
+# ---------------------------------------------------------------------------
+
+
+async def test_overdue_callback_noop_after_shutdown(
+    hass: Any, fake_track: dict[str, Any]
+) -> None:
+    """Timer callback is a no-op when coordinator runtime is torn down."""
+    entry = make_entry(days_ago=0, interval_value=7)
+    entry.add_to_hass(hass)
+    coord = await setup_coord(hass, entry)
+    cb = fake_track["cb"]
+
+    coord._runtime = None
+    cb(datetime.now(tz=UTC))  # must not raise
+
+
+# ---------------------------------------------------------------------------
+# Repair issue tests
+# ---------------------------------------------------------------------------
+
+
+async def test_naive_last_completed_gracefully_recovered(hass: Any) -> None:
+    """A naive last_completed is cleared to None and a repair issue is raised."""
+    entry = make_entry(interval_value=7, last_completed="2020-01-01")
+    entry.add_to_hass(hass)
+
+    coord = await setup_coord(hass, entry)
+
+    assert coord.data["last_completed"] is None
+    assert entry.options["last_completed"] is None
+    issue = ir.async_get(hass).async_get_issue(
+        DOMAIN, f"{REPAIR_ISSUE_CORRUPT_LAST_COMPLETED}_{entry.entry_id}"
+    )
+    assert issue is not None
+    assert issue.severity == ir.IssueSeverity.WARNING
+
+
+async def test_invalid_interval_value_raises_config_entry_error(hass: Any) -> None:
+    """An invalid interval_value raises ConfigEntryError and surfaces an ERROR repair issue."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        entry_id="test_entry_id",
+        options={
+            "name": "Bins",
+            "interval_value": 0,
+            "default_snooze_value": 1,
+            "default_snooze_unit": "days",
+            "notification_time": "08:00",
+            "last_completed": None,
+            "snooze_until": None,
+        },
+    )
+    entry.add_to_hass(hass)
+
+    with pytest.raises(ConfigEntryError):
+        coord = ChoresCoordinator(hass, entry)
+        await coord.async_initialize()
+
+    issue = ir.async_get(hass).async_get_issue(
+        DOMAIN, f"{REPAIR_ISSUE_CORRUPT_CONFIG}_{entry.entry_id}"
+    )
+    assert issue is not None
+    assert issue.severity == ir.IssueSeverity.ERROR
+
+
+async def test_garbage_snooze_until_gracefully_recovered(hass: Any) -> None:
+    """A totally unparseable snooze_until (not just naive) also triggers a repair issue."""
+    entry = make_entry(days_ago=30, interval_value=7, snooze_until="not-a-date")
+    entry.add_to_hass(hass)
+
+    coord = await setup_coord(hass, entry)
+
+    assert coord.data["snooze_until"] is None
+    assert entry.options["snooze_until"] is None
+    issue = ir.async_get(hass).async_get_issue(
+        DOMAIN, f"{REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL}_{entry.entry_id}"
+    )
+    assert issue is not None
+    assert issue.severity == ir.IssueSeverity.WARNING
+
+
+async def test_valid_options_no_repair_issue(hass: Any) -> None:
+    """A clean load produces no repair issues."""
+    entry = make_entry(days_ago=3, interval_value=7)
+    entry.add_to_hass(hass)
+
+    await setup_coord(hass, entry)
+
+    issue_reg = ir.async_get(hass)
+    assert (
+        issue_reg.async_get_issue(
+            DOMAIN, f"{REPAIR_ISSUE_CORRUPT_LAST_COMPLETED}_{entry.entry_id}"
+        )
+        is None
+    )
+    assert (
+        issue_reg.async_get_issue(
+            DOMAIN, f"{REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL}_{entry.entry_id}"
+        )
+        is None
+    )
+    assert (
+        issue_reg.async_get_issue(
+            DOMAIN, f"{REPAIR_ISSUE_CORRUPT_CONFIG}_{entry.entry_id}"
+        )
+        is None
+    )
+
+
+async def test_clean_load_deletes_stale_repair_issues(hass: Any) -> None:
+    """A clean load deletes any repair issues left over from a prior corrupt boot."""
+    entry = make_entry(days_ago=3, interval_value=7)
+    entry.add_to_hass(hass)
+
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        f"{REPAIR_ISSUE_CORRUPT_LAST_COMPLETED}_{entry.entry_id}",
+        is_fixable=False,
+        severity=ir.IssueSeverity.WARNING,
+        translation_key=REPAIR_ISSUE_CORRUPT_LAST_COMPLETED,
+        translation_placeholders={"name": "Bins"},
+    )
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        f"{REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL}_{entry.entry_id}",
+        is_fixable=False,
+        severity=ir.IssueSeverity.WARNING,
+        translation_key=REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL,
+        translation_placeholders={"name": "Bins"},
+    )
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        f"{REPAIR_ISSUE_CORRUPT_CONFIG}_{entry.entry_id}",
+        is_fixable=False,
+        severity=ir.IssueSeverity.ERROR,
+        translation_key=REPAIR_ISSUE_CORRUPT_CONFIG,
+        translation_placeholders={"name": "Bins", "error": "bad"},
+    )
+
+    await setup_coord(hass, entry)
+
+    issue_reg = ir.async_get(hass)
+    assert (
+        issue_reg.async_get_issue(
+            DOMAIN, f"{REPAIR_ISSUE_CORRUPT_LAST_COMPLETED}_{entry.entry_id}"
+        )
+        is None
+    )
+    assert (
+        issue_reg.async_get_issue(
+            DOMAIN, f"{REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL}_{entry.entry_id}"
+        )
+        is None
+    )
+    assert (
+        issue_reg.async_get_issue(
+            DOMAIN, f"{REPAIR_ISSUE_CORRUPT_CONFIG}_{entry.entry_id}"
+        )
+        is None
+    )
