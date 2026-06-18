@@ -1,3 +1,8 @@
+"""Data models for the Chores integration.
+
+ChoreConfig — immutable dataclass describing a chore's configured parameters.
+"""
+
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
