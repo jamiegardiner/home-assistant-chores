@@ -26,7 +26,7 @@ custom_components/chores/
     en.json            # runtime translations loaded by HA (mirrors strings.json)
   manifest.json        # HACS/HA integration metadata
 
-tests/components/chores/   # one test file per source module; coordinator tests are split across four focused files
+tests/components/chores/   # one test file per source module; coordinator tests are split across three focused files
 ```
 
 ______________________________________________________________________
@@ -207,14 +207,13 @@ ______________________________________________________________________
 
 ### Coordinator test layout
 
-Coordinator tests are split across four focused modules:
+Coordinator tests are split across three focused modules:
 
-| File                           | Coverage                                                  |
-| ------------------------------ | --------------------------------------------------------- |
-| `test_coordinator_init.py`     | Initialization, status computation, `async_update_config` |
-| `test_coordinator_snooze.py`   | Snooze, unsnooze, never-completed chore behaviour         |
-| `test_coordinator_complete.py` | `async_complete`, `completed_at`, notification time       |
-| `test_coordinator_coverage.py` | Timer-reschedule guard branches, `_parse_aware_datetime`  |
+| File                           | Coverage                                                                                                                                       |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `test_coordinator_init.py`     | Initialization, status computation, `async_update_config`, never-completed state, repair issues, `_parse_aware_datetime`, timer-guard branches |
+| `test_coordinator_complete.py` | `async_complete`, `completed_at`, notification time, completing a never-completed chore, timer-cancel on complete                              |
+| `test_coordinator_snooze.py`   | Snooze, unsnooze, snooze on never-completed chores, timer-reschedule and expiry guard branches                                                 |
 
 `conftest.py` provides two fixtures auto-discovered by pytest — no import needed:
 
