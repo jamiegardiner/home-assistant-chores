@@ -182,7 +182,7 @@ class _ChoreDateSensor(
 
 
 class ChoreLastCompletedSensor(_ChoreDateSensor):
-    """Diagnostic sensor surfacing the last completed datetime."""
+    """Primary sensor surfacing the last completed datetime."""
 
     _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_translation_key = "last_completed"
@@ -192,7 +192,7 @@ class ChoreLastCompletedSensor(_ChoreDateSensor):
 
 
 class ChoreNextDueSensor(_ChoreDateSensor):
-    """Diagnostic sensor surfacing the next due datetime."""
+    """Primary sensor surfacing the next due datetime."""
 
     _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_translation_key = "next_due"
