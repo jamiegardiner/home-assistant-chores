@@ -283,21 +283,15 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     # ------------------------------------------------------------------
 
     @callback
-    def _schedule_timers(self) -> None:
-        """Schedule overdue and/or snooze timer based on current runtime state."""
-        assert self._runtime is not None
-        rt = self._runtime
-        if rt.status == STATUS_SNOOZED:
-            self._schedule_snooze(rt)
-        else:
-            self._schedule(rt)
-
-    @callback
     def _schedule(self, rt: ChoreRuntime) -> None:
         """Schedule a timer to fire the overdue transition at next_due."""
         rt.cancel_overdue_timer()
 
-        if rt.next_due is None or rt.next_due <= dt_util.now():
+        if (
+            rt.status == STATUS_SNOOZED
+            or rt.next_due is None
+            or rt.next_due <= dt_util.now()
+        ):
             return
 
         @callback
@@ -354,7 +348,8 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         assert self._runtime is not None
         rt = self._runtime
         rt.recompute()
-        self._schedule_timers()
+        self._schedule(rt)
+        self._schedule_snooze(rt)
         self._persist(
             {
                 "last_completed": rt.last_completed.isoformat()
