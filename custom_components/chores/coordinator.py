@@ -366,12 +366,12 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Parse a datetime option field; create or delete a repair issue accordingly."""
         raw = opts.get(field_name)
         parsed: datetime | None = None
-        if raw:
+        if raw is not None:
             try:
                 parsed = _parse_aware_datetime(raw)
             except ValueError:
                 parsed = None
-        if raw and parsed is None:
+        if raw is not None and parsed is None:
             _LOGGER.warning(
                 "Chore entry %s has a corrupt %r field (%r); clearing to None",
                 entry_id,
