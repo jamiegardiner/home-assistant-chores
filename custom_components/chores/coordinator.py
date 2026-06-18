@@ -225,7 +225,8 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         assert self._runtime is not None
         cfg = self._runtime.config
         await self.async_snooze(
-            _snooze_target(cfg.default_snooze_value, cfg.default_snooze_unit)
+            dt_util.now()
+            + timedelta(**{cfg.default_snooze_unit: cfg.default_snooze_value})
         )
 
     async def async_snooze(self, snooze_until: datetime) -> None:
@@ -424,11 +425,6 @@ def _parse_aware_datetime(value: str | None) -> datetime | None:
     if candidate.tzinfo is None:
         raise ValueError(f"Expected a tz-aware datetime string, got naive: {value!r}")
     return candidate
-
-
-def _snooze_target(value: int, unit: str) -> datetime:
-    """Return the snooze expiry datetime: now + value units."""
-    return dt_util.now() + timedelta(**{unit: value})
 
 
 def _time_on_local_date(local_date: date, notification_time: str) -> datetime:
