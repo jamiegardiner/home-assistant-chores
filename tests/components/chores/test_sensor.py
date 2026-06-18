@@ -335,6 +335,35 @@ class TestChoreSnoozeUntilSensor:
         assert sensor.available is True
 
 
+class TestChoreSensorExtraStateAttributes:
+    """Tests for ChoreSensor.extra_state_attributes."""
+
+    def test_extra_state_attributes_contains_next_due(self):
+        sensor = _make_sensor()
+        assert sensor.extra_state_attributes["next_due"] == CHORE_STATE["next_due"]
+
+    def test_extra_state_attributes_contains_last_completed(self):
+        sensor = _make_sensor()
+        assert sensor.extra_state_attributes["last_completed"] == _LC
+
+    def test_extra_state_attributes_none_when_data_is_none(self):
+        coordinator = FakeCoordinator()
+        coordinator.data = None
+        sensor = _make_sensor(coordinator=coordinator)
+        attrs = sensor.extra_state_attributes
+        assert attrs["next_due"] is None
+        assert attrs["last_completed"] is None
+
+    def test_extra_state_attributes_none_when_never_completed(self):
+        coordinator = FakeCoordinator(
+            {**CHORE_STATE, "next_due": None, "last_completed": None}
+        )
+        sensor = _make_sensor(coordinator=coordinator)
+        attrs = sensor.extra_state_attributes
+        assert attrs["next_due"] is None
+        assert attrs["last_completed"] is None
+
+
 class TestHandleComplete:
     """Tests for the _handle_complete service handler."""
 

@@ -140,6 +140,14 @@ class ChoreSensor(
         """Return ``done``, ``overdue``, ``snoozed``, or None when unknown."""
         return (self.coordinator.data or {}).get("status")
 
+    @property
+    def extra_state_attributes(self) -> dict[str, datetime | None]:
+        data = self.coordinator.data or {}
+        return {
+            "next_due": data.get("next_due"),
+            "last_completed": data.get("last_completed"),
+        }
+
 
 class _ChoreDateSensor(
     _ChoreDeviceMixin, CoordinatorEntity[ChoresCoordinator], SensorEntity
