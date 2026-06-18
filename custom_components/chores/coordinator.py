@@ -157,12 +157,9 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             config.name,
         )
 
-        rt = ChoreRuntime(
+        self._runtime = ChoreRuntime(
             config=config, last_completed=last_completed, snooze_until=snooze_until
         )
-        rt.recompute()
-        self._runtime = rt
-
         self._commit()
 
     async def async_update_config(self, new_options: dict[str, Any]) -> None:
@@ -187,7 +184,6 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         rt.config = new_config
         rt.last_completed = new_last_completed
         rt.snooze_until = new_snooze_until
-        rt.recompute()
         self._commit()
 
     @callback
@@ -222,7 +218,6 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             rt.snooze_until = None
 
         rt.last_completed = completed_at
-        rt.recompute()
         self._commit()
 
     async def async_snooze_default(self) -> None:
@@ -244,10 +239,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         rt = self._runtime
         rt.snooze_until = snooze_until
-        rt.status = STATUS_SNOOZED
-
         rt.cancel_overdue_timer()
-
         self._commit()
 
     async def async_unsnooze(self) -> None:
@@ -259,7 +251,6 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         rt.cancel_snooze_timer()
         rt.snooze_until = None
-        rt.recompute()
         self._commit()
 
     def set_option(self, key: str, value: Any) -> None:
@@ -314,8 +305,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if self._runtime is None:
                 return
             self._runtime._unsubscribe_overdue_timer = None
-            self._runtime.recompute()
-            self.async_set_updated_data(self._snapshot())
+            self._commit()
 
         rt._unsubscribe_overdue_timer = async_track_point_in_time(
             self.hass, HassJob(_overdue_callback), rt.next_due
@@ -338,10 +328,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 return
             self._runtime.snooze_until = None
             self._runtime._unsubscribe_snooze_timer = None
-            self._runtime.recompute()
-            self._persist({"snooze_until": None})
-            self._schedule(self._runtime)
-            self.async_set_updated_data(self._snapshot())
+            self._commit()
 
         rt._unsubscribe_snooze_timer = async_track_point_in_time(
             self.hass, HassJob(_snooze_expiry_callback), rt.snooze_until
@@ -363,9 +350,10 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.hass.config_entries.async_update_entry(self.config_entry, options=new_opts)
 
     def _commit(self) -> None:
-        """Schedule timers, persist runtime fields, and push a snapshot update."""
+        """Recompute state, schedule timers, persist runtime fields, and push a snapshot update."""
         assert self._runtime is not None
         rt = self._runtime
+        rt.recompute()
         self._schedule_timers()
         self._persist(
             {
