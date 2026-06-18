@@ -320,9 +320,6 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if rt.snooze_until is None:
             return
 
-        if rt.snooze_until <= dt_util.now():
-            return
-
         @callback
         def _snooze_expiry_callback(_now: datetime) -> None:
             if self._runtime is None:
