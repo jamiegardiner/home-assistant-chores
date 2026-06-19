@@ -24,6 +24,7 @@ from .const import (
     MIN_NUMBER_VALUE,
     SERVICE_COMPLETE,
     SERVICE_SNOOZE,
+    SERVICE_SNOOZE_EXACT,
     SERVICE_UNSNOOZE,
     SNOOZE_UNITS,
     STATUS_OPTIONS,
@@ -32,6 +33,7 @@ from .const import (
 from .coordinator import ChoresCoordinator, _ChoreDeviceMixin
 from .services import (
     COMPLETE_SCHEMA,
+    SNOOZE_EXACT_SCHEMA,
     SNOOZE_SCHEMA,
     UNSNOOZE_SCHEMA,
     _parse_snooze_datetime,
@@ -77,6 +79,13 @@ async def _handle_snooze(entity: ChoreSensor, call: ServiceCall) -> None:
     await entity.coordinator.async_snooze(snooze_until)
 
 
+async def _handle_snooze_exact(entity: ChoreSensor, call: ServiceCall) -> None:
+    snooze_until: datetime = call.data["snooze_until"]
+    if snooze_until.tzinfo is None:
+        snooze_until = dt_util.as_local(snooze_until)
+    await entity.coordinator.async_snooze(snooze_until)
+
+
 async def _handle_unsnooze(entity: ChoreSensor, call: ServiceCall) -> None:
     await entity.coordinator.async_unsnooze()
 
@@ -108,6 +117,12 @@ async def async_setup_entry(
         SERVICE_SNOOZE,
         SNOOZE_SCHEMA,
         _handle_snooze,
+        required_features=[ChoreSensorEntityFeature.TARGETABLE],
+    )
+    platform.async_register_entity_service(
+        SERVICE_SNOOZE_EXACT,
+        SNOOZE_EXACT_SCHEMA,
+        _handle_snooze_exact,
         required_features=[ChoreSensorEntityFeature.TARGETABLE],
     )
     platform.async_register_entity_service(

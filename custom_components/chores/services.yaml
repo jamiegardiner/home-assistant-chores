@@ -35,6 +35,18 @@ snooze:
             - days
             - weeks
 
+snooze_exact:
+  target:
+    entity:
+      integration: chores
+      domain: sensor
+      device_class: enum
+  fields:
+    snooze_until:
+      required: true
+      selector:
+        datetime:
+
 unsnooze:
   target:
     entity:
