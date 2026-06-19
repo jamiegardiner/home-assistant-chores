@@ -1,13 +1,16 @@
 """Tests for the Chores service helpers and entity service handlers."""
 
 from datetime import timedelta
-from unittest.mock import AsyncMock, MagicMock
+from typing import Any
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.exceptions import ServiceValidationError
+from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.chores.const import SNOOZE_UNITS
+from custom_components.chores.const import DOMAIN, SNOOZE_UNITS
 from custom_components.chores.sensor import (
     _handle_complete,
     _handle_snooze,
@@ -15,6 +18,7 @@ from custom_components.chores.sensor import (
     _handle_unsnooze,
 )
 from custom_components.chores.services import _parse_snooze_datetime
+from tests.components.chores.helpers import make_entry
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -193,3 +197,125 @@ class TestHandleUnsnooze:
         entity = _make_entity()
         await _handle_unsnooze(entity, _make_call({}))
         entity.coordinator.async_unsnooze.assert_called_once_with()
+
+
+# ---------------------------------------------------------------------------
+# End-to-end integration tests — full HA stack via hass.services.async_call
+# ---------------------------------------------------------------------------
+
+_TRACK_PATCH = "custom_components.chores.coordinator.async_track_point_in_time"
+
+
+class TestServiceCallsIntegration:
+    @pytest.fixture(autouse=True)
+    def auto_enable_custom_integrations(self, enable_custom_integrations: Any) -> None:
+        pass
+
+    async def _setup(self, hass: Any) -> tuple[MockConfigEntry, str]:
+        entry = make_entry(days_ago=30, interval_value=7)
+        entry.add_to_hass(hass)
+        with patch(_TRACK_PATCH):
+            await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        entity_id = er.async_get(hass).async_get_entity_id(
+            "sensor", DOMAIN, entry.entry_id
+        )
+        return entry, entity_id
+
+    async def test_complete_service_sets_status_done(self, hass: Any) -> None:
+        entry, entity_id = await self._setup(hass)
+        assert entry.runtime_data.data["status"] == "overdue"
+
+        with patch(_TRACK_PATCH):
+            await hass.services.async_call(
+                DOMAIN, "complete", {"entity_id": entity_id}, blocking=True
+            )
+
+        data = entry.runtime_data.data
+        assert data["status"] == "done"
+        assert data["last_completed"].date() == dt_util.now().date()
+
+    async def test_complete_service_with_completed_at(self, hass: Any) -> None:
+        entry, entity_id = await self._setup(hass)
+        past = dt_util.now() - timedelta(hours=2)
+
+        with patch(_TRACK_PATCH):
+            await hass.services.async_call(
+                DOMAIN,
+                "complete",
+                {"entity_id": entity_id, "completed_at": past},
+                blocking=True,
+            )
+
+        last_completed = entry.runtime_data.data["last_completed"]
+        assert last_completed is not None
+        assert abs((last_completed - past).total_seconds()) < 1
+
+    async def test_snooze_service_default_params(self, hass: Any) -> None:
+        entry, entity_id = await self._setup(hass)
+
+        with patch(_TRACK_PATCH):
+            await hass.services.async_call(
+                DOMAIN, "snooze", {"entity_id": entity_id}, blocking=True
+            )
+
+        data = entry.runtime_data.data
+        assert data["status"] == "snoozed"
+        assert data["snooze_until"] is not None
+
+    async def test_snooze_service_explicit_params(self, hass: Any) -> None:
+        entry, entity_id = await self._setup(hass)
+        before = dt_util.now()
+
+        with patch(_TRACK_PATCH):
+            await hass.services.async_call(
+                DOMAIN,
+                "snooze",
+                {"entity_id": entity_id, "value": 2, "unit": "hours"},
+                blocking=True,
+            )
+
+        after = dt_util.now()
+        snooze_until = entry.runtime_data.data["snooze_until"]
+        assert snooze_until is not None
+        assert before + timedelta(hours=2) <= snooze_until <= after + timedelta(hours=2)
+
+    async def test_snooze_exact_service(self, hass: Any) -> None:
+        entry, entity_id = await self._setup(hass)
+        target = dt_util.now() + timedelta(hours=3)
+
+        with patch(_TRACK_PATCH):
+            await hass.services.async_call(
+                DOMAIN,
+                "snooze_exact",
+                {"entity_id": entity_id, "snooze_until": target},
+                blocking=True,
+            )
+
+        snooze_until = entry.runtime_data.data["snooze_until"]
+        assert snooze_until is not None
+        assert abs((snooze_until - target).total_seconds()) < 1
+
+    async def test_unsnooze_service_clears_snooze(self, hass: Any) -> None:
+        snooze_dt = dt_util.now() + timedelta(hours=1)
+        entry = make_entry(
+            days_ago=30, interval_value=7, snooze_until=snooze_dt.isoformat()
+        )
+        entry.add_to_hass(hass)
+        with patch(_TRACK_PATCH):
+            await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        entity_id = er.async_get(hass).async_get_entity_id(
+            "sensor", DOMAIN, entry.entry_id
+        )
+
+        assert entry.runtime_data.data["status"] == "snoozed"
+
+        with patch(_TRACK_PATCH):
+            await hass.services.async_call(
+                DOMAIN, "unsnooze", {"entity_id": entity_id}, blocking=True
+            )
+
+        data = entry.runtime_data.data
+        assert data["snooze_until"] is None
+        assert data["status"] == "overdue"
