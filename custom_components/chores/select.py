@@ -10,8 +10,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from . import _ChoreDeviceMixin
 from .const import INTERVAL_UNITS, SNOOZE_UNITS
-from .coordinator import ChoresCoordinator, _ChoreDeviceMixin
+from .coordinator import ChoresCoordinator
 
 PARALLEL_UPDATES = 0
 
