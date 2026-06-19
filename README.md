@@ -57,12 +57,12 @@ Rather than trying to become a full household management platform, it concentrat
 
 A few things are deliberately out of scope:
 
-- **Fixed calendar scheduling** — chores are based on rolling intervals from the last completion date. If you need "every Tuesday" reminders, Home Assistant's built-in calendar and schedule helpers are a better choice.
-- **Gamification, points, and assignments** — no scores, leaderboards, or assigning chores to individual people.
-- **Built-in notifications** — Chore Tracker tracks status and exposes entities. How you're notified is entirely up to you.
-- **Custom dashboard cards** — chore data is available through standard Home Assistant entities, so it works with the cards and dashboards you already use.
-- **Cloud services and external accounts** — everything stays local to Home Assistant.
-- **YAML configuration** — setup and management happen entirely through the UI.
+- **No fixed calendar scheduling** — chores use rolling intervals from the last completion date. If you need "every Tuesday" reminders, Home Assistant's built-in calendar and schedule helpers are a better choice.
+- **No gamification, points, or assignments** — no scores, leaderboards, or assigning chores to individual people.
+- **No built-in notifications** — Chore Tracker tracks status and exposes entities. How you're notified is entirely up to you.
+- **No custom dashboard cards** — chore data is available through standard Home Assistant entities, so it works with the cards and dashboards you already use.
+- **No cloud services or external accounts** — everything stays local to Home Assistant.
+- **No YAML configuration** — setup and management happen entirely through the UI.
 
 ______________________________________________________________________
 
