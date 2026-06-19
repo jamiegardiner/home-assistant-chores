@@ -22,6 +22,7 @@ MAX_NUMBER_VALUE: int = 365
 
 SERVICE_COMPLETE = "complete"
 SERVICE_SNOOZE = "snooze"
+SERVICE_SNOOZE_EXACT = "snooze_exact"
 SERVICE_UNSNOOZE = "unsnooze"
 
 

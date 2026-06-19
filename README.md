@@ -169,10 +169,11 @@ ______________________________________________________________________
 
 Want chores to be part of your automations?
 
-Chore Tracker provides three services:
+Chore Tracker provides four services:
 
 - `chores.complete`
 - `chores.snooze`
+- `chores.snooze_exact`
 - `chores.unsnooze`
 
 Use them from automations, scripts, dashboards, voice assistants, or anything else that can call Home Assistant services.

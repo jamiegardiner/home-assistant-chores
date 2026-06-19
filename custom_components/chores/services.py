@@ -21,6 +21,9 @@ SNOOZE_SCHEMA: dict[Any, Any] = {
     vol.Optional("value"): vol.Coerce(int),
     vol.Optional("unit"): str,
 }
+SNOOZE_EXACT_SCHEMA: dict[Any, Any] = {
+    vol.Required("snooze_until"): cv.datetime,
+}
 
 
 def _parse_snooze_datetime(call_data: dict[str, Any]) -> datetime:

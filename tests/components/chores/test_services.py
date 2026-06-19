@@ -11,6 +11,7 @@ from custom_components.chores.const import SNOOZE_UNITS
 from custom_components.chores.sensor import (
     _handle_complete,
     _handle_snooze,
+    _handle_snooze_exact,
     _handle_unsnooze,
 )
 from custom_components.chores.services import _parse_snooze_datetime
@@ -169,6 +170,22 @@ class TestHandleSnoozeValidation:
         assert exc_info.value.translation_key == "snooze_partial_params"
         entity.coordinator.async_snooze.assert_not_called()
         entity.coordinator.async_snooze_default.assert_not_called()
+
+
+class TestHandleSnoozeExact:
+    async def test_naive_datetime_converted_to_aware(self) -> None:
+        entity = _make_entity()
+        naive = dt_util.now().replace(tzinfo=None)
+        await _handle_snooze_exact(entity, _make_call({"snooze_until": naive}))
+        entity.coordinator.async_snooze.assert_called_once()
+        passed = entity.coordinator.async_snooze.call_args[0][0]
+        assert passed.tzinfo is not None
+
+    async def test_aware_datetime_passed_directly(self) -> None:
+        entity = _make_entity()
+        aware = dt_util.now() + timedelta(hours=3)
+        await _handle_snooze_exact(entity, _make_call({"snooze_until": aware}))
+        entity.coordinator.async_snooze.assert_called_once_with(aware)
 
 
 class TestHandleUnsnooze:
