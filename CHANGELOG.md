@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.2.0](https://github.com/jamiegardiner/home-assistant-chores/compare/v1.1.0...v1.2.0) (2026-06-19)
+
+
+### Features
+
+* **issue-184:** promote next_due and last_completed to primary sensors; disable snooze_until by default ([#185](https://github.com/jamiegardiner/home-assistant-chores/issues/185)) ([2f8cf85](https://github.com/jamiegardiner/home-assistant-chores/commit/2f8cf85b0b8c67e15c492ef861224d2a5f492f8a))
+* **issue-186:** rename "Notification Time" label to "Overdue time" ([#188](https://github.com/jamiegardiner/home-assistant-chores/issues/188)) ([df4c880](https://github.com/jamiegardiner/home-assistant-chores/commit/df4c88056c6b4e6f0294ab34e0f4a25310e9e045))
+* **issue-189:** make chores.snooze value/unit optional, defaulting to device config ([#191](https://github.com/jamiegardiner/home-assistant-chores/issues/191)) ([a3abbe8](https://github.com/jamiegardiner/home-assistant-chores/commit/a3abbe84d4d314f4efe7fcb6e564bd9aa823d58d))
+* **issue-190:** add configurable interval unit (days/weeks) with interval_days migration ([#194](https://github.com/jamiegardiner/home-assistant-chores/issues/194)) ([47534ea](https://github.com/jamiegardiner/home-assistant-chores/commit/47534ea13b1f82a5991f7c74a93047c2e8d1a55b))
+* **issue-196:** expose next_due and last_completed as extra state attributes on ChoreSensor ([#198](https://github.com/jamiegardiner/home-assistant-chores/issues/198)) ([74807c6](https://github.com/jamiegardiner/home-assistant-chores/commit/74807c652af6047ca2383fa0511018c321c8cd6d))
+* **issue-208:** add chores.snooze_exact service for exact-datetime snoozing ([#209](https://github.com/jamiegardiner/home-assistant-chores/issues/209)) ([9a0e72d](https://github.com/jamiegardiner/home-assistant-chores/commit/9a0e72d257a4047d5ab8432824fa1c4747e1f31a))
+
+
+### Bug Fixes
+
+* **issue-199:** guard against None coordinator.data in diagnostics ([#210](https://github.com/jamiegardiner/home-assistant-chores/issues/210)) ([262ed9e](https://github.com/jamiegardiner/home-assistant-chores/commit/262ed9e0a50f2447af21748ba8d9d45722a91300))
+
 ## [1.1.0](https://github.com/jamiegardiner/home-assistant-chores/compare/v1.0.1...v1.1.0) (2026-06-16)
 
 
