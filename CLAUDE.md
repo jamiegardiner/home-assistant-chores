@@ -19,7 +19,7 @@ custom_components/chores/
   sensor.py            # ChoreSensor + 2 primary date sensors + 1 diagnostic sensor (one set per config entry)
   diagnostics.py       # async_get_config_entry_diagnostics — full coordinator snapshot for HA diagnostics download
   config_flow.py       # UI config flow (create chore — name + interval only; no options flow)
-  services.py          # chores.complete/snooze/unsnooze service handlers
+  services.py          # chores.complete/snooze/snooze_exact/unsnooze service handlers
   services.yaml        # service structure for the HA UI (target, fields, selectors)
   strings.json         # translation source (used by tooling/validation)
   translations/

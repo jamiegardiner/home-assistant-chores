@@ -64,6 +64,24 @@ data:
 
 ______________________________________________________________________
 
+## `chores.snooze_exact`
+
+Snooze a chore until a specific date and time. Use this when you know the exact expiry moment rather than a duration.
+
+| Field          | Required | Description                                                      |
+| -------------- | -------- | ---------------------------------------------------------------- |
+| `snooze_until` | Yes      | The datetime at which the snooze expires. Must be in the future. |
+
+```yaml
+action: chores.snooze_exact
+target:
+  entity_id: sensor.vacuum_living_room
+data:
+  snooze_until: "2026-06-21 08:00:00"
+```
+
+______________________________________________________________________
+
 ## `chores.unsnooze`
 
 Cancel an active snooze and return the chore to its normal state immediately.
