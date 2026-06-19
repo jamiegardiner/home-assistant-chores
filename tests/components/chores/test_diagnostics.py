@@ -39,3 +39,15 @@ async def test_returns_coordinator_snapshot(hass: Any) -> None:
     assert data["interval_value"] == 7
     assert data["interval_unit"] == "days"
     assert data["notification_time"] == "08:00"
+
+
+async def test_returns_empty_dict_when_coordinator_data_is_none(hass: Any) -> None:
+    """Returns empty coordinator_data when coordinator.data is None (pre-init state)."""
+    entry = make_entry(days_ago=0, interval_value=7, notification_time="08:00")
+    entry.add_to_hass(hass)
+    coord = await setup_coord(hass, entry)
+    coord.data = None
+    entry.runtime_data = coord
+
+    result = await async_get_config_entry_diagnostics(hass, entry)
+    assert result == {"coordinator_data": {}}
