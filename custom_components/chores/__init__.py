@@ -3,9 +3,23 @@
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.device_registry import DeviceInfo
 
 from .const import DEFAULT_INTERVAL_UNIT, DOMAIN
 from .coordinator import ChoresConfigEntry, ChoresCoordinator
+
+
+class _ChoreDeviceMixin:
+    """Shared device_info property for all chore entity classes."""
+
+    _entry_id: str
+    coordinator: ChoresCoordinator
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        name = (self.coordinator.data or {}).get("name", "Chore")
+        return DeviceInfo(identifiers={(DOMAIN, self._entry_id)}, name=name)
+
 
 PLATFORMS: list[Platform] = [
     Platform.BUTTON,

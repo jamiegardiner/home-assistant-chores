@@ -18,6 +18,7 @@ from homeassistant.helpers.entity_platform import (
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
+from . import _ChoreDeviceMixin
 from .const import (
     DOMAIN,
     MAX_NUMBER_VALUE,
@@ -30,7 +31,7 @@ from .const import (
     STATUS_OPTIONS,
     ChoreSensorEntityFeature,
 )
-from .coordinator import ChoresCoordinator, _ChoreDeviceMixin
+from .coordinator import ChoresCoordinator
 from .services import (
     COMPLETE_SCHEMA,
     SNOOZE_EXACT_SCHEMA,

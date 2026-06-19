@@ -13,7 +13,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HassJob, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryError, HomeAssistantError
 from homeassistant.helpers import issue_registry as ir
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.event import async_track_point_in_time
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
@@ -390,18 +389,6 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         else:
             ir.async_delete_issue(self.hass, DOMAIN, f"{issue_key}_{entry_id}")
         return parsed
-
-
-class _ChoreDeviceMixin:
-    """Shared device_info property for chore sensor and button entities."""
-
-    _entry_id: str
-    coordinator: ChoresCoordinator
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        name = (self.coordinator.data or {}).get("name", "Chore")
-        return DeviceInfo(identifiers={(DOMAIN, self._entry_id)}, name=name)
 
 
 def _parse_aware_datetime(value: str | None) -> datetime | None:
