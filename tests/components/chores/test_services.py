@@ -211,8 +211,8 @@ class TestServiceCallsIntegration:
     def auto_enable_custom_integrations(self, enable_custom_integrations: Any) -> None:
         pass
 
-    async def _setup(self, hass: Any) -> tuple[MockConfigEntry, str]:
-        entry = make_entry(days_ago=30, interval_value=7)
+    async def _setup(self, hass: Any, **opts: Any) -> tuple[MockConfigEntry, str]:
+        entry = make_entry(days_ago=30, interval_value=7, **opts)
         entry.add_to_hass(hass)
         with patch(_TRACK_PATCH):
             await hass.config_entries.async_setup(entry.entry_id)
@@ -220,6 +220,7 @@ class TestServiceCallsIntegration:
         entity_id = er.async_get(hass).async_get_entity_id(
             "sensor", DOMAIN, entry.entry_id
         )
+        assert entity_id is not None
         return entry, entity_id
 
     async def test_complete_service_sets_status_done(self, hass: Any) -> None:
@@ -298,16 +299,7 @@ class TestServiceCallsIntegration:
 
     async def test_unsnooze_service_clears_snooze(self, hass: Any) -> None:
         snooze_dt = dt_util.now() + timedelta(hours=1)
-        entry = make_entry(
-            days_ago=30, interval_value=7, snooze_until=snooze_dt.isoformat()
-        )
-        entry.add_to_hass(hass)
-        with patch(_TRACK_PATCH):
-            await hass.config_entries.async_setup(entry.entry_id)
-        await hass.async_block_till_done()
-        entity_id = er.async_get(hass).async_get_entity_id(
-            "sensor", DOMAIN, entry.entry_id
-        )
+        entry, entity_id = await self._setup(hass, snooze_until=snooze_dt.isoformat())
 
         assert entry.runtime_data.data["status"] == "snoozed"
 
