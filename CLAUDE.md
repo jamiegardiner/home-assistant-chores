@@ -46,11 +46,14 @@ Each chore is a separate config entry (`integration_type: device`). All state li
   "default_snooze_unit": "days",
   "notification_time": "08:00",
   "last_completed": "2026-06-01T14:30:00+10:00",
-  "snooze_until": null
+  "snooze_until": null,
+  "next_due": "2026-06-15T08:00:00+10:00"
 }
 ```
 
 `last_completed` is `null` on creation; the chore starts overdue. It is set to a tz-aware ISO 8601 datetime string only when `chores.complete` is called.
+
+`next_due` is derived from `last_completed + interval_value + interval_unit`, expressed at `notification_time` on the local due date, via `coordinator.compute_next_due()`. It is `null` when `last_completed` is `null`, and is recomputed and persisted to `entry.options` every time `last_completed`, the interval, or `notification_time` changes — it is a read-derived value, not directly writable by any entity or service today.
 
 ### Data flow
 
@@ -59,7 +62,7 @@ entry.options (one chore per entry)
         │
         ▼
 ChoresCoordinator.async_initialize()
-  ├── reads last_completed / snooze_until / interval_value / interval_unit / default_snooze_value / default_snooze_unit / notification_time from entry.options
+  ├── reads last_completed / snooze_until / next_due / interval_value / interval_unit / default_snooze_value / default_snooze_unit / notification_time from entry.options
   ├── builds ChoreRuntime (status, next_due — both None when last_completed is None)
   └── schedules a point-in-time timer at next_due (skipped when next_due is None)
         │
@@ -94,7 +97,7 @@ Options updates (from config flow edits) are handled in-place via `async_update_
 - **`done` → `overdue`**: HA point-in-time timer fires at `next_due` (`notification_time` on the local day of `last_completed + interval`)
 - **`overdue` → `done`**: `chores.complete` service call sets `last_completed` to now (or the supplied `completed_at` datetime), persists to `entry.options`, recomputes `next_due`, schedules new timer
 - **`snoozed`**: any state (including never-completed) can be snoozed; `chores.snooze` sets `snooze_until` in `entry.options` as a timezone-aware ISO datetime; a snooze-expiry timer fires at exactly `snooze_until`; expiry returns to `overdue` when `last_completed` is `None`
-- **Corrupt state recovery**: `async_initialize` handles two failure modes — recoverable fields (`last_completed`, `snooze_until`) are sanitised to `None` and a WARNING repair issue is raised via `ir.async_create_issue`; unrecoverable fields (`name`, `interval_value`) raise `ConfigEntryError` and an ERROR repair issue. Repair issue IDs are `{REPAIR_ISSUE_CORRUPT_FIELD}_{entry_id}` and `{REPAIR_ISSUE_CORRUPT_CONFIG}_{entry_id}` (constants in `const.py`).
+- **Corrupt state recovery**: `async_initialize` handles two failure modes — recoverable fields (`last_completed`, `snooze_until`, `next_due`) are sanitised to `None` and a WARNING repair issue is raised via `ir.async_create_issue`; unrecoverable fields (`name`, `interval_value`) raise `ConfigEntryError` and an ERROR repair issue. Repair issue IDs are `{REPAIR_ISSUE_CORRUPT_FIELD}_{entry_id}` and `{REPAIR_ISSUE_CORRUPT_CONFIG}_{entry_id}` (constants in `const.py`). A sanitised `next_due` is immediately recomputed from `last_completed` by the `_commit()` that follows.
 
 ______________________________________________________________________
 
@@ -243,13 +246,14 @@ ______________________________________________________________________
 
 - Each chore is a separate config entry — multiple entries are allowed.
 - No YAML configuration — all setup is through the UI.
-- All chore state (`last_completed`, `snooze_until`) lives in `entry.options`.
+- All chore state (`last_completed`, `snooze_until`, `next_due`) lives in `entry.options`.
 - Python `>=3.14.2` (matches Home Assistant's own requirement). This enables PEP 758 — `except TypeError, ValueError:` without parentheses is **valid syntax** at this version. Ruff enforces the parenthesis-free form; do not flag it as a bug.
 - `integration_type: device` in `manifest.json` — chores appear in the Devices & Services panel, not the Helpers panel.
 - Interval is stored as `interval_value` (int) + `interval_unit` (`"days"` | `"weeks"`). On creation `interval_unit` defaults to `"days"`. Pre-v2 entries (which stored `interval_days`) are migrated by `async_migrate_entry` in `__init__.py`.
 - `default_snooze_value` (default: `1`) + `default_snooze_unit` (default: `"days"`) control the snooze duration. Both the Snooze button and the `chores.snooze` service share the same unit set, defined in `const.py`.
 - `last_completed` is `null` on creation; set to a tz-aware ISO 8601 datetime string only when `chores.complete` is called.
 - `notification_time` is stored as an `"HH:MM"` string in `entry.options`.
+- `next_due` is stored as a tz-aware ISO 8601 datetime string (or `null`) in `entry.options`, computed by `coordinator.compute_next_due()` and persisted every time `_commit()` runs (completion, snooze/unsnooze, timer firing, or a config edit). Config version `3` adds this field; pre-v3 entries are migrated by `async_migrate_entry` in `__init__.py`, which computes it from the existing `last_completed` + interval + `notification_time`.
 - The `chores.complete` service accepts an optional `completed_at` datetime (must not be in the future). Omit it to default to now.
 - `quality_scale.yaml` lives at `custom_components/chores/quality_scale.yaml` and lists every HA Integration Quality Scale rule with `done`, `todo`, or `exempt`. Update it whenever a rule's status changes (e.g. a `todo` is implemented or an `exempt` justification changes).
 - The `reconfiguration-flow` quality scale rule is intentionally not implemented. Post-creation editing is handled entirely through CONFIG entities (number, select, time), which already provide an in-place edit experience without a separate reconfiguration flow.
