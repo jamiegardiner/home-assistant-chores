@@ -1,6 +1,6 @@
 """Unit tests for custom_components/chores/sensor.py."""
 
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.components.sensor import SensorDeviceClass
@@ -32,6 +32,7 @@ CHORE_STATE = {
     "snooze_until": None,
     "default_snooze_value": 1,
     "default_snooze_unit": "days",
+    "notification_time": "08:00",
 }
 
 CHORE_STATE_B = {
@@ -42,6 +43,7 @@ CHORE_STATE_B = {
     "snooze_until": None,
     "default_snooze_value": 2,
     "default_snooze_unit": "hours",
+    "notification_time": "18:30",
 }
 
 
@@ -346,6 +348,14 @@ class TestChoreSensorExtraStateAttributes:
         sensor = _make_sensor()
         assert sensor.extra_state_attributes["last_completed"] == _LC
 
+    def test_extra_state_attributes_contains_notification_time(self):
+        sensor = _make_sensor()
+        assert sensor.extra_state_attributes["notification_time"] == time(8, 0)
+
+    def test_extra_state_attributes_notification_time_updates(self):
+        sensor = _make_sensor(coordinator=FakeCoordinator(dict(CHORE_STATE_B)))
+        assert sensor.extra_state_attributes["notification_time"] == time(18, 30)
+
     def test_extra_state_attributes_none_when_data_is_none(self):
         coordinator = FakeCoordinator()
         coordinator.data = None
@@ -353,6 +363,7 @@ class TestChoreSensorExtraStateAttributes:
         attrs = sensor.extra_state_attributes
         assert attrs["next_due"] is None
         assert attrs["last_completed"] is None
+        assert attrs["notification_time"] is None
 
     def test_extra_state_attributes_none_when_never_completed(self):
         coordinator = FakeCoordinator(
@@ -362,6 +373,15 @@ class TestChoreSensorExtraStateAttributes:
         attrs = sensor.extra_state_attributes
         assert attrs["next_due"] is None
         assert attrs["last_completed"] is None
+
+    def test_extra_state_attributes_notification_time_present_when_never_completed(
+        self,
+    ):
+        coordinator = FakeCoordinator(
+            {**CHORE_STATE, "next_due": None, "last_completed": None}
+        )
+        sensor = _make_sensor(coordinator=coordinator)
+        assert sensor.extra_state_attributes["notification_time"] == time(8, 0)
 
 
 class TestHandleComplete:
