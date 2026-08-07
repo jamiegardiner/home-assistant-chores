@@ -389,7 +389,7 @@ class TestHandleComplete:
 
     async def test_naive_completed_at_becomes_tz_aware(self):
         """A naive completed_at datetime is localised before reaching async_complete."""
-        naive = datetime(2026, 6, 8, 14, 30)
+        naive = datetime.fromisoformat("2026-06-08T14:30:00")
         assert naive.tzinfo is None
 
         mock_coordinator = AsyncMock()

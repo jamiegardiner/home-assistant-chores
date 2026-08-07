@@ -3,8 +3,9 @@
 ChoreConfig — immutable dataclass describing a chore's configured parameters.
 """
 
+import re
 from dataclasses import dataclass
-from datetime import datetime, time
+from datetime import time
 from typing import Any
 
 from .const import (
@@ -16,6 +17,8 @@ from .const import (
     INTERVAL_UNITS,
     SNOOZE_UNITS,
 )
+
+_NOTIFICATION_TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,15 +73,12 @@ class ChoreConfig:
                 f"Invalid default_snooze_unit {default_snooze_unit!r}; must be one of {SNOOZE_UNITS}"
             )
         notification_time = data.get("notification_time", DEFAULT_NOTIFICATION_TIME)
-        try:
-            if notification_time != datetime.strptime(
-                notification_time, "%H:%M"
-            ).strftime("%H:%M"):
-                raise ValueError(notification_time)
-        except TypeError, ValueError:
+        if not isinstance(
+            notification_time, str
+        ) or not _NOTIFICATION_TIME_RE.fullmatch(notification_time):
             raise ValueError(
                 f"Invalid notification_time {notification_time!r}; must be HH:MM (00:00-23:59)"
-            ) from None
+            )
         return cls(
             name=name.strip(),
             interval_value=interval_value,
