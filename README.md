@@ -122,13 +122,13 @@ The status sensor also exposes `next_due`, `last_completed`, and `notification_t
 
 Available from the device's **Configuration** section:
 
-| Entity              | Description                                                 |
-| ------------------- | ----------------------------------------------------------- |
-| Interval            | How many days or weeks before the chore becomes overdue     |
-| Interval unit       | Days or weeks                                               |
-| Snooze interval     | Amount of time to snooze when the Snooze button is pressed  |
-| Snooze unit         | Minutes, hours, days, or weeks                              |
-| Overdue time of day | Time of day when the chore becomes overdue (default: 08:00) |
+| Entity            | Description                                                 |
+| ----------------- | ----------------------------------------------------------- |
+| Due interval      | How many days or weeks before the chore becomes overdue     |
+| Due interval unit | Days or weeks                                               |
+| Snooze interval   | Amount of time to snooze when the Snooze button is pressed  |
+| Snooze unit       | Minutes, hours, days, or weeks                              |
+| Due time          | Time of day when the chore becomes overdue (default: 08:00) |
 
 ______________________________________________________________________
 

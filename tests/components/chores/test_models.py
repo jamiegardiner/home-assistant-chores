@@ -16,49 +16,42 @@ def test_from_dict_valid() -> None:
     assert config.default_snooze_unit == "days"
 
 
-def test_from_dict_custom_snooze_value() -> None:
+@pytest.mark.parametrize(
+    ("extra", "expected_value", "expected_unit"),
+    [
+        pytest.param({"default_snooze_value": 3}, 3, "days", id="custom_value"),
+        pytest.param({"default_snooze_unit": "hours"}, 1, "hours", id="custom_unit"),
+        pytest.param(
+            {"default_snooze_value": 2, "default_snooze_unit": "hours"},
+            2,
+            "hours",
+            id="custom_value_and_unit",
+        ),
+        pytest.param({}, 1, "days", id="defaults_absent"),
+    ],
+)
+def test_from_dict_snooze_value_and_unit(
+    extra: dict[str, int | str], expected_value: int, expected_unit: str
+) -> None:
+    config = ChoreConfig.from_dict({"name": "Bins", "interval_value": 7, **extra})
+    assert config.default_snooze_value == expected_value
+    assert config.default_snooze_unit == expected_unit
+
+
+@pytest.mark.parametrize(
+    "unit",
+    [
+        pytest.param("minutes", id="minutes"),
+        pytest.param("hours", id="hours"),
+        pytest.param("days", id="days"),
+        pytest.param("weeks", id="weeks"),
+    ],
+)
+def test_from_dict_all_valid_units(unit: str) -> None:
     config = ChoreConfig.from_dict(
-        {"name": "Bins", "interval_value": 7, "default_snooze_value": 3}
+        {"name": "Bins", "interval_value": 7, "default_snooze_unit": unit}
     )
-    assert config.default_snooze_value == 3
-
-
-def test_from_dict_custom_snooze_unit() -> None:
-    config = ChoreConfig.from_dict(
-        {"name": "Bins", "interval_value": 7, "default_snooze_unit": "hours"}
-    )
-    assert config.default_snooze_unit == "hours"
-
-
-def test_from_dict_custom_snooze_value_and_unit() -> None:
-    config = ChoreConfig.from_dict(
-        {
-            "name": "Bins",
-            "interval_value": 7,
-            "default_snooze_value": 2,
-            "default_snooze_unit": "hours",
-        }
-    )
-    assert config.default_snooze_value == 2
-    assert config.default_snooze_unit == "hours"
-
-
-def test_from_dict_default_snooze_value_absent_defaults_to_one() -> None:
-    config = ChoreConfig.from_dict({"name": "Bins", "interval_value": 14})
-    assert config.default_snooze_value == 1
-
-
-def test_from_dict_default_snooze_unit_absent_defaults_to_days() -> None:
-    config = ChoreConfig.from_dict({"name": "Bins", "interval_value": 14})
-    assert config.default_snooze_unit == "days"
-
-
-def test_from_dict_all_valid_units() -> None:
-    for unit in ("minutes", "hours", "days", "weeks"):
-        config = ChoreConfig.from_dict(
-            {"name": "Bins", "interval_value": 7, "default_snooze_unit": unit}
-        )
-        assert config.default_snooze_unit == unit
+    assert config.default_snooze_unit == unit
 
 
 def test_from_dict_missing_interval_value_raises() -> None:
