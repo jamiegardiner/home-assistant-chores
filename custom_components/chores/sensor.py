@@ -43,8 +43,10 @@ from .services import (
 PARALLEL_UPDATES = 0
 
 
-def _parse_time(value: str) -> time:
-    """Parse an ``"HH:MM"`` string into a time object."""
+def _parse_time(value: str | None) -> time | None:
+    """Parse an ``"HH:MM"`` string into a time object; return None if absent."""
+    if not value:
+        return None
     hour, minute = map(int, value.split(":"))
     return time(hour, minute)
 
@@ -166,13 +168,10 @@ class ChoreSensor(
     def extra_state_attributes(self) -> dict[str, datetime | date | time | None]:
         """Return next_due, last_completed, and notification_time for use in templates."""
         data = self.coordinator.data or {}
-        notification_time = data.get("notification_time")
         return {
             "next_due": data.get("next_due"),
             "last_completed": data.get("last_completed"),
-            "notification_time": _parse_time(notification_time)
-            if notification_time
-            else None,
+            "notification_time": _parse_time(data.get("notification_time")),
         }
 
 
