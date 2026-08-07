@@ -1,9 +1,11 @@
 """Tests for ChoreConfig model."""
 
+from datetime import time
+
 import pytest
 
 from custom_components.chores.const import DOMAIN
-from custom_components.chores.models import ChoreConfig
+from custom_components.chores.models import ChoreConfig, parse_time_of_day
 
 
 def test_from_dict_valid() -> None:
@@ -196,3 +198,11 @@ def test_from_dict_invalid_interval_unit_raises() -> None:
         ChoreConfig.from_dict(
             {"name": "Bins", "interval_value": 7, "interval_unit": "fortnights"}
         )
+
+
+def test_parse_time_of_day() -> None:
+    assert parse_time_of_day("08:30") == time(8, 30)
+
+
+def test_parse_time_of_day_midnight() -> None:
+    assert parse_time_of_day("00:00") == time(0, 0)

@@ -4,7 +4,7 @@ ChoreConfig — immutable dataclass describing a chore's configured parameters.
 """
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, time
 from typing import Any
 
 from .const import (
@@ -87,3 +87,9 @@ class ChoreConfig:
             default_snooze_unit=default_snooze_unit,
             notification_time=notification_time,
         )
+
+
+def parse_time_of_day(value: str) -> time:
+    """Parse an ``"HH:MM"`` string into a time object."""
+    hour, minute = map(int, value.split(":"))
+    return time(hour, minute)

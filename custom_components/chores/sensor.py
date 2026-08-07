@@ -32,6 +32,7 @@ from .const import (
     ChoreSensorEntityFeature,
 )
 from .coordinator import ChoresCoordinator
+from .models import parse_time_of_day
 from .services import (
     COMPLETE_SCHEMA,
     SNOOZE_EXACT_SCHEMA,
@@ -41,14 +42,6 @@ from .services import (
 )
 
 PARALLEL_UPDATES = 0
-
-
-def _parse_time(value: str | None) -> time | None:
-    """Parse an ``"HH:MM"`` string into a time object; return None if absent."""
-    if not value:
-        return None
-    hour, minute = map(int, value.split(":"))
-    return time(hour, minute)
 
 
 async def _handle_complete(entity: ChoreSensor, call: ServiceCall) -> None:
@@ -165,13 +158,16 @@ class ChoreSensor(
         return (self.coordinator.data or {}).get("status")
 
     @property
-    def extra_state_attributes(self) -> dict[str, datetime | date | time | None]:
+    def extra_state_attributes(self) -> dict[str, datetime | time | None]:
         """Return next_due, last_completed, and notification_time for use in templates."""
         data = self.coordinator.data or {}
+        notification_time = data.get("notification_time")
         return {
             "next_due": data.get("next_due"),
             "last_completed": data.get("last_completed"),
-            "notification_time": _parse_time(data.get("notification_time")),
+            "notification_time": parse_time_of_day(notification_time)
+            if notification_time
+            else None,
         }
 
 
