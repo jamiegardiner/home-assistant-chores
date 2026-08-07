@@ -66,7 +66,7 @@ class TestParseSnoozeDateTime:
             <= after + timedelta(**{unit: value})
         )
 
-    def test_all_units_are_covered(self):
+    def test_all_units_are_covered(self) -> None:
         """Every unit in SNOOZE_UNITS must produce a valid future datetime."""
         for unit in SNOOZE_UNITS:
             result = _parse_snooze_datetime({"value": 1, "unit": unit})
@@ -79,13 +79,13 @@ class TestParseSnoozeDateTime:
 
 
 class TestHandleComplete:
-    async def test_calls_coordinator_async_complete_no_completed_at(self):
+    async def test_calls_coordinator_async_complete_no_completed_at(self) -> None:
         """Calling complete without completed_at passes None to the coordinator."""
         entity = _make_entity()
         await _handle_complete(entity, _make_call({}))
         entity.coordinator.async_complete.assert_called_once_with(None)
 
-    async def test_calls_coordinator_async_complete_with_completed_at(self):
+    async def test_calls_coordinator_async_complete_with_completed_at(self) -> None:
         """Calling complete with a past completed_at passes the datetime to the coordinator.
 
         cv.datetime in the schema converts the string before the handler fires,
@@ -100,7 +100,7 @@ class TestHandleComplete:
         assert passed.tzinfo is not None
         assert abs((passed - past).total_seconds()) < 1
 
-    async def test_complete_second_entity_also_works(self):
+    async def test_complete_second_entity_also_works(self) -> None:
         entity = _make_entity()
         await _handle_complete(entity, _make_call({}))
         entity.coordinator.async_complete.assert_called_once_with(None)
@@ -193,7 +193,7 @@ class TestHandleSnoozeExact:
 
 
 class TestHandleUnsnooze:
-    async def test_calls_coordinator_async_unsnooze(self):
+    async def test_calls_coordinator_async_unsnooze(self) -> None:
         entity = _make_entity()
         await _handle_unsnooze(entity, _make_call({}))
         entity.coordinator.async_unsnooze.assert_called_once_with()
