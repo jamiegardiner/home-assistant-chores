@@ -61,6 +61,9 @@
     },
     "unsnooze": {
       "service": "mdi:alarm-off"
+    },
+    "snooze_exact": {
+      "service": "mdi:alarm-check"
     }
   }
 }
