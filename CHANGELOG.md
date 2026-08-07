@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/jamiegardiner/home-assistant-chores/compare/v1.2.0...v1.3.0) (2026-08-07)
+
+
+### Features
+
+* **issue-211:** persist next_due in config entry options ([#221](https://github.com/jamiegardiner/home-assistant-chores/issues/221)) ([a56404a](https://github.com/jamiegardiner/home-assistant-chores/commit/a56404adbb745dbb4a6a6acc8a7af6e2d8aa22a8))
+* **issue-218:** add notification_time to primary sensor's extra_state_attributes ([#219](https://github.com/jamiegardiner/home-assistant-chores/issues/219)) ([230c06a](https://github.com/jamiegardiner/home-assistant-chores/commit/230c06a9c26f65c2d29f347686ce5c420599e6e5))
+
 ## [1.2.0](https://github.com/jamiegardiner/home-assistant-chores/compare/v1.1.0...v1.2.0) (2026-06-19)
 
 
