@@ -26,7 +26,7 @@ from .const import (
     STATUS_OVERDUE,
     STATUS_SNOOZED,
 )
-from .models import ChoreConfig
+from .models import ChoreConfig, parse_time_of_day
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -406,5 +406,7 @@ def _parse_aware_datetime(value: str | None) -> datetime | None:
 
 def _time_on_local_date(local_date: date, notification_time: str) -> datetime:
     """Return a tz-aware datetime at notification_time on local_date."""
-    hour, minute = map(int, notification_time.split(":"))
-    return dt_util.start_of_local_day(local_date).replace(hour=hour, minute=minute)
+    parsed = parse_time_of_day(notification_time)
+    return dt_util.start_of_local_day(local_date).replace(
+        hour=parsed.hour, minute=parsed.minute
+    )

@@ -4,7 +4,7 @@ Four sensor entities per config entry: primary status sensor, two primary date s
 and one diagnostic sensor (snooze expiry, disabled by default).
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, time
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
@@ -32,6 +32,7 @@ from .const import (
     ChoreSensorEntityFeature,
 )
 from .coordinator import ChoresCoordinator
+from .models import parse_time_of_day
 from .services import (
     COMPLETE_SCHEMA,
     SNOOZE_EXACT_SCHEMA,
@@ -157,12 +158,16 @@ class ChoreSensor(
         return (self.coordinator.data or {}).get("status")
 
     @property
-    def extra_state_attributes(self) -> dict[str, datetime | None]:
-        """Return next_due and last_completed for use in templates."""
+    def extra_state_attributes(self) -> dict[str, datetime | time | None]:
+        """Return next_due, last_completed, and notification_time for use in templates."""
         data = self.coordinator.data or {}
+        notification_time = data.get("notification_time")
         return {
             "next_due": data.get("next_due"),
             "last_completed": data.get("last_completed"),
+            "notification_time": parse_time_of_day(notification_time)
+            if notification_time
+            else None,
         }
 
 

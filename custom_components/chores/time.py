@@ -14,6 +14,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import _ChoreDeviceMixin
 from .coordinator import ChoresCoordinator
+from .models import parse_time_of_day
 
 PARALLEL_UPDATES = 0
 
@@ -48,8 +49,7 @@ class ChoreNotificationTimeEntity(
         if not time_str:
             return None
         try:
-            h, m = map(int, time_str.split(":"))
-            return time(h, m)
+            return parse_time_of_day(time_str)
         except ValueError, AttributeError:
             return None
 

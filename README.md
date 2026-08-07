@@ -100,7 +100,7 @@ Each chore has one of three states:
 | `overdue` | ⏰ The chore is due and waiting to be completed          |
 | `snoozed` | 😴 The chore has been temporarily deferred               |
 
-The status sensor also exposes `next_due` and `last_completed` as extra state attributes, useful for templates.
+The status sensor also exposes `next_due`, `last_completed`, and `notification_time` as extra state attributes, useful for templates.
 
 ### 📡 Sensors
 
