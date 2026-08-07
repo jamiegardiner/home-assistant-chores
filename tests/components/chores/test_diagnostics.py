@@ -39,6 +39,9 @@ async def test_returns_coordinator_snapshot(hass: Any) -> None:
     assert data["interval_value"] == 7
     assert data["interval_unit"] == "days"
     assert data["notification_time"] == "08:00"
+    assert data["next_due"] is not None
+    assert data["next_due"] == coord.data["next_due"]
+    assert entry.options["next_due"] is not None
 
 
 async def test_returns_empty_dict_when_coordinator_data_is_none(hass: Any) -> None:

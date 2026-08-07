@@ -28,6 +28,7 @@ SERVICE_UNSNOOZE = "unsnooze"
 
 REPAIR_ISSUE_CORRUPT_LAST_COMPLETED = "corrupt_last_completed"
 REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL = "corrupt_snooze_until"
+REPAIR_ISSUE_CORRUPT_NEXT_DUE = "corrupt_next_due"
 REPAIR_ISSUE_CORRUPT_CONFIG = "corrupt_unrecoverable_config"
 
 

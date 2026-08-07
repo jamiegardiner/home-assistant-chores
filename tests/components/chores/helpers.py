@@ -19,6 +19,7 @@ def make_entry(
     notification_time: str = "00:00",
     days_ago: int = 0,
     snooze_until: str | None = None,
+    next_due: str | None = None,
     entry_id: str = "test_entry_id",
     last_completed: str | None = "auto",
 ) -> MockConfigEntry:
@@ -38,6 +39,7 @@ def make_entry(
         "notification_time": notification_time,
         "last_completed": last_completed,
         "snooze_until": snooze_until,
+        "next_due": next_due,
     }
     return MockConfigEntry(domain=DOMAIN, entry_id=entry_id, options=opts)
 

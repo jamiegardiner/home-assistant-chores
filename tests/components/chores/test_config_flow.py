@@ -42,6 +42,7 @@ async def test_user_flow_creates_entry_with_options(hass):
     assert opts["default_snooze_unit"] == "days"
     assert opts["last_completed"] is None
     assert opts["snooze_until"] is None
+    assert opts["next_due"] is None
 
 
 async def test_user_flow_creates_entry_with_weeks_unit(hass):

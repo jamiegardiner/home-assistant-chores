@@ -45,7 +45,7 @@ def _chore_schema() -> vol.Schema:
 class ChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle the initial config flow: collect name and interval for one chore."""
 
-    VERSION = 2
+    VERSION = 3
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -75,6 +75,7 @@ class ChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         "notification_time": DEFAULT_NOTIFICATION_TIME,
                         "last_completed": None,
                         "snooze_until": None,
+                        "next_due": None,
                     },
                 )
 
