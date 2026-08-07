@@ -19,7 +19,7 @@ from custom_components.chores.const import (
 )
 from custom_components.chores.coordinator import (
     ChoresCoordinator,
-    _parse_aware_datetime,
+    parse_aware_datetime,
 )
 from tests.components.chores.helpers import make_entry, setup_coord
 
@@ -276,13 +276,13 @@ async def test_next_due_dst_spring_forward(hass: Any) -> None:
 
 
 # ---------------------------------------------------------------------------
-# _parse_aware_datetime tests
+# parse_aware_datetime tests
 # ---------------------------------------------------------------------------
 
 
 def test_parse_aware_datetime_type_error_returns_none() -> None:
     """A non-string value triggers TypeError in fromisoformat and returns None."""
-    result = _parse_aware_datetime(cast(str, 42))
+    result = parse_aware_datetime(cast(str, 42))
     assert result is None
 
 

@@ -9,8 +9,8 @@ from .const import DEFAULT_INTERVAL_UNIT, DOMAIN
 from .coordinator import (
     ChoresConfigEntry,
     ChoresCoordinator,
-    _parse_aware_datetime,
     compute_next_due,
+    parse_aware_datetime,
 )
 from .models import ChoreConfig
 
@@ -57,11 +57,15 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ChoresConfigEntry) -> 
     if entry.version == 2:
         options = dict(entry.options)
         try:
-            last_completed = _parse_aware_datetime(options.get("last_completed"))
+            last_completed = parse_aware_datetime(options.get("last_completed"))
         except ValueError:
             last_completed = None
-        config = ChoreConfig.from_dict(options)
-        next_due = compute_next_due(last_completed, config)
+
+        try:
+            config = ChoreConfig.from_dict(options)
+            next_due = compute_next_due(last_completed, config)
+        except ValueError:
+            next_due = None
         options["next_due"] = next_due.isoformat() if next_due else None
 
         hass.config_entries.async_update_entry(entry, options=options, version=3)

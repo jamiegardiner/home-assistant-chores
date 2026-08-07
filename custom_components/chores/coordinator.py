@@ -173,10 +173,9 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         rt = self._runtime
         new_config = ChoreConfig.from_dict(new_options)
         new_last_completed = (
-            _parse_aware_datetime(new_options.get("last_completed"))
-            or rt.last_completed
+            parse_aware_datetime(new_options.get("last_completed")) or rt.last_completed
         )
-        new_snooze_until = _parse_aware_datetime(new_options.get("snooze_until"))
+        new_snooze_until = parse_aware_datetime(new_options.get("snooze_until"))
 
         if (
             rt.config == new_config
@@ -374,7 +373,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         parsed: datetime | None = None
         if raw is not None:
             try:
-                parsed = _parse_aware_datetime(raw)
+                parsed = parse_aware_datetime(raw)
             except ValueError:
                 parsed = None
         if raw is not None and parsed is None:
@@ -398,7 +397,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return parsed
 
 
-def _parse_aware_datetime(value: str | None) -> datetime | None:
+def parse_aware_datetime(value: str | None) -> datetime | None:
     """Parse an ISO datetime string; return None if absent or malformed; raise on naive."""
     if not value:
         return None

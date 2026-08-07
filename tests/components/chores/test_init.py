@@ -8,6 +8,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.chores import async_migrate_entry
 from custom_components.chores.const import DOMAIN
 
 
@@ -253,6 +254,37 @@ async def test_migrate_entry_v2_corrupt_last_completed_does_not_crash(hass) -> N
 
     with patch("custom_components.chores.coordinator.async_track_point_in_time"):
         result = await hass.config_entries.async_setup(entry.entry_id)
+
+    assert result is True
+    assert entry.version == 3
+    assert entry.options["next_due"] is None
+
+
+async def test_migrate_entry_v2_corrupt_config_does_not_crash(hass) -> None:
+    """A corrupt v2 config field does not crash migration; next_due ends up None.
+
+    Calls async_migrate_entry directly rather than through the full setup flow,
+    since the corrupt config subsequently fails async_initialize's own
+    unrecoverable-config handling (a separate, already-tested code path).
+    """
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        entry_id="migrate_test",
+        version=2,
+        options={
+            "name": "Bins",
+            "interval_value": 0,
+            "interval_unit": "days",
+            "default_snooze_value": 1,
+            "default_snooze_unit": "days",
+            "notification_time": "08:00",
+            "last_completed": dt_util.now().isoformat(),
+            "snooze_until": None,
+        },
+    )
+    entry.add_to_hass(hass)
+
+    result = await async_migrate_entry(hass, entry)
 
     assert result is True
     assert entry.version == 3
