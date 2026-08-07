@@ -14,6 +14,7 @@ from custom_components.chores.const import (
     DOMAIN,
     REPAIR_ISSUE_CORRUPT_CONFIG,
     REPAIR_ISSUE_CORRUPT_LAST_COMPLETED,
+    REPAIR_ISSUE_CORRUPT_NEXT_DUE,
     REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL,
 )
 from custom_components.chores.coordinator import (
@@ -82,6 +83,17 @@ async def test_last_completed_survives_restart(hass: Any) -> None:
 
     assert coord2.data["last_completed"] == completion_date
     assert coord2.data["status"] == "done"
+
+
+async def test_next_due_persisted_to_entry_options(hass: Any) -> None:
+    """A normal load persists the recomputed next_due into entry.options."""
+    entry = make_entry(days_ago=0, interval_value=7)
+    entry.add_to_hass(hass)
+    coord = await setup_coord(hass, entry)
+
+    persisted = entry.options["next_due"]
+    assert persisted is not None
+    assert datetime.fromisoformat(persisted) == coord.data["next_due"]
 
 
 async def test_unload_cancels_timers(hass: Any, patch_track: MagicMock) -> None:
@@ -160,6 +172,7 @@ async def test_update_config_recomputes_from_preserved_last_completed(
     expected_next_due = last_completed_date + timedelta(days=14)
     assert coord.data["next_due"].date() == expected_next_due
     assert coord.data["status"] == "done"
+    assert datetime.fromisoformat(entry.options["next_due"]) == coord.data["next_due"]
 
 
 async def test_update_config_name_change_no_status_change(hass: Any) -> None:
@@ -356,6 +369,23 @@ async def test_garbage_snooze_until_gracefully_recovered(hass: Any) -> None:
     assert issue.severity == ir.IssueSeverity.WARNING
 
 
+async def test_garbage_next_due_gracefully_recovered(hass: Any) -> None:
+    """A totally unparseable next_due is sanitised and recomputed, with a repair issue raised."""
+    entry = make_entry(days_ago=30, interval_value=7, next_due="not-a-date")
+    entry.add_to_hass(hass)
+
+    coord = await setup_coord(hass, entry)
+
+    expected_next_due = dt_util.now().date() - timedelta(days=23)
+    assert coord.data["next_due"].date() == expected_next_due
+    assert datetime.fromisoformat(entry.options["next_due"]).date() == expected_next_due
+    issue = ir.async_get(hass).async_get_issue(
+        DOMAIN, f"{REPAIR_ISSUE_CORRUPT_NEXT_DUE}_{entry.entry_id}"
+    )
+    assert issue is not None
+    assert issue.severity == ir.IssueSeverity.WARNING
+
+
 async def test_valid_options_no_repair_issue(hass: Any) -> None:
     """A clean load produces no repair issues."""
     entry = make_entry(days_ago=3, interval_value=7)
@@ -373,6 +403,12 @@ async def test_valid_options_no_repair_issue(hass: Any) -> None:
     assert (
         issue_reg.async_get_issue(
             DOMAIN, f"{REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL}_{entry.entry_id}"
+        )
+        is None
+    )
+    assert (
+        issue_reg.async_get_issue(
+            DOMAIN, f"{REPAIR_ISSUE_CORRUPT_NEXT_DUE}_{entry.entry_id}"
         )
         is None
     )
@@ -410,6 +446,15 @@ async def test_clean_load_deletes_stale_repair_issues(hass: Any) -> None:
     ir.async_create_issue(
         hass,
         DOMAIN,
+        f"{REPAIR_ISSUE_CORRUPT_NEXT_DUE}_{entry.entry_id}",
+        is_fixable=False,
+        severity=ir.IssueSeverity.WARNING,
+        translation_key=REPAIR_ISSUE_CORRUPT_NEXT_DUE,
+        translation_placeholders={"name": "Bins"},
+    )
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
         f"{REPAIR_ISSUE_CORRUPT_CONFIG}_{entry.entry_id}",
         is_fixable=False,
         severity=ir.IssueSeverity.ERROR,
@@ -429,6 +474,12 @@ async def test_clean_load_deletes_stale_repair_issues(hass: Any) -> None:
     assert (
         issue_reg.async_get_issue(
             DOMAIN, f"{REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL}_{entry.entry_id}"
+        )
+        is None
+    )
+    assert (
+        issue_reg.async_get_issue(
+            DOMAIN, f"{REPAIR_ISSUE_CORRUPT_NEXT_DUE}_{entry.entry_id}"
         )
         is None
     )

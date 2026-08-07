@@ -41,6 +41,9 @@ async def test_complete_persists_to_entry_options(hass: Any) -> None:
     assert datetime.fromisoformat(persisted).date() == dt_util.now().date()
     assert entry.options["snooze_until"] is None
 
+    persisted_next_due = entry.options["next_due"]
+    assert datetime.fromisoformat(persisted_next_due) == coord.data["next_due"]
+
 
 async def test_completing_never_completed_chore_starts_cycle(hass: Any) -> None:
     """Completing a never-completed chore sets last_completed, next_due, and status done."""

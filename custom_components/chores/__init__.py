@@ -6,7 +6,13 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 
 from .const import DEFAULT_INTERVAL_UNIT, DOMAIN
-from .coordinator import ChoresConfigEntry, ChoresCoordinator
+from .coordinator import (
+    ChoresConfigEntry,
+    ChoresCoordinator,
+    _parse_aware_datetime,
+    compute_next_due,
+)
+from .models import ChoreConfig
 
 
 class _ChoreDeviceMixin:
@@ -47,6 +53,18 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ChoresConfigEntry) -> 
             ent_reg.async_remove(old_entity_id)
 
         hass.config_entries.async_update_entry(entry, options=options, version=2)
+
+    if entry.version == 2:
+        options = dict(entry.options)
+        try:
+            last_completed = _parse_aware_datetime(options.get("last_completed"))
+        except ValueError:
+            last_completed = None
+        config = ChoreConfig.from_dict(options)
+        next_due = compute_next_due(last_completed, config)
+        options["next_due"] = next_due.isoformat() if next_due else None
+
+        hass.config_entries.async_update_entry(entry, options=options, version=3)
 
     return True
 

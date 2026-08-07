@@ -21,6 +21,7 @@ from .const import (
     DOMAIN,
     REPAIR_ISSUE_CORRUPT_CONFIG,
     REPAIR_ISSUE_CORRUPT_LAST_COMPLETED,
+    REPAIR_ISSUE_CORRUPT_NEXT_DUE,
     REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL,
     STATUS_DONE,
     STATUS_OVERDUE,
@@ -64,8 +65,10 @@ class ChoreRuntime:
     def recompute(self) -> None:
         """Recompute status and next_due from current field values."""
         now = dt_util.now()
+        next_due = compute_next_due(self.last_completed, self.config)
+        self.next_due = next_due
+
         if self.last_completed is None:
-            self.next_due = None
             if self.snooze_until is not None and now < self.snooze_until:
                 self.status = STATUS_SNOOZED
                 return
@@ -73,18 +76,14 @@ class ChoreRuntime:
             self.status = STATUS_OVERDUE
             return
 
-        due_date = dt_util.as_local(self.last_completed).date() + timedelta(
-            days=self.config.interval_in_days
-        )
-        self.next_due = _time_on_local_date(due_date, self.config.notification_time)
-
+        assert next_due is not None
         if self.snooze_until is not None:
             if now < self.snooze_until:
                 self.status = STATUS_SNOOZED
                 return
             self.snooze_until = None
 
-        self.status = STATUS_OVERDUE if now >= self.next_due else STATUS_DONE
+        self.status = STATUS_OVERDUE if now >= next_due else STATUS_DONE
 
 
 type ChoresConfigEntry = ConfigEntry[ChoresCoordinator]
@@ -152,6 +151,13 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             opts,
             "snooze_until",
             REPAIR_ISSUE_CORRUPT_SNOOZE_UNTIL,
+            entry_id,
+            config.name,
+        )
+        self._resolve_datetime_field(
+            opts,
+            "next_due",
+            REPAIR_ISSUE_CORRUPT_NEXT_DUE,
             entry_id,
             config.name,
         )
@@ -350,6 +356,7 @@ class ChoresCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "snooze_until": rt.snooze_until.isoformat()
                 if rt.snooze_until
                 else None,
+                "next_due": rt.next_due.isoformat() if rt.next_due else None,
             }
         )
         self.async_set_updated_data(self._snapshot())
@@ -410,3 +417,18 @@ def _time_on_local_date(local_date: date, notification_time: str) -> datetime:
     return dt_util.start_of_local_day(local_date).replace(
         hour=parsed.hour, minute=parsed.minute
     )
+
+
+def compute_next_due(
+    last_completed: datetime | None, config: ChoreConfig
+) -> datetime | None:
+    """Compute next_due from last_completed and the chore config.
+
+    Returns None when the chore has never been completed.
+    """
+    if last_completed is None:
+        return None
+    due_date = dt_util.as_local(last_completed).date() + timedelta(
+        days=config.interval_in_days
+    )
+    return _time_on_local_date(due_date, config.notification_time)
